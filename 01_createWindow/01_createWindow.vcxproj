@@ -76,7 +76,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)\bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)\obj\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)\deps\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)deps\include;$(SolutionDir)common;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\deps\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -143,8 +143,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\Exceptions.cpp" />
+    <ClCompile Include="..\common\GLApplication.cpp" />
     <ClCompile Include="..\deps\src\glad.c" />
+    <ClCompile Include="GLWindowApp.cpp" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\Exceptions.h" />
+    <ClInclude Include="..\common\GLApplication.h" />
+    <ClInclude Include="..\common\pch.h" />
+    <ClInclude Include="GLWindowApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
