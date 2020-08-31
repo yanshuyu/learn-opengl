@@ -39,7 +39,7 @@ bool GLApplication::initailize() {
 
 	glfwSwapInterval(1);
 
-	glViewport(0, 0, m_wndWidth, m_wndHeight);
+	GLCALL(glViewport(0, 0, m_wndWidth, m_wndHeight));
 
 	m_initailized = true;
 

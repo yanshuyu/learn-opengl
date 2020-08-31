@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="shader">
+      <UniqueIdentifier>{9b772237-5b9c-4e2f-a3c3-afbf13804542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="deps">
+      <UniqueIdentifier>{c4d3fb36-a8e0-499d-8a03-e879f01bf548}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="02_textureCube.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Exceptions.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GLApplication.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\src\glad.c">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureCubeApp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Shader.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ShaderProgram.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Util.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ShaderProgamMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Texture.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Buffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\VertexLayoutDescription.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\VertexArray.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\TextureMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\Exceptions.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GLApplication.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pch.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureCubeApp.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Shader.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ShaderProgram.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Util.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ShaderProgamMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Singleton.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\include\stb_image\stb_image.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Texture.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Buffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\VertexLayoutDescription.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\VertexArray.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TextureMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\shader\AbedoMap.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\SolidColor.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\test.shader">
+      <Filter>shader</Filter>
+    </None>
+  </ItemGroup>
+</Project>
