@@ -36,6 +36,9 @@ public:
 	Texture(const std::string& file);
 	virtual ~Texture();
 
+	Texture(const Texture& other) = delete;
+	Texture& operator = (const Texture& other) = delete;
+
 	bool load();
 	void bind(int slot = 0) const ;
 	void unbind() const;

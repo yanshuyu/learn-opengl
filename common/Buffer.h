@@ -22,8 +22,11 @@ public:
 		Unsynchronized_Bit = GL_MAP_UNSYNCHRONIZED_BIT,
 	};
 public:
-	Buffer(const void* data, size_t sz, GLenum target, GLenum usage);
+	Buffer(const void* data, size_t sz, GLenum target, GLenum usage, size_t elementCnt = 0);
 	~Buffer();
+
+	Buffer(const Buffer& other) = delete;
+	Buffer& operator = (const Buffer& other) = delete;
 
 	void bind() const;
 	void unbind() const;
@@ -41,6 +44,10 @@ public:
 		return m_size;
 	}
 
+	inline size_t getElementCount() const {
+		return m_elementCount;
+	}
+
 	inline GLenum getTarget() const {
 		return m_target;
 	}
@@ -51,7 +58,9 @@ public:
 
 protected:
 	GLuint m_handler;
-	size_t m_size;
+	size_t m_size; //buffer size in bytes
+	size_t m_elementCount; //element count in buffer
 	GLenum m_target;
 	GLenum m_usage;
+
 };

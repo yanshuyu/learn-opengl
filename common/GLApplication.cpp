@@ -39,7 +39,15 @@ bool GLApplication::initailize() {
 
 	glfwSwapInterval(1);
 
+	glfwSetFramebufferSizeCallback(m_glfwWnd, [](GLFWwindow* wnd, int width, int height) {
+		ASSERT(glfwGetWindowUserPointer(wnd));
+		GLApplication* app = static_cast<GLApplication*>(glfwGetWindowUserPointer(wnd));
+		app->injectWindowSize(width, height);
+	});
+	
 	GLCALL(glViewport(0, 0, m_wndWidth, m_wndHeight));
+
+	glfwSetWindowUserPointer(m_glfwWnd, this);
 
 	m_initailized = true;
 
@@ -66,6 +74,12 @@ void GLApplication::run() {
 	shutdown();
 }
 
+
+void GLApplication::onWindowResized(int width, int height) {
+	GLCALL(glViewport(0, 0, width, height));
+	m_wndWidth = width;
+	m_wndHeight = height;
+}
 
 void GLApplication::shutdown() {
 	if (m_glfwWnd != nullptr) {

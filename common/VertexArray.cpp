@@ -18,10 +18,8 @@ void VertexArray::unbind() const {
 	GLCALL(glBindVertexArray(0));
 }
 
-void VertexArray::storeVertexLayout(const Buffer& vb, const VertexLayoutDescription& vbDesc) {
+void VertexArray::storeVertexLayout(const VertexLayoutDescription& vbDesc) {
 	bind();
-	vb.bind();
-
 	size_t stride = vbDesc.getStride();
 	size_t offset = 0;
 	auto attributes = vbDesc.getAttributes();
@@ -36,9 +34,6 @@ void VertexArray::storeVertexLayout(const Buffer& vb, const VertexLayoutDescript
 							reinterpret_cast<void*>(offset)));
 		offset += a.packedSize;
 	}
-
-	unbind();
-	vb.unbind();
 }
 
 

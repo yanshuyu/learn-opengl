@@ -14,6 +14,9 @@ public:
 	Shader(const std::string& src, Type type = Type::VertexShader);
 	~Shader();
 
+	Shader(const Shader& other) = delete;
+	Shader& operator = (const Shader& other) = delete;
+
 	bool isCompiled() const;
 	bool compile();
 	void release();

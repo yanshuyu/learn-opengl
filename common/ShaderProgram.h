@@ -38,6 +38,9 @@ public:
 	ShaderProgram(const std::string& name, const std::string& file);
 	~ShaderProgram();
 
+	ShaderProgram(const ShaderProgram& other) = delete;
+	ShaderProgram& operator = (const ShaderProgram& other) = delete;
+
 	bool compileAndLink();
 	bool isLinked() const;
 	void release();

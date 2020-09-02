@@ -36,9 +36,13 @@ public:
 	
 	void pushAttribute(AttributeElementType et, size_t ec, size_t packedSz = 0, bool normalize = false);
 	
+	void reset();
+
 	size_t getStride() const;
 
-	inline std::vector<VertexAttribute> getAttributes() const {
+	inline void setStride(size_t stride) { m_stride = stride; }
+
+	inline const std::vector<VertexAttribute>& getAttributes() const {
 		return m_attributes;
 	}
 

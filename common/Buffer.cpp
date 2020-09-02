@@ -3,8 +3,9 @@
 
 
 
-Buffer::Buffer(const void* data, size_t sz, GLenum target, GLenum usage):m_handler(0)
+Buffer::Buffer(const void* data, size_t sz, GLenum target, GLenum usage, size_t elementCnt):m_handler(0)
 , m_size(sz)
+, m_elementCount(elementCnt)
 , m_target(target)
 , m_usage(usage) {
 	GLCALL(glGenBuffers(1, &m_handler));

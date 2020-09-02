@@ -10,9 +10,12 @@ public:
 	VertexArray();
 	~VertexArray();
 
+	VertexArray(const VertexArray& other) = delete;
+	VertexArray& operator = (const VertexArray& other) = delete;
+
 	void bind() const;
 	void unbind() const;
-	void storeVertexLayout(const Buffer& vb, const VertexLayoutDescription& vbDesc);
+	void storeVertexLayout(const VertexLayoutDescription& vbDesc);
 	void release();
 
 	inline unsigned int getHandler() const {

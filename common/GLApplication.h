@@ -10,11 +10,16 @@ public:
 
 	virtual void run();
 
+	inline void injectWindowSize(int width, int height) {
+		onWindowResized(width, height);
+	}
+
 protected:
 	virtual bool initailize();
 	virtual void update(double dt) {};
 	virtual void render() {};
 	virtual void shutdown();
+	virtual void onWindowResized(int width, int height);
 
 protected:
 	std::string m_wndName;

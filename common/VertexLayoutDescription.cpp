@@ -29,6 +29,12 @@ void VertexLayoutDescription::pushAttribute(AttributeElementType et, size_t ec, 
 	m_attributes.push_back(VertexAttribute(et, ec, packedSz, normalize));
 }
 
+
+void VertexLayoutDescription::reset() {
+	m_attributes.clear();
+	m_stride = 0;
+}
+
 size_t VertexLayoutDescription::getStride() const {
 	if (m_stride)
 		return m_stride;
