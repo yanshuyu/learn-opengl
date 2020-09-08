@@ -45,6 +45,7 @@ bool GLApplication::initailize() {
 		app->injectWindowSize(width, height);
 	});
 	
+	
 	GLCALL(glViewport(0, 0, m_wndWidth, m_wndHeight));
 
 	glfwSetWindowUserPointer(m_glfwWnd, this);

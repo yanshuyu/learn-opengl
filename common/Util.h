@@ -15,3 +15,6 @@ void GLClearError();
 bool GLCheckError();
 
 
+typedef unsigned long ID;
+
+

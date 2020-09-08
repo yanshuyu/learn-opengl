@@ -12,3 +12,5 @@
 #include"VertexLayoutDescription.h"
 #include"VertexArray.h"
 #include"MeshMgr.h"
+#include"MaterialMgr.h"
+#include"Scene.h"

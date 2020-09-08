@@ -8,7 +8,7 @@ class MeshManager;
 
 class MeshGroup {
 	friend class MeshManager;
-	typedef std::vector<std::unique_ptr<Mesh>> MeshContainer;
+	typedef std::vector<std::unique_ptr<Mesh>> MeshVector;
 public:
 	MeshGroup();
 	MeshGroup(MeshGroup&& other) noexcept;
@@ -22,11 +22,11 @@ public:
 	void addMesh(const aiMesh* mesh, aiMatrix4x4 transform);
 	void addMesh(Mesh* mesh);
 	void addMesh(std::unique_ptr<Mesh>&& mesh);
-	Mesh* addMesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indices, Mesh::PrimitiveType pt = Mesh::PrimitiveType::Triangle);
-	Mesh* addMesh(std::vector<Vertex>&& vertices, std::vector<Index>&& indices, Mesh::PrimitiveType pt = Mesh::PrimitiveType::Triangle);
+	Mesh* addMesh(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt = PrimitiveType::Triangle);
+	Mesh* addMesh(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt = PrimitiveType::Triangle);
 
 
-	inline unsigned long id() const {
+	inline ID id() const {
 		return m_id;
 	}
 
@@ -66,7 +66,7 @@ public:
 	//	return m_meshes.cend();
 	//}
 
-	inline const MeshContainer& meshes() const {
+	inline const MeshVector& meshes() const {
 		return m_meshes;
 	}
 
@@ -78,7 +78,7 @@ private:
 	std::vector<std::unique_ptr<Mesh>> m_meshes;
 	std::string m_file;
 	std::string m_name;
-	unsigned long m_id;
+	ID m_id;
 };
 
 

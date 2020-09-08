@@ -25,11 +25,11 @@ MeshGroup& MeshGroup::operator = (MeshGroup&& rv) noexcept {
 }
 
 void MeshGroup::addMesh(const aiMesh* mesh, aiMatrix4x4 transform) {
-	std::vector<Vertex> vertices;
+	std::vector<Vertex_t> vertices;
 	vertices.reserve(mesh->mNumVertices);
 
 	for (size_t i = 0; i < mesh->mNumVertices; i++) {
-		Vertex v;
+		Vertex_t v;
 		ASSERT(mesh->HasPositions());
 		const aiVector3D pos = mesh->mVertices[i];
 
@@ -53,34 +53,34 @@ void MeshGroup::addMesh(const aiMesh* mesh, aiMatrix4x4 transform) {
 	if (vertices.empty())
 		return;
 	
-	Mesh::PrimitiveType pt = Mesh::PrimitiveType::Unknown;
+	PrimitiveType pt = PrimitiveType::Unknown;
+	size_t primitiveIndexCount = 3;
 	switch (mesh->mPrimitiveTypes)
 	{
 	case aiPrimitiveType_POINT:
-		pt = Mesh::PrimitiveType::Point;
+		pt = PrimitiveType::Point;
+		primitiveIndexCount = 1;
 		break;
 	case aiPrimitiveType_LINE:
-		pt = Mesh::PrimitiveType::Line;
+		pt = PrimitiveType::Line;
+		primitiveIndexCount = 2;
 		break;
 	case aiPrimitiveType_TRIANGLE:
-		pt = Mesh::PrimitiveType::Triangle;
+		pt = PrimitiveType::Triangle;
+		primitiveIndexCount = 3;
 		break;
 	case aiPrimitiveType_POLYGON:
-		pt = Mesh::PrimitiveType::Polygon;
+		pt = PrimitiveType::Polygon;
+		primitiveIndexCount = 4;
 		break;
 	default:
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
 		break;
 	}
 
-	std::vector<Index> indices;
-	size_t primitiveIndexCount = 3;
-	if (pt == Mesh::PrimitiveType::Polygon) {
-		primitiveIndexCount = 4;
-	}else if (pt == Mesh::PrimitiveType::Point) {
-		primitiveIndexCount = 2;
-	}else if (pt == Mesh::PrimitiveType::Point) {
-		primitiveIndexCount = 1;
-	}
+	std::vector<Index_t> indices;
 	indices.reserve(mesh->mNumFaces * primitiveIndexCount);
 
 	for (size_t j = 0; j < mesh->mNumFaces; j++) {
@@ -104,14 +104,14 @@ void MeshGroup::addMesh(std::unique_ptr<Mesh>&& mesh) {
 	m_meshes.push_back(std::move(mesh));
 }
 
-Mesh* MeshGroup::addMesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indices, Mesh::PrimitiveType pt) {
+Mesh* MeshGroup::addMesh(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt) {
 	auto mesh = std::make_unique<Mesh>();
 	mesh->fill(vertices, indices, pt);
 	m_meshes.push_back(std::move(mesh));
 	return m_meshes.back().get();
 }
 
-Mesh* MeshGroup::addMesh(std::vector<Vertex>&& vertices, std::vector<Index>&& indices, Mesh::PrimitiveType pt) {
+Mesh* MeshGroup::addMesh(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt) {
 	auto mesh = std::make_unique<Mesh>();
 	mesh->fill(std::move(vertices), std::move(indices), pt);
 	m_meshes.push_back(std::move(mesh));

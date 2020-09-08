@@ -8,6 +8,10 @@ public:
 
 private:
 	bool initailize() override;
+	void update(double dt) override;
 	void render() override;
 
+private:
+	std::unique_ptr<Scene> m_scene;
+	std::unique_ptr<Renderer> m_renderer;
 };

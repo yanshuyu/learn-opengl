@@ -45,7 +45,7 @@ std::shared_ptr<MeshGroup> MeshManager::load(const std::string& file) {
 	return meshGroup;
 }
 
-std::shared_ptr<MeshGroup> MeshManager::getMesh(int id) const {
+std::shared_ptr<MeshGroup> MeshManager::getMesh(ID id) const {
 	auto pos = m_meshes.find(id);
 	if (pos == m_meshes.end())
 		return nullptr;
@@ -76,7 +76,7 @@ std::vector<std::shared_ptr<MeshGroup>> MeshManager::getMesh(const std::string& 
 	return result;
 }
 
-std::shared_ptr<MeshGroup> MeshManager::removeMesh(int id) {
+std::shared_ptr<MeshGroup> MeshManager::removeMesh(ID id) {
 	auto pos = m_meshes.find(id);
 	if (pos != m_meshes.end()) {
 		m_meshes.erase(pos);

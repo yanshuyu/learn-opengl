@@ -1,8 +1,8 @@
 #include"Mesh.h"
-#include"Util.h"
+
 
 Mesh::Mesh() :m_name()
-, m_primitiveType(Mesh::PrimitiveType::Triangle)
+, m_primitiveType(PrimitiveType::Unknown)
 , m_vertics()
 , m_indices()
 , m_transform(1)
@@ -46,7 +46,7 @@ Mesh& Mesh::operator = (Mesh&& other) noexcept {
 }
 
 
-void Mesh::fill(const std::vector<Vertex>& vertices, const std::vector<Index>& indices, PrimitiveType pt) {
+void Mesh::fill(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt) {
 	release();
 	m_vertics = vertices;
 	m_indices = indices;
@@ -54,7 +54,7 @@ void Mesh::fill(const std::vector<Vertex>& vertices, const std::vector<Index>& i
 	genRenderBuffers();
 }
 
-void Mesh::fill(std::vector<Vertex>&& vertices, std::vector<Index>&& indices, PrimitiveType pt) {
+void Mesh::fill(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt) {
 	release();
 	m_vertics = std::move(vertices);
 	m_indices = std::move(indices);
@@ -65,13 +65,13 @@ void Mesh::fill(std::vector<Vertex>&& vertices, std::vector<Index>&& indices, Pr
 void Mesh::genRenderBuffers() {
 	ASSERT(m_vertics.size() > 0);
 	m_vao = std::make_unique<VertexArray>();
-	m_vbo = std::make_unique<Buffer>(m_vertics.data(), sizeof(Vertex) * m_vertics.size(), GL_ARRAY_BUFFER, GL_STATIC_DRAW, m_vertics.size());
+	m_vbo = std::make_unique<Buffer>(m_vertics.data(), sizeof(Vertex_t) * m_vertics.size(), GL_ARRAY_BUFFER, GL_STATIC_DRAW, m_vertics.size());
 	if (m_indices.size() > 0) {
-		m_ibo = std::make_unique<Buffer>(m_indices.data(), sizeof(Index) * m_indices.size(), GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, m_indices.size());
+		m_ibo = std::make_unique<Buffer>(m_indices.data(), sizeof(Index_t) * m_indices.size(), GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, m_indices.size());
 	}
 	
 	VertexLayoutDescription layoutDesc;
-	layoutDesc.setStride(sizeof(Vertex));
+	layoutDesc.setStride(sizeof(Vertex_t));
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // position
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // normal
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // tangent
@@ -92,7 +92,7 @@ void Mesh::release() {
 	m_name.clear();
 	m_vertics.clear();
 	m_indices.clear();
-	m_primitiveType = PrimitiveType::Triangle;
+	m_primitiveType = PrimitiveType::Unknown;
 
 	m_vao = nullptr;
 	m_vbo = nullptr;

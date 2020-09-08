@@ -6,7 +6,6 @@
 #include<string>
 #include<memory>
 #include<vector>
-#include<stack>
 #include<assimp/scene.h>
 
 
@@ -15,8 +14,7 @@ class MeshManager : public Singleton<MeshManager> {
 public:
 	enum MeshLoadOption {
 		LoadMaterial = 1 << 0,
-		LoadTexture = 1 << 1,
-		LoadAnimation = 1 << 2,
+		LoadAnimation = 1 << 1,
 	};
 
 	MeshManager() = default;
@@ -24,11 +22,11 @@ public:
 
 	std::shared_ptr<MeshGroup> load(const std::string& file);
 	
-	std::shared_ptr<MeshGroup> getMesh(int id) const;
+	std::shared_ptr<MeshGroup> getMesh(ID id) const;
 	std::shared_ptr<MeshGroup> getFirstMesh(const std::string& name)const;
 	std::vector<std::shared_ptr<MeshGroup>> getMesh(const std::string& name) const;
 
-	std::shared_ptr<MeshGroup> removeMesh(int id);
+	std::shared_ptr<MeshGroup> removeMesh(ID id);
 	std::shared_ptr<MeshGroup> removeFirstMesh(const std::string& name);
 	size_t removeMesh(const std::string& name);
 	void removeAllMesh();
@@ -40,5 +38,5 @@ private:
 	void dumpBoneHiearcy(const aiNode* root, std::string indent = "");
 
 private:
-	std::unordered_map<int, std::shared_ptr<MeshGroup>> m_meshes;
+	std::unordered_map<ID, std::shared_ptr<MeshGroup>> m_meshes;
 };

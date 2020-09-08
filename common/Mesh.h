@@ -3,6 +3,7 @@
 #include<glad/glad.h>
 #include"Buffer.h"
 #include"VertexArray.h"
+#include"Util.h"
 #include<vector>
 #include<string>
 #include<memory>
@@ -11,10 +12,10 @@ class MeshGroup;
 class MeshManager;
 
 
-typedef unsigned int Index;
+typedef unsigned int Index_t;
 
 
-struct Vertex {
+struct Vertex_t {
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec3 tangent;
@@ -23,20 +24,19 @@ struct Vertex {
 };
 
 
+enum class PrimitiveType {
+	Point,
+	Line,
+	Triangle,
+	Polygon,
+	Unknown,
+};
+
 
 
 class Mesh {
 	friend class MeshGroup;
 	friend class MeshManager;
-public:
-	enum class PrimitiveType {
-		Point,
-		Line,
-		Triangle,
-		Polygon,
-		Unknown,
-	};
-
 public:
 	Mesh();
 	Mesh(const Mesh& other) = delete;
@@ -47,11 +47,11 @@ public:
 	Mesh& operator = (Mesh&& other) noexcept;
 
 
-	void fill(const std::vector<Vertex>& vertices, const std::vector<Index>& indices, PrimitiveType pt = PrimitiveType::Unknown);
-	void fill(std::vector<Vertex>&& vertices, std::vector<Index>&& indices, PrimitiveType pt = PrimitiveType::Unknown);
+	void fill(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt = PrimitiveType::Unknown);
+	void fill(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt = PrimitiveType::Unknown);
 	void release();
 
-	inline unsigned long id() const {
+	inline ID id() const {
 		return m_id;
 	}
 
@@ -91,11 +91,11 @@ public:
 		return m_transform;
 	}
 	
-	inline const std::vector<Vertex>& getVertices() const {
+	inline const std::vector<Vertex_t>& getVertices() const {
 		return m_vertics;
 	}
 
-	inline const std::vector<Index>& getIndices() const {
+	inline const std::vector<Index_t>& getIndices() const {
 		return m_indices;
 	}
 
@@ -104,10 +104,10 @@ private:
 
 private:
 	PrimitiveType m_primitiveType;
-	unsigned long m_id;
+	ID m_id;
 	std::string m_name;
-	std::vector<Vertex> m_vertics;
-	std::vector<Index> m_indices;
+	std::vector<Vertex_t> m_vertics;
+	std::vector<Index_t> m_indices;
 	glm::mat4 m_transform;
 
 	std::unique_ptr<Buffer> m_vbo;
