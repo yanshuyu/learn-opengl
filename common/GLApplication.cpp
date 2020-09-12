@@ -1,5 +1,5 @@
 #include"GLApplication.h"
-
+#include"NotificationCenter.h"
 
 GLApplication::GLApplication(const std::string& wndTitle, size_t wndWidth, size_t wndHeight, size_t major, size_t minor):m_wndName(wndTitle)
 , m_wndWidth(wndWidth)
@@ -43,12 +43,15 @@ bool GLApplication::initailize() {
 		ASSERT(glfwGetWindowUserPointer(wnd));
 		GLApplication* app = static_cast<GLApplication*>(glfwGetWindowUserPointer(wnd));
 		app->injectWindowSize(width, height);
+		WindowResizedNotification nc(width, height);
+		NotificationCenter::getInstance()->postNotification(&nc);
 	});
 	
-	
 	GLCALL(glViewport(0, 0, m_wndWidth, m_wndHeight));
-
+	
 	glfwSetWindowUserPointer(m_glfwWnd, this);
+	
+	InputManager::getInstance()->setWindow(m_glfwWnd);
 
 	m_initailized = true;
 
@@ -63,6 +66,7 @@ void GLApplication::run() {
 	double now = glfwGetTime();
 	double last = now;
 	while (!glfwWindowShouldClose(m_glfwWnd)) {
+		InputManager::getInstance()->update();
 		update( now - last);
 		render();
 		glfwSwapBuffers(m_glfwWnd);
@@ -77,7 +81,7 @@ void GLApplication::run() {
 
 
 void GLApplication::onWindowResized(int width, int height) {
-	GLCALL(glViewport(0, 0, width, height));
+	//GLCALL(glViewport(0, 0, width, height));
 	m_wndWidth = width;
 	m_wndHeight = height;
 }

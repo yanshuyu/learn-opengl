@@ -18,7 +18,9 @@ public:
 	virtual ~SceneObject() {}
 
 	SceneObject(const SceneObject& other) = delete;
+	SceneObject(SceneObject&& rv) = delete;
 	SceneObject& operator = (const SceneObject& other) = delete;
+	SceneObject& operator = (SceneObject&& rv) = delete;
 
 	SceneObject* copy() const;
 	
@@ -134,5 +136,4 @@ private:
 	ID m_id;
 	ID m_tag;
 	SceneObject* m_parent;
-	MeshRenderComponent* m_meshRender;
 };

@@ -10,6 +10,7 @@ private:
 	bool initailize() override;
 	void update(double dt) override;
 	void render() override;
+	void onWindowResized(int width, int height) override;
 
 private:
 	std::unique_ptr<Scene> m_scene;

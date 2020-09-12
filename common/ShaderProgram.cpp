@@ -133,6 +133,28 @@ std::vector<ShaderProgram::UniformBlock> ShaderProgram::getUniformBlocks() const
 	return m_uniformBlocks;
 }
 
+
+bool ShaderProgram::hasAttribute(const std::string& name) const {
+	auto pos = std::find_if(m_attributes.begin(), m_attributes.end(), [&](const ShaderProgram::Attribute& attr) {
+		return attr.name == name;
+	});
+	return pos != m_attributes.end();
+}
+
+bool ShaderProgram::hasUniform(const std::string& name) const {
+	auto pos = std::find_if(m_uniforms.begin(), m_uniforms.end(), [&](const ShaderProgram::Uniform& u) {
+		return u.name == name;
+	});
+	return pos != m_uniforms.end();
+}
+
+bool ShaderProgram::hasUniformBlock(const std::string& name) const {
+	auto pos = std::find_if(m_uniformBlocks.begin(), m_uniformBlocks.end(), [&](const ShaderProgram::UniformBlock& ub) {
+		return ub.name == name;
+	});
+	return pos != m_uniformBlocks.end();
+}
+
 void ShaderProgram::bind() const {
 	GLCALL(glUseProgram(m_handler));
 }

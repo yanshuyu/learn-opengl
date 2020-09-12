@@ -12,15 +12,10 @@
 class MeshManager : public Singleton<MeshManager> {
 	typedef std::unordered_map<int, std::shared_ptr<MeshGroup>> MeshContainer;
 public:
-	enum MeshLoadOption {
-		LoadMaterial = 1 << 0,
-		LoadAnimation = 1 << 1,
-	};
-
 	MeshManager() = default;
 	~MeshManager() {};
 
-	std::shared_ptr<MeshGroup> load(const std::string& file);
+	std::shared_ptr<MeshGroup> addModel(const std::string& file, MeshLoadOption options = MeshLoadOption::None);
 	
 	std::shared_ptr<MeshGroup> getMesh(ID id) const;
 	std::shared_ptr<MeshGroup> getFirstMesh(const std::string& name)const;
@@ -31,8 +26,16 @@ public:
 	size_t removeMesh(const std::string& name);
 	void removeAllMesh();
 
+	inline std::string getResourceAbsolutePath() const {
+		return "C:/Users/SY/Documents/learn-opengl/res/models/";
+	}
+
+	inline std::string getResourceRelativePath() const {
+		return "res/models/";
+	}
+
 private:
-	void gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform);
+	void gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform, MeshLoadOption options);
 	std::unordered_set<std::string> gatherBonesName(const aiScene* scene);
 	const aiNode* findBonesRootNode(const aiNode* node, const std::unordered_set<std::string> bonesName);
 	void dumpBoneHiearcy(const aiNode* root, std::string indent = "");

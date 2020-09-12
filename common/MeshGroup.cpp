@@ -1,12 +1,17 @@
 #include"MeshGroup.h"
 #include"Util.h"
-#include<assimp/material.h>
+#include"TextureMgr.h"
+#include"MaterialMgr.h"
+#include<assimp/scene.h>
 #include<glm/gtc/type_ptr.hpp>
+
+
 
 MeshGroup::MeshGroup() :m_name()
 , m_id(0)
 , m_file()
-, m_meshes() {
+, m_meshes()
+, m_embededMaterials() {
 	m_id = reinterpret_cast<unsigned long>(this);
 }
 
@@ -24,23 +29,84 @@ MeshGroup& MeshGroup::operator = (MeshGroup&& rv) noexcept {
 	return *this;
 }
 
-void MeshGroup::addMesh(const aiMesh* mesh, aiMatrix4x4 transform) {
+void MeshGroup::addMesh(const aiScene* scene, const aiMesh* mesh, aiMatrix4x4 transform, MeshLoadOption options) {
 	std::vector<Vertex_t> vertices;
-	vertices.reserve(mesh->mNumVertices);
+	std::vector<Index_t> indices;
+	PrimitiveType pt = PrimitiveType::Unknown;
+	
+	// load vertices indics
+	loadGeometry(mesh, vertices, indices, pt);
+	
+	if (vertices.empty())
+		return;
 
-	for (size_t i = 0; i < mesh->mNumVertices; i++) {
+	aiMatrix4x4 colMajorTransform = transform.Transpose();
+	Mesh* newMesh = addMesh(std::move(vertices), std::move(indices), pt);
+	newMesh->m_name = mesh->mName.C_Str();
+	newMesh->m_transform = glm::make_mat4(&colMajorTransform[0][0]);
+
+	// load material
+	if (options & MeshLoadOption::LoadMaterial) {
+		if (auto mat = loadMaterial(scene, mesh)) {
+			MaterialManager::getInstance()->addMaterial(mat);
+			m_embededMaterials.insert({ newMesh->id(), mat->getName() });
+		}
+	}
+}
+
+void MeshGroup::addMesh(Mesh* mesh) {
+	m_meshes.emplace_back(mesh);
+}
+
+void MeshGroup::addMesh(std::unique_ptr<Mesh>&& mesh) {
+	m_meshes.push_back(std::move(mesh));
+}
+
+Mesh* MeshGroup::addMesh(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt) {
+	auto mesh = std::make_unique<Mesh>();
+	mesh->fill(vertices, indices, pt);
+	m_meshes.push_back(std::move(mesh));
+	return m_meshes.back().get();
+}
+
+Mesh* MeshGroup::addMesh(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt) {
+	auto mesh = std::make_unique<Mesh>();
+	mesh->fill(std::move(vertices), std::move(indices), pt);
+	m_meshes.push_back(std::move(mesh));
+	return m_meshes.back().get();
+}
+
+
+std::shared_ptr<Material> MeshGroup::embededMaterialForMesh(const Mesh* mesh) {
+	return embededMaterialForMesh(mesh->id());
+}
+
+std::shared_ptr<Material> MeshGroup::embededMaterialForMesh(ID meshId) {
+	auto pos = m_embededMaterials.find(meshId);
+	if (pos == m_embededMaterials.end())
+		return nullptr;
+
+	return MaterialManager::getInstance()->getMaterial(pos->second);
+}
+
+
+void MeshGroup::loadGeometry(const aiMesh* aMesh, std::vector<Vertex_t>& vertices, std::vector<Index_t>& indices, PrimitiveType& pt) {
+	vertices.clear();
+	vertices.reserve(aMesh->mNumVertices);
+
+	for (size_t i = 0; i < aMesh->mNumVertices; i++) {
 		Vertex_t v;
-		ASSERT(mesh->HasPositions());
-		const aiVector3D pos = mesh->mVertices[i];
+		ASSERT(aMesh->HasPositions());
+		const aiVector3D pos = aMesh->mVertices[i];
 
-		ASSERT(mesh->HasNormals());
-		const aiVector3D normal = mesh->mNormals[i];
+		ASSERT(aMesh->HasNormals());
+		const aiVector3D normal = aMesh->mNormals[i];
 
-		ASSERT(mesh->HasTangentsAndBitangents());
-		const aiVector3D tangent = mesh->mTangents[i];
-		const aiVector3D biTangent = mesh->mBitangents[i];
+		ASSERT(aMesh->HasTangentsAndBitangents());
+		const aiVector3D tangent = aMesh->mTangents[i];
+		const aiVector3D biTangent = aMesh->mBitangents[i];
 
-		const aiVector3D uv = mesh->HasTextureCoords(0) ? mesh->mTextureCoords[0][i] : aiVector3D();
+		const aiVector3D uv = aMesh->HasTextureCoords(0) ? aMesh->mTextureCoords[0][i] : aiVector3D();
 
 		v.position = glm::vec3(pos.x, pos.y, pos.z);
 		v.normal = glm::vec3(normal.x, normal.y, normal.z);
@@ -52,10 +118,10 @@ void MeshGroup::addMesh(const aiMesh* mesh, aiMatrix4x4 transform) {
 
 	if (vertices.empty())
 		return;
-	
-	PrimitiveType pt = PrimitiveType::Unknown;
+
+	pt = PrimitiveType::Unknown;
 	size_t primitiveIndexCount = 3;
-	switch (mesh->mPrimitiveTypes)
+	switch (aMesh->mPrimitiveTypes)
 	{
 	case aiPrimitiveType_POINT:
 		pt = PrimitiveType::Point;
@@ -80,42 +146,91 @@ void MeshGroup::addMesh(const aiMesh* mesh, aiMatrix4x4 transform) {
 		break;
 	}
 
-	std::vector<Index_t> indices;
-	indices.reserve(mesh->mNumFaces * primitiveIndexCount);
+	indices.clear();
+	indices.reserve(aMesh->mNumFaces * primitiveIndexCount);
 
-	for (size_t j = 0; j < mesh->mNumFaces; j++) {
-		const aiFace face = mesh->mFaces[j];
-		for (size_t k=0; k < face.mNumIndices; k++) {
+	for (size_t j = 0; j < aMesh->mNumFaces; j++) {
+		const aiFace face = aMesh->mFaces[j];
+		for (size_t k = 0; k < face.mNumIndices; k++) {
 			indices.push_back(face.mIndices[k]);
 		}
 	}
-
-	aiMatrix4x4 colMajorTransform = transform.Transpose();
-	Mesh* addedMesh = addMesh(std::move(vertices), std::move(indices), pt);
-	addedMesh->m_name = mesh->mName.C_Str();
-	addedMesh->m_transform = glm::make_mat4(&colMajorTransform[0][0]);
 }
 
-void MeshGroup::addMesh(Mesh* mesh) {
-	m_meshes.emplace_back(mesh);
-}
+std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
+	if (!aScene->HasMaterials())
+		return nullptr;
 
-void MeshGroup::addMesh(std::unique_ptr<Mesh>&& mesh) {
-	m_meshes.push_back(std::move(mesh));
-}
+	if (aScene->mNumMaterials <= aMesh->mMaterialIndex)
+		return nullptr;
 
-Mesh* MeshGroup::addMesh(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt) {
-	auto mesh = std::make_unique<Mesh>();
-	mesh->fill(vertices, indices, pt);
-	m_meshes.push_back(std::move(mesh));
-	return m_meshes.back().get();
-}
+	aiColor3D aiDiffuseColor(0.f, 0.f, 0.f);
+	aiColor3D aiSpecularColor(1.f, 1.f, 1.f);
+	aiColor3D aiEmissiveColor(0.f, 0.f, 0.f);
+	aiString aiName;
+	float aiOpacity = 1.f;
+	float aiShininess = 0.f;
 
-Mesh* MeshGroup::addMesh(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt) {
-	auto mesh = std::make_unique<Mesh>();
-	mesh->fill(std::move(vertices), std::move(indices), pt);
-	m_meshes.push_back(std::move(mesh));
-	return m_meshes.back().get();
+	bool hasDiffuseMap = false;
+	bool hasNormalMap = false;
+	std::string diffuseTextureName;
+	std::string normalTextureName;
+
+	const aiMaterial* aMat = aScene->mMaterials[aMesh->mMaterialIndex];
+	aMat->Get(AI_MATKEY_COLOR_DIFFUSE, aiDiffuseColor);
+	aMat->Get(AI_MATKEY_COLOR_SPECULAR, aiSpecularColor);
+	aMat->Get(AI_MATKEY_COLOR_EMISSIVE, aiEmissiveColor);
+	aMat->Get(AI_MATKEY_OPACITY, aiOpacity);
+	aMat->Get(AI_MATKEY_SHININESS, aiShininess);
+	aMat->Get(AI_MATKEY_NAME, aiName);
+
+	if (aMat->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+		diffuseTextureName.assign(path.C_Str());
+		hasDiffuseMap = ExtractFileNameFromPath(diffuseTextureName, diffuseTextureName);
+	}
+
+	if (aMat->GetTextureCount(aiTextureType_NORMALS) > 0) {
+		hasNormalMap = true;
+		aiString path;
+		aMat->GetTexture(aiTextureType_NORMALS, 0, &path);
+		normalTextureName.assign(path.C_Str());
+		hasNormalMap = ExtractFileNameFromPath(normalTextureName, normalTextureName);
+	}
+
+	auto mat = std::make_shared<Material>();
+	mat->m_diffuseColor = glm::vec3(aiDiffuseColor.r, aiDiffuseColor.g, aiDiffuseColor.b);
+	mat->m_specularColor = glm::vec3(aiSpecularColor.r, aiSpecularColor.g, aiSpecularColor.b);
+	mat->m_emissiveColor = glm::vec3(aiEmissiveColor.r, aiEmissiveColor.g, aiEmissiveColor.b);
+	mat->m_opacity = aiOpacity;
+	mat->m_shininess = aiShininess;
+	mat->setName(m_name + "_" + aMesh->mName.C_Str() + "_" + aiName.C_Str());
+	if (hasDiffuseMap) {
+		auto textureMgr = TextureManager::getInstance();
+		auto diffuseMap = textureMgr->addTexture(diffuseTextureName, textureMgr->getResourceAbsolutePath() + diffuseTextureName);
+		mat->m_diffuseMap = diffuseMap;
+
+		if (!diffuseMap) {
+#ifdef _DEBUG
+			std::cout << "Failed to load texture: " << mat->getName() + "_" + diffuseTextureName << std::endl;
+#endif // _DEBUG
+
+		}
+	}
+	if (hasNormalMap) {
+		auto textureMgr = TextureManager::getInstance();
+		auto normalMap = textureMgr->addTexture(normalTextureName, textureMgr->getResourceAbsolutePath() + normalTextureName);
+		mat->m_normalMap = normalMap;
+		if (!normalMap) {
+#ifdef _DEBUG
+			std::cout << "Failed to load texture: " << mat->getName() + "_" + normalTextureName << std::endl;
+#endif // _DEBUG
+
+		}
+	}
+
+	return mat;
 }
 
 

@@ -3,13 +3,9 @@
 #include"RendererCore.h"
 #include"ShaderProgram.h"
 
-
 class Scene;
 
-
 class Renderer {
-	friend class Scene;
-
 public:
 	Renderer();
 	virtual ~Renderer() {}
@@ -25,7 +21,7 @@ public:
 	void setViewPort(int x, int y, int width, int height);
 	void clearScrren(int flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	
+	virtual bool initialize() { return true; }
 	virtual void renderScene(Scene* s) = 0;
 	virtual void subsimtTask(const RenderTask_t& task) = 0;
 
@@ -53,12 +49,11 @@ protected:
 	virtual void endLightPass() = 0;
 
 	ShaderProgram* getActiveShaderProgram() const {
-		return m_activeShaderProgram.get();
+		return m_activeShader.get();
 	}
-private:
+
 	float m_clearColor[4];
 	float m_clearDepth;
 	int m_clearMask;
-
-	std::shared_ptr<ShaderProgram> m_activeShaderProgram;
+	std::shared_ptr<ShaderProgram> m_activeShader;
 };

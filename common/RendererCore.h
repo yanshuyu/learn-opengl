@@ -9,8 +9,13 @@ class Renderer;
 
 
 struct Camera_t {
-	glm::mat4 viewTransform;
-	glm::mat4 projTransform;
+	glm::mat4 viewMatrix;
+	glm::mat4 projMatrix;
+	glm::vec4 backgrounColor;
+	float viewPortX;
+	float viewportY;
+	float viewportWidth;
+	float viewportHeight;
 };
 
 
@@ -40,9 +45,9 @@ struct RenderTask_t {
 	const VertexArray* vao;
 	const Material* material;
 	size_t indexCount;
+	size_t vertexCount;
 	PrimitiveType primitive;
-	glm::mat4 modelTransform;
-	Camera_t camera;
+	glm::mat4 modelMatrix;
 };
 
 
@@ -53,7 +58,9 @@ public:
 
 	void pushMatrix(const glm::mat4& m);
 	void popMatrix();
+	void clearMatrix();
 	glm::mat4 getMatrix() const;
+
 
 	inline void setRenderer(Renderer* renderer) {
 		m_renderer = renderer;

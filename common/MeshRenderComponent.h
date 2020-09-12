@@ -6,7 +6,7 @@
 
 class MeshRenderComponent : public Component {
 public:
-	MeshRenderComponent(std::shared_ptr<MeshGroup> meshes = nullptr);
+	MeshRenderComponent(std::shared_ptr<MeshGroup> meshes = nullptr, bool useEmbededMaterial = true);
 	MeshRenderComponent(MeshRenderComponent&& rv) = default;
 	MeshRenderComponent& operator = (MeshRenderComponent&& rv) = default;
 
@@ -20,11 +20,13 @@ public:
 	}
 
 	Component* copy() const override;
+	static MeshRenderComponent* create();
+	static void destory(MeshRenderComponent* mrc);
 
 	//
 	// mesh managment
 	//
-	void setMeshes(std::shared_ptr<MeshGroup> meshes);
+	void setMeshes(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterials = true);
 	size_t meshCount() const;
 	
 	inline std::shared_ptr<MeshGroup> getMeshes() const {
@@ -55,10 +57,10 @@ public:
 	//
 	// mesh render
 	//
-	void render(RenderContext* context) const;
+	void render(RenderContext* context) override;
 
 private:
-	void loadDefaultMaterials(MeshGroup* meshes);
+	void loadEmbededMaterials();
 	
 private:
 	std::shared_ptr<MeshGroup> m_meshes;

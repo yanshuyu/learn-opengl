@@ -25,6 +25,14 @@ public:
 		return m_shaderPrograms.size();
 	}
 
+	inline std::string getResourceAbsolutePath() const {
+		return "C:/Users/SY/Documents/learn-opengl/res/shader/";
+	}
+
+	inline std::string getResourceRelativePath() const {
+		return "res/shader/";
+	}
+
 private:
 	std::unordered_map<std::string, std::shared_ptr<ShaderProgram>> m_shaderPrograms;
 };

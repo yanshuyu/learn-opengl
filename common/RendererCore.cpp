@@ -21,6 +21,12 @@ void RenderContext::popMatrix() {
 }
 
 
+void RenderContext::clearMatrix() {
+	while (!m_transformStack.empty()) {
+		m_transformStack.pop();
+	}
+}
+
 glm::mat4 RenderContext::getMatrix() const {
 	return m_transformStack.top();
 }

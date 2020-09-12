@@ -3,6 +3,7 @@
 
 
 class SceneObject;
+class RenderContext;
 
 class Component {
 	friend class SceneObject;
@@ -13,6 +14,8 @@ public:
 	
 	virtual bool initialize() { return true; }
 	virtual void update(double dt) {}
+	virtual void render(RenderContext* context) {}
+
 	virtual std::string indentifier() const = 0;
 	virtual Component* copy() const = 0;
 

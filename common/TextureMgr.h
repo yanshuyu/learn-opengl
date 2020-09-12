@@ -22,6 +22,14 @@ public:
 		return m_textures.size();
 	}
 
+	inline std::string getResourceAbsolutePath() const {
+		return "C:/Users/SY/Documents/learn-opengl/res/images/";
+	}
+
+	inline std::string getResourceRelativePath() const {
+		return "res/images/";
+	}
+
 private:
 	std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;
 };

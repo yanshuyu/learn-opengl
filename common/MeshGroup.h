@@ -1,7 +1,11 @@
 #pragma once
 #include"Mesh.h"
+#include"Material.h"
 #include<assimp/Importer.hpp>
 #include<assimp/mesh.h>
+#include<unordered_map>
+
+
 
 class MeshManager;
 
@@ -19,12 +23,14 @@ public:
 	MeshGroup& operator = (const MeshGroup& other) = delete;
 
 public:
-	void addMesh(const aiMesh* mesh, aiMatrix4x4 transform);
+	void addMesh(const aiScene* scene, const aiMesh* mesh, aiMatrix4x4 transform, MeshLoadOption options);
 	void addMesh(Mesh* mesh);
 	void addMesh(std::unique_ptr<Mesh>&& mesh);
 	Mesh* addMesh(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt = PrimitiveType::Triangle);
 	Mesh* addMesh(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt = PrimitiveType::Triangle);
 
+	std::shared_ptr<Material> embededMaterialForMesh(const Mesh* mesh);
+	std::shared_ptr<Material> embededMaterialForMesh(ID meshId);
 
 	inline ID id() const {
 		return m_id;
@@ -38,6 +44,14 @@ public:
 		return m_meshes.size();
 	}
 
+	inline const Mesh* meshAt(size_t idx) const {
+		return m_meshes.at(idx).get();
+	}
+
+	inline const MeshVector& meshes() const {
+		return m_meshes;
+	}
+
 	inline std::string getName() const {
 		return m_name;
 	}
@@ -46,36 +60,22 @@ public:
 		m_name = name;
 	}
 
-	inline const Mesh* meshAt(size_t idx) const {
-		return m_meshes.at(idx).get();
-	}
-
-	//inline MeshContainer::iterator begin() {
-	//	return m_meshes.begin();
-	//}
-
-	//inline MeshContainer::const_iterator cbegin() const {
-	//	return m_meshes.cbegin();
-	//}
-
-	//inline MeshContainer::iterator end() {
-	//	return m_meshes.end();
-	//}
-
-	//inline MeshContainer::const_iterator cend() const {
-	//	return m_meshes.cend();
-	//}
-
-	inline const MeshVector& meshes() const {
-		return m_meshes;
-	}
-
 	inline void clear() {
 		m_meshes.clear();
 	}
 
+	inline size_t embededMaterialCount() const {
+		return m_embededMaterials.size();
+	} 
+
+private:
+	void loadGeometry(const aiMesh* aMesh, std::vector<Vertex_t>& vertices, std::vector<Index_t>& indices, PrimitiveType& pt);
+	std::shared_ptr<Material> loadMaterial(const aiScene* aScene, const aiMesh* aMesh);
+
 private:
 	std::vector<std::unique_ptr<Mesh>> m_meshes;
+	std::unordered_map<ID, std::string> m_embededMaterials;
+
 	std::string m_file;
 	std::string m_name;
 	ID m_id;

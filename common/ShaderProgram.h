@@ -49,6 +49,10 @@ public:
 	std::string getInfoLog() const;
 	void dumpProgramInfo() const;
 
+	bool hasAttribute(const std::string& name) const;
+	bool hasUniform(const std::string& name) const;
+	bool hasUniformBlock(const std::string& name) const;
+
 	std::vector<Attribute> getAttributes() const;
 	std::vector<Uniform> getUniforms() const;
 	std::vector<UniformBlock> getUniformBlocks() const;

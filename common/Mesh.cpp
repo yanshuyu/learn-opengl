@@ -80,11 +80,13 @@ void Mesh::genRenderBuffers() {
 
 	m_vao->bind();
 	m_vbo->bind();
-	if (m_ibo) m_ibo->bind();
+	if (m_ibo) 
+		m_ibo->bind();
 	m_vao->storeVertexLayout(layoutDesc);
 	m_vao->unbind();
 	m_vbo->unbind();
-	if(m_ibo) m_ibo->unbind();
+	if(m_ibo) 
+		m_ibo->unbind();
 }
 
 
@@ -102,6 +104,6 @@ void Mesh::release() {
 
 std::ostream& operator << (std::ostream& o, const Mesh& mesh) {
 	o << "{name: " << mesh.getName() << "(" << mesh.id() << ")" << ", vertexCount: " << mesh.verticesCount()
-		<< ", indexCount" << mesh.indicesCount() << ", primitive: " << int(mesh.getPrimitiveType()) << "}";
+		<< ", indexCount: " << mesh.indicesCount() << ", primitive: " << int(mesh.getPrimitiveType()) << "}";
 	return o;
 }

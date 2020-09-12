@@ -3,11 +3,16 @@
 #include"Renderer.h"
 #include<functional>
 
+class Renderer;
+class Notification;
+
+
 class Scene {
+	friend class Renderer;
 	typedef std::vector<std::unique_ptr<SceneObject>> ObjectVector;
 public:
-	Scene(const std::string& name = "", Renderer* renderer = nullptr);
-	virtual ~Scene() {}
+	Scene(const glm::vec2& wndSz, const std::string& name = "");
+	virtual ~Scene();
 
 	Scene(const Scene& other) = delete;
 	Scene& operator = (const Scene& other) = delete;
@@ -25,6 +30,10 @@ public:
 	void addOject(SceneObject* object);
 	void addObject(std::unique_ptr<SceneObject>&& object);
 	
+	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f));
+	CameraComponent* getCamera() const;
+
+
 	SceneObject* findObjectWithID(ID id) const;
 	SceneObject* findObjectWithTag(ID tag) const;
 	SceneObject* findObjectWithName(const std::string& name) const;
@@ -48,17 +57,10 @@ public:
 	//
 	// rendering
 	//
-	void render();
-
-	inline void setRenderer(Renderer* renderer) {
-		m_renderer = renderer;
-	}
-
-	inline Renderer* getRenderer() const {
-		return m_renderer;
-	}
-
-
+	void preRender(Renderer* renderer);
+	void render(RenderContext* context);
+	void afterRender(Renderer* renderer);
+	
 	//
 	// public getter setter
 	//
@@ -78,11 +80,15 @@ public:
 		return m_id;
 	}
 
+	inline void setWindowSize(float w, float h) {
+		m_windowSize = glm::vec2(w, h);
+	}
 
 protected:
-	bool m_isInitialize;
-	std::string m_name;
 	ID m_id;
+	std::string m_name;
+	bool m_isInitialize;
+
 	std::unique_ptr<SceneObject> m_rootObject;
-	Renderer* m_renderer;
+	glm::vec2 m_windowSize;
 };

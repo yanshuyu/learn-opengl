@@ -9,7 +9,7 @@
 
 
 
-std::shared_ptr<MeshGroup> MeshManager::load(const std::string& file) {
+std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLoadOption options) {
 	Assimp::Importer importer;
 	auto scene = importer.ReadFile(file, aiProcessPreset_TargetRealtime_Quality);
 	if (!scene) {
@@ -25,10 +25,12 @@ std::shared_ptr<MeshGroup> MeshManager::load(const std::string& file) {
 	auto meshGroup = std::make_shared<MeshGroup>();
 	meshGroup->m_file = file;
 	size_t pos1 = file.find_last_of("\\");
+	if (pos1 == std::string::npos)
+		pos1 = file.find_last_of("/");
 	size_t pos2 = file.find_last_of(".");
 	meshGroup->m_name = file.substr(pos1+1, pos2 - pos1);
 
-	gatherMeshes(scene, scene->mRootNode, meshGroup.get(), aiMatrix4x4());
+	gatherMeshes(scene, scene->mRootNode, meshGroup.get(), aiMatrix4x4(), options);
 
 #ifdef _DEBUG
 	std::cout << "Loaded mesh group " << "\"" << meshGroup->m_name << "\": " << *meshGroup.get() << std::endl;
@@ -40,7 +42,7 @@ std::shared_ptr<MeshGroup> MeshManager::load(const std::string& file) {
 	if (meshGroup->meshesCount() <= 0) {
 		return nullptr;
 	}
-	
+
 	m_meshes.insert({ meshGroup->id(), meshGroup });
 	return meshGroup;
 }
@@ -130,15 +132,15 @@ void MeshManager::removeAllMesh() {
 }
 
 
-void MeshManager::gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform) {
-	aiMatrix4x4 transform = parentTransform * node->mTransformation;
+void MeshManager::gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform, MeshLoadOption options) {
+	aiMatrix4x4 transform = node->mTransformation * parentTransform;
 	for (size_t i = 0; i < node->mNumMeshes; i++) {
 		const aiMesh* mesh = scene->mMeshes[ node->mMeshes[i] ];
-		meshGroup->addMesh(mesh, transform);
+		meshGroup->addMesh(scene, mesh, transform, options);
 	}
 	
 	for (size_t j = 0; j < node->mNumChildren; j++) {
-		gatherMeshes(scene, node->mChildren[j], meshGroup, transform);
+		gatherMeshes(scene, node->mChildren[j], meshGroup, transform, options);
 	}
 }
 

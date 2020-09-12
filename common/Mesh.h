@@ -33,6 +33,12 @@ enum class PrimitiveType {
 };
 
 
+enum MeshLoadOption {
+	None = 0,
+	LoadMaterial = 1 << 0,
+	LoadAnimation = 1 << 1,
+};
+
 
 class Mesh {
 	friend class MeshGroup;

@@ -6,21 +6,20 @@
 
 const std::string MeshRenderComponent::s_identifier = "MeshRender";
 
-MeshRenderComponent::MeshRenderComponent(std::shared_ptr<MeshGroup> meshes):m_meshes(meshes)
+MeshRenderComponent::MeshRenderComponent(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterial):m_meshes(meshes)
 , m_materials() {
-	if (meshes)
-		loadDefaultMaterials(meshes.get());
+	if (meshes && useEmbededMaterial)
+		loadEmbededMaterials();
 }
 
 
-void MeshRenderComponent::setMeshes(std::shared_ptr<MeshGroup> meshes) {
+void MeshRenderComponent::setMeshes(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterials) {
 	m_meshes = meshes;
 	m_materials.clear();
 
-	if (m_meshes) {
-		m_materials.resize(m_meshes->meshesCount(), nullptr);
-		loadDefaultMaterials(meshes.get());
-	}
+	if (m_meshes && useEmbededMaterials)
+		loadEmbededMaterials();
+	
 }
 
 
@@ -31,6 +30,16 @@ Component* MeshRenderComponent::copy() const {
 	copyed->m_isEnable = m_isEnable;
 	
 	return copyed;
+}
+
+
+MeshRenderComponent* MeshRenderComponent::create() {
+	return new MeshRenderComponent();
+}
+
+void MeshRenderComponent::destory(MeshRenderComponent* mrc){
+	if (mrc)
+		delete mrc;
 }
 
 
@@ -76,7 +85,7 @@ void MeshRenderComponent::moveMaterial(size_t srcIndex, size_t dstIndex) {
 	}
 }
 
-void MeshRenderComponent::render(RenderContext* context) const {
+void MeshRenderComponent::render(RenderContext* context) {
 	if (!m_isEnable || meshCount() <= 0)
 		return;
 
@@ -86,18 +95,23 @@ void MeshRenderComponent::render(RenderContext* context) const {
 		auto material = materialAt(i) ? materialAt(i).get() : MaterialManager::defaultMaterial();
 
 		task.vao = mesh->vertexArray();
+		task.vertexCount = mesh->verticesCount();
 		task.indexCount = mesh->indicesCount();
 		task.primitive = mesh->getPrimitiveType();
 		task.material = material;
-		task.modelTransform = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform();
-
+		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform(); 
 		context->renderer()->subsimtTask(task);
 	}
 }
 
 
-void MeshRenderComponent::loadDefaultMaterials(MeshGroup* meshes) {
-	// TODO: restore mesh default materials if any
+void MeshRenderComponent::loadEmbededMaterials() {
+	if (m_meshes) {
+		m_materials.resize(m_meshes->meshesCount(), nullptr);
+		for (size_t i = 0; i < m_meshes->meshesCount(); i++) {
+			m_materials[i] = m_meshes->embededMaterialForMesh(m_meshes->meshAt(i));
+		}
+	}
 }
 
 

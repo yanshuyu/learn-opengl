@@ -4,7 +4,9 @@
 Renderer::Renderer() :m_clearColor{ 0 }
 , m_clearDepth(1.0f)
 , m_clearMask(0){
-
+	setClearColor(m_clearColor[0], m_clearColor[1], m_clearColor[2], 1);
+	setClearDepth(m_clearDepth);
+	setClearMask(m_clearMask);
 }
 
 void Renderer::setViewPort(int x, int y, int width, int height) {

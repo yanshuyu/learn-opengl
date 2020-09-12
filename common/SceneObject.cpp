@@ -8,10 +8,9 @@
 
 SceneObject::SceneObject(const std::string& name) :m_name(name)
 , m_id(0)
-, m_transform()
+, m_transform(this)
 , m_isEnable(true)
 , m_isVisible(true)
-, m_meshRender(nullptr)
 , m_parent(nullptr)
 , m_tag(0) {
 	m_id = reinterpret_cast<unsigned long>(this);
@@ -19,7 +18,7 @@ SceneObject::SceneObject(const std::string& name) :m_name(name)
 
 
 SceneObject* SceneObject::copy() const {
-	SceneObject* copyed = new SceneObject(m_name);
+	SceneObject* copyed = new SceneObject(m_name + " Copy");
 	copyed->m_transform = m_transform;
 	copyed->m_isEnable = m_isEnable;
 	copyed->m_isVisible = m_isVisible;
@@ -27,6 +26,12 @@ SceneObject* SceneObject::copy() const {
 		Component* cc = (*c)->copy();
 		copyed->addComponent(cc);
 	}
+
+	for (size_t i = 0; i < m_childs.size(); i++) {
+		SceneObject* copyedChild = m_childs[i]->copy();
+		copyed->addChild(copyedChild);
+	}
+
 	return copyed;
 }
 
@@ -63,8 +68,8 @@ void SceneObject::render(RenderContext* context) const {
 	if (!m_isVisible)
 		return;
 
-	if (m_meshRender)
-		m_meshRender->render(context);
+	for (auto c = m_components.begin(); c != m_components.end(); c++)
+		(*c)->render(context);
 
 	context->pushMatrix(m_transform.getMatrix());
 	for (size_t i = 0; i < m_childs.size(); i++) {
@@ -74,29 +79,26 @@ void SceneObject::render(RenderContext* context) const {
 }
 
 bool SceneObject::addComponent(Component* c) {
-	auto pos = findComponent_if(c->indentifier());
-	if (pos != m_components.end() || !c)
+	if (!c)
 		return false;
 
-	m_components.emplace_back(c);
-	c->m_owner = this;
-	if (c->indentifier() == MeshRenderComponent::s_identifier)
-		m_meshRender = static_cast<MeshRenderComponent*>(c);
+	if (findComponent_if(c->indentifier()) != m_components.end())
+		return false;
 
+	c->m_owner = this;
+	m_components.emplace_back(c);
 	return true;
 }
 
 bool SceneObject::addComponent(std::unique_ptr<Component>&& c) {
-	auto pos = findComponent_if(c->indentifier());
-	if (pos != m_components.end() || !c)
+	if (!c)
+		return false;
+
+	if (findComponent_if(c->indentifier()) != m_components.end())
 		return false;
 	
-	Component* _c = c.get();
+	c->m_owner = this;
 	m_components.push_back(std::move(c));
-	_c->m_owner = this;
-	if (_c->indentifier() == MeshRenderComponent::s_identifier)
-		m_meshRender = static_cast<MeshRenderComponent*>(_c);
-
 	return true;
 }
 
@@ -105,10 +107,6 @@ std::unique_ptr<Component> SceneObject::removeComponent(const std::string& ident
 	if (pos != m_components.end()) {
 		std::unique_ptr<Component> removed = std::move(*pos);
 		m_components.erase(pos);
-
-		if (identifier == MeshRenderComponent::s_identifier)
-			m_meshRender = nullptr;
-		
 		removed->m_owner = nullptr;
 		return std::move(removed);
 	}
