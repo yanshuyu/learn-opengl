@@ -12,7 +12,7 @@ class MaterialManager : public Singleton<MaterialManager> {
 public:
 	MaterialManager() = default;
 
-	std::shared_ptr<Material> addMaterial(const std::string& name = "New Material");
+	std::shared_ptr<Material> addMaterial(const std::string& name);
 	bool addMaterial(Material* m);
 	bool addMaterial(std::shared_ptr<Material> m);
 

@@ -51,7 +51,7 @@ void ForwardRenderer::beginUnlitPass() {
 	if (!m_unlitShader) {
 		m_unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
 		if (!m_unlitShader)
-			m_unlitShader = ShaderProgramManager::getInstance()->addProgram("Unlit", "C:/Users/SY/Documents/learn-opengl/res/shader/Unlit.shader");
+			m_unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/Unlit.shader");
 	}
 	ASSERT(m_unlitShader != nullptr);
 	m_activeShader = m_unlitShader;

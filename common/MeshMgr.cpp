@@ -9,7 +9,12 @@
 
 
 
-std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLoadOption options) {
+std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLoadOption options, const std::string& name) {
+	std::string modelName(name);
+	if (modelName.empty())
+		if (!ExtractFileNameFromPath(file, modelName))
+			modelName = file;
+
 	Assimp::Importer importer;
 	auto scene = importer.ReadFile(file, aiProcessPreset_TargetRealtime_Quality);
 	if (!scene) {
@@ -24,11 +29,7 @@ std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLo
 
 	auto meshGroup = std::make_shared<MeshGroup>();
 	meshGroup->m_file = file;
-	size_t pos1 = file.find_last_of("\\");
-	if (pos1 == std::string::npos)
-		pos1 = file.find_last_of("/");
-	size_t pos2 = file.find_last_of(".");
-	meshGroup->m_name = file.substr(pos1+1, pos2 - pos1);
+	meshGroup->m_name = modelName;
 
 	gatherMeshes(scene, scene->mRootNode, meshGroup.get(), aiMatrix4x4(), options);
 
@@ -43,89 +44,58 @@ std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLo
 		return nullptr;
 	}
 
-	m_meshes.insert({ meshGroup->id(), meshGroup });
+	m_meshes.insert({ modelName, meshGroup });
+
 	return meshGroup;
 }
 
 std::shared_ptr<MeshGroup> MeshManager::getMesh(ID id) const {
-	auto pos = m_meshes.find(id);
-	if (pos == m_meshes.end())
-		return nullptr;
-	
-	return pos->second;
-}
-
-std::shared_ptr<MeshGroup> MeshManager::getFirstMesh(const std::string& name) const {
-	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [&](const MeshContainer::value_type& mesh) {
-		if (mesh.second && mesh.second->getName() == name)
-			return true;
-		return false;
-	});
-	
-	if (pos == m_meshes.end())
-		return nullptr;
-
-	return pos->second;
-}
-
-std::vector<std::shared_ptr<MeshGroup>> MeshManager::getMesh(const std::string& name) const {
-	std::vector<std::shared_ptr<MeshGroup>> result;
-	std::for_each(m_meshes.begin(), m_meshes.end(), [&](const MeshContainer::value_type& mesh) {
-		if (mesh.second && mesh.second->getName() == name)
-			result.push_back(mesh.second);
-	});
-
-	return result;
-}
-
-std::shared_ptr<MeshGroup> MeshManager::removeMesh(ID id) {
-	auto pos = m_meshes.find(id);
-	if (pos != m_meshes.end()) {
-		m_meshes.erase(pos);
-		return pos->second;
-	}
-
-	return nullptr;
-}
-
-size_t MeshManager::removeMesh(const std::string& name) {
-	//auto pos = std::remove_if(m_meshes.begin(), m_meshes.end(), [&](const MeshContainer::value_type& mesh) {
-	//	if (mesh.second && mesh.second->getName() == name)
-	//		return true;
-	//	return false;
-	//});
-	//
-	//size_t cnt = std::distance(pos, m_meshes.end());
-	//m_meshes.erase(pos, m_meshes.end());
-	
-	size_t cnt = 0;
-	for (auto pos = m_meshes.begin(); pos != m_meshes.end(); ) {
-		if (pos->second && pos->second->getName() == name) {
-			pos = m_meshes.erase(pos);
-			cnt++;
-		} else {
-			pos++;
-		}
-	}
-
-	return cnt;
-}
-
-
-std::shared_ptr<MeshGroup> MeshManager::removeFirstMesh(const std::string& name) {
-	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [&](const MeshContainer::value_type& mesh) {
-		if (mesh.second && mesh.second->getName() == name)
+	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
+		if (mesh.second && mesh.second->id() == id)
 			return true;
 		return false;
 		});
 
-	if (pos != m_meshes.end()) {
-		m_meshes.erase(pos);
-		return pos->second;
-	}
-		
-	return nullptr;
+	if (pos == m_meshes.end())
+		return nullptr;
+
+	return pos->second;
 }
+
+std::shared_ptr<MeshGroup> MeshManager::getMesh(const std::string& name) const {
+	auto pos = m_meshes.find(name);
+	if (pos == m_meshes.end())
+		return nullptr;
+
+	return pos->second;
+}
+
+
+std::shared_ptr<MeshGroup> MeshManager::removeMesh(ID id) {
+	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
+		if (mesh.second && mesh.second->id() == id)
+			return true;
+		return false;
+		});
+
+	if (pos == m_meshes.end())
+		return nullptr;
+	
+	m_meshes.erase(pos);
+
+	return pos->second;
+}
+
+std::shared_ptr<MeshGroup> MeshManager::removeMesh(const std::string& name) {
+	auto pos = m_meshes.find(name);
+	if (pos == m_meshes.end())
+		return nullptr;
+
+	m_meshes.erase(pos);
+
+	return pos->second;
+}
+
 
 void MeshManager::removeAllMesh() {
 	m_meshes.clear();

@@ -10,20 +10,18 @@
 
 
 class MeshManager : public Singleton<MeshManager> {
-	typedef std::unordered_map<int, std::shared_ptr<MeshGroup>> MeshContainer;
+	typedef std::unordered_map<std::string, std::shared_ptr<MeshGroup>> MeshContainer;
 public:
 	MeshManager() = default;
 	~MeshManager() {};
 
-	std::shared_ptr<MeshGroup> addModel(const std::string& file, MeshLoadOption options = MeshLoadOption::None);
+	std::shared_ptr<MeshGroup> addModel(const std::string& file, MeshLoadOption options = MeshLoadOption::None, const std::string& name = "");
 	
 	std::shared_ptr<MeshGroup> getMesh(ID id) const;
-	std::shared_ptr<MeshGroup> getFirstMesh(const std::string& name)const;
-	std::vector<std::shared_ptr<MeshGroup>> getMesh(const std::string& name) const;
+	std::shared_ptr<MeshGroup> getMesh(const std::string& name)const;
 
 	std::shared_ptr<MeshGroup> removeMesh(ID id);
-	std::shared_ptr<MeshGroup> removeFirstMesh(const std::string& name);
-	size_t removeMesh(const std::string& name);
+	std::shared_ptr<MeshGroup> removeMesh(const std::string& name);
 	void removeAllMesh();
 
 	inline std::string getResourceAbsolutePath() const {
@@ -41,5 +39,5 @@ private:
 	void dumpBoneHiearcy(const aiNode* root, std::string indent = "");
 
 private:
-	std::unordered_map<ID, std::shared_ptr<MeshGroup>> m_meshes;
+	std::unordered_map<std::string, std::shared_ptr<MeshGroup>> m_meshes;
 };

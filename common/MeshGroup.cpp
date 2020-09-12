@@ -208,7 +208,7 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 	mat->setName(m_name + "_" + aMesh->mName.C_Str() + "_" + aiName.C_Str());
 	if (hasDiffuseMap) {
 		auto textureMgr = TextureManager::getInstance();
-		auto diffuseMap = textureMgr->addTexture(diffuseTextureName, textureMgr->getResourceAbsolutePath() + diffuseTextureName);
+		auto diffuseMap = textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + diffuseTextureName, diffuseTextureName);
 		mat->m_diffuseMap = diffuseMap;
 
 		if (!diffuseMap) {
@@ -220,7 +220,7 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 	}
 	if (hasNormalMap) {
 		auto textureMgr = TextureManager::getInstance();
-		auto normalMap = textureMgr->addTexture(normalTextureName, textureMgr->getResourceAbsolutePath() + normalTextureName);
+		auto normalMap = textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + normalTextureName, normalTextureName);
 		mat->m_normalMap = normalMap;
 		if (!normalMap) {
 #ifdef _DEBUG

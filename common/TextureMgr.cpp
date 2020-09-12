@@ -1,8 +1,14 @@
 #include"TextureMgr.h"
+#include"Util.h"
 
 
-std::shared_ptr<Texture> TextureManager::addTexture(const std::string& name, const std::string& file) {
-	auto texture = getTexture(name);
+std::shared_ptr<Texture> TextureManager::addTexture(const std::string& file, const std::string& name) {
+	std::string textureName(name);
+	if (textureName.empty())
+		if (!ExtractFileNameFromPath(file, textureName))
+			textureName = file;
+
+	auto texture = getTexture(textureName);
 	if (texture != nullptr)
 		return texture;
 	
@@ -11,7 +17,7 @@ std::shared_ptr<Texture> TextureManager::addTexture(const std::string& name, con
 	if (!texture->load())
 		return nullptr;
 
-	m_textures.insert(std::make_pair(name, texture));
+	m_textures.insert(std::make_pair(textureName, texture));
 	
 	return texture;
 }

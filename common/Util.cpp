@@ -17,14 +17,20 @@ bool GLCheckError() {
 	return !hasError;
 }
 
-bool ExtractFileNameFromPath(const std::string& path, std::string& name) {
-	auto pos = path.find_last_of("\\");
-	if (pos == std::string::npos)
-		pos = path.find_last_of("/");
-	if (pos == std::string::npos)
+bool ExtractFileNameFromPath(const std::string& path, std::string& name, bool includeExt) {
+	auto fst = path.find_last_of("\\");
+	if (fst == std::string::npos)
+		fst = path.find_last_of("/");
+	if (fst == std::string::npos)
 		return false;
 
-	name = path.substr(++pos);
+	auto last = path.length();
+	if (!includeExt)
+		last = path.find_last_of(".");
+	if (last == std::string::npos)
+		return false;
+
+	name = path.substr(++fst, last - fst);
 	
 	return true;
 }

@@ -10,6 +10,9 @@ std::shared_ptr<Material> MaterialManager::addMaterial(const std::string& name) 
 }
 
 bool MaterialManager::addMaterial(Material* m) {
+	if (m->getName().empty())
+		return false;
+
 	if (m_materials.find(m->getName()) == m_materials.end()) {
 		m_materials.insert({ m->getName(), std::shared_ptr<Material>(m) });
 		return true;
@@ -19,6 +22,9 @@ bool MaterialManager::addMaterial(Material* m) {
 }
 
 bool MaterialManager::addMaterial(std::shared_ptr<Material> m) {
+	if (m->getName().empty())
+		return false;
+
 	if (m_materials.find(m->getName()) == m_materials.end()) {
 		m_materials.insert({ m->getName(), m });
 		return true;

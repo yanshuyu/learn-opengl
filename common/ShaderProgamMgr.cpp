@@ -1,15 +1,24 @@
 #include"ShaderProgamMgr.h"
+#include"Util.h"
 #include<iostream>
 
-std::shared_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& name, const std::string& file) {
-	auto program = getProgram(name);
+
+
+
+std::shared_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& file, const std::string& name) {
+	std::string shaderName(name);
+	if (shaderName.empty())
+		if (!ExtractFileNameFromPath(file, shaderName, false))
+			shaderName = file;
+	
+	auto program = getProgram(shaderName);
 
 	if (program != nullptr)
 		return program;
 
-	program = std::make_shared<ShaderProgram>(name, file);
+	program = std::make_shared<ShaderProgram>(shaderName, file);
 	if (program->compileAndLink()) {
-		m_shaderPrograms.insert(std::make_pair(name, program));
+		m_shaderPrograms.insert(std::make_pair(shaderName, program));
 		return program;
 	}
 

@@ -128,15 +128,15 @@ bool TextureCubeApp::initailize() {
 
 
 		auto programMgr = ShaderProgramManager::getInstance();
-		ASSERT(programMgr->addProgram("SolidColor", "res/shader/SolidColor.shader"));
-		ASSERT(programMgr->addProgram("AbedoMap", "res/shader/AbedoMap.shader"));
+		ASSERT(programMgr->addProgram("res/shader/SolidColor.shader"));
+		ASSERT(programMgr->addProgram("res/shader/AbedoMap.shader"));
 		//ASSERT(programMgr->addProgram("test", "res/shader/test.shader"));
 		m_shaderProgram = programMgr->getProgram("AbedoMap");
 		
 
 		auto textureMgr = TextureManager::getInstance();
-		ASSERT(textureMgr->addTexture("opengl_logo", "res/images/opengl_logo.png"));
-		m_abedoMap = textureMgr->getTexture("opengl_logo");
+		ASSERT(textureMgr->addTexture("res/images/opengl_logo.png"));
+		m_abedoMap = textureMgr->getTexture("opengl_logo.png");
 
 		m_modelMat = glm::rotate(m_modelMat, glm::radians(30.f), glm::vec3(0, 1, 0));
 		m_modelMat = glm::rotate(m_modelMat, glm::radians(15.f), glm::vec3(1, 0, 0));

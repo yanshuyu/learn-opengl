@@ -20,5 +20,5 @@ typedef unsigned long ID;
 
 
 
-bool ExtractFileNameFromPath(const std::string& path, std::string& name);
+bool ExtractFileNameFromPath(const std::string& path, std::string& name, bool includeExt = true);
 
