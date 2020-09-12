@@ -63,6 +63,60 @@
     <ClCompile Include="..\common\TextureMgr.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\NoticificationCenter.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Notification.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\InputMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\CameraComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Component.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\SceneObject.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\TransformComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RendererCore.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ForwardRenderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Material.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MaterialMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Mesh.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshGroup.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshRenderComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Renderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Scene.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\FirstPersonCameraController.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Exceptions.h">
@@ -108,6 +162,60 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\TextureMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Notification.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\NotificationCenter.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\InputMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\CameraComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Component.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\SceneObject.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TransformComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RendererCore.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ForwardRenderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Material.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MaterialMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Mesh.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshGroup.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshRenderComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Renderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Scene.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FirstPersonCameraController.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

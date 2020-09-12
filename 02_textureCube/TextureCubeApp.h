@@ -43,4 +43,6 @@ private:
 	glm::mat4 m_viewMat;
 	glm::mat4 m_projMat;
 	glm::mat4 m_orthMat;
+
+	std::unique_ptr<SceneObject> m_camera;
 };

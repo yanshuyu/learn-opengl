@@ -3,6 +3,7 @@
 #include<glm/ext/matrix_clip_space.hpp>
 
 
+
 TextureCubeApp::TextureCubeApp(const std::string& title) :GLApplication(title)
 , m_vbo_cube(nullptr)
 , m_ibo_cube(nullptr)
@@ -15,7 +16,8 @@ TextureCubeApp::TextureCubeApp(const std::string& title) :GLApplication(title)
 , m_modelMat(1)
 , m_viewMat(1)
 , m_projMat(1)
-, m_orthMat(1) {
+, m_orthMat(1)
+, m_camera(nullptr) {
 }
 
 
@@ -143,9 +145,18 @@ bool TextureCubeApp::initailize() {
 
 		m_orthMat = glm::ortho(0.f, float(m_wndWidth), 0.f, float(m_wndHeight), float(-1), 1.f);
 
+		m_camera = std::make_unique<SceneObject>("camera");
+		m_camera->addComponent(new CameraComponent(m_wndWidth, m_wndHeight));
+		m_camera->addComponent(FirstPersonCameraController::create());
+		m_camera->m_transform.setPosition(glm::vec3(0, 0, 8));
+
 		GLCALL(glEnable(GL_CULL_FACE));
 		GLCALL(glCullFace(GL_BACK));
 		GLCALL(glFrontFace(GL_CCW));
+
+		GLCALL(glEnable(GL_BLEND));
+		GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		GLCALL(glBlendEquation(GL_FUNC_ADD));
 	}
 	
 	return success;
@@ -154,8 +165,9 @@ bool TextureCubeApp::initailize() {
 
 void TextureCubeApp::onWindowResized(int w, int h) {
 	__super::onWindowResized(w, h);
-	m_projMat = glm::perspective(glm::radians(45.f), float(m_wndWidth) / m_wndHeight, 0.1f, 100.0f);
-	m_orthMat = glm::ortho(0.f, float(m_wndWidth), 0.f, float(m_wndHeight), float(-1), 1.f);
+	GLCALL(glViewport(0, 0, m_wndWidth, m_wndHeight));
+	//m_projMat = glm::perspective(glm::radians(45.f), float(m_wndWidth) / m_wndHeight, 0.1f, 100.0f);
+	//m_orthMat = glm::ortho(0.f, float(m_wndWidth), 0.f, float(m_wndHeight), float(-1), 1.f);
 }
 
 
@@ -163,6 +175,7 @@ void TextureCubeApp::update(double dt) {
 	float ry = glm::radians(15.f * dt);
 	m_modelMat = glm::rotate(m_modelMat, ry, glm::vec3(1, 0, 0));
 	m_modelMat = glm::rotate(m_modelMat, ry, glm::vec3(0, 1, 0));
+	m_camera->update(dt);
 }
 
 
@@ -177,7 +190,8 @@ void TextureCubeApp::render() {
 	m_shaderProgram->bind();
 	m_abedoMap->bind(0);
 
-	glm::mat4 mvp = m_projMat * m_viewMat * m_modelMat;
+	auto cameraComponent = static_cast<CameraComponent*>(m_camera->findComponent(CameraComponent::s_indentifier));
+	glm::mat4 mvp = cameraComponent->viewProjectionMatrix() * m_modelMat;
 	GLCALL(m_shaderProgram->setUniformMat4v("MVP", &mvp[0][0]));
 	GLCALL(m_shaderProgram->setUniform1("u_abedoMap", 0));
 	GLCALL(glDrawElements(GL_TRIANGLES, m_ibo_cube->getElementCount(), GL_UNSIGNED_INT, 0));
