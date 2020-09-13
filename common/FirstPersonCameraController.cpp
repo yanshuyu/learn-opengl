@@ -24,7 +24,7 @@ void FirstPersonCameraController::update(double dt) {
 
 	float xRot = 0.f;
 	float yRot = 0.f;
-
+	//m_owner->m_transform.setTransformMode(TransformComponent::TransformMode::World);
 	if (input->isMouseButtonDown(MouseButtonCode::Left)) {
 		auto cursorPos = input->getCursorPosition();
 		m_lastMouseXPos = cursorPos.first;
@@ -47,40 +47,39 @@ void FirstPersonCameraController::update(double dt) {
 
 	if (fabs(xRot) > 0.1 || fabs(yRot) > 0.1) {
 		m_owner->m_transform.rotateBy(glm::vec3(xRot, yRot, 0.f));
-		m_owner->m_transform.applyTransform();
 	}
 
 	glm::vec3 direction(0.f);
+	TransformComponent& transform = m_owner->m_transform;
 
 	if (input->isKeyPressed(KeyCode::A)) {
-		direction.x = -1.f;
+		glm::vec3 detal = -transform.getRight() * m_moveSpeed * float(dt);
+		transform.translateBy(detal);
 	}
 
 	if (input->isKeyPressed(KeyCode::D)) {
-		direction.x = 1.f;
+		glm::vec3 detal = transform.getRight() * m_moveSpeed * float(dt);
+		transform.translateBy(detal);
 	}
 
 	if (input->isKeyPressed(KeyCode::W)) {
-		direction.z = -1.f;
+		glm::vec3 detal = transform.getForward() * m_moveSpeed * float(dt);
+		transform.translateBy(detal);
 	}
 
 	if (input->isKeyPressed(KeyCode::S)) {
-		direction.z = 1.f;
+		glm::vec3 detal = -transform.getForward() * m_moveSpeed * float(dt);
+		transform.translateBy(detal);
 	}
 
 	if (input->isKeyPressed(KeyCode::Q)) {
-		direction.y = -1;
+		glm::vec3 detal = transform.getUp() * m_moveSpeed * float(dt);
+		transform.translateBy(detal);
 	}
 
 	if (input->isKeyPressed(KeyCode::E)) {
-		direction.y = 1;
-	}
-
-
-	float l = glm::length(direction);
-	if (l > 0) {
-		m_owner->m_transform.translateBy(glm::normalize(direction) * m_moveSpeed * float(dt));
-		m_owner->m_transform.applyTransform();
+		glm::vec3 detal = -transform.getUp() * m_moveSpeed * float(dt);
+		transform.translateBy(detal);
 	}
 
 	

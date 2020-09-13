@@ -30,9 +30,9 @@ public:
 	void addOject(SceneObject* object);
 	void addObject(std::unique_ptr<SceneObject>&& object);
 	
+	SceneObject* addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f));
 	CameraComponent* getCamera() const;
-
 
 	SceneObject* findObjectWithID(ID id) const;
 	SceneObject* findObjectWithTag(ID tag) const;
@@ -84,7 +84,11 @@ public:
 		m_windowSize = glm::vec2(w, h);
 	}
 
-protected:
+private:
+	std::shared_ptr<MeshGroup> createGridMesh(float width, float depth, float spaceing);
+
+
+private:
 	ID m_id;
 	std::string m_name;
 	bool m_isInitialize;

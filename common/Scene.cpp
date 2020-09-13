@@ -1,5 +1,6 @@
 #include"Scene.h"
 #include"InputMgr.h"
+#include"MeshMgr.h"
 #include"NotificationCenter.h"
 #include"CameraComponent.h"
 #include<glm/gtc/matrix_transform.hpp>
@@ -69,12 +70,11 @@ void Scene::addObject(std::unique_ptr<SceneObject>&& object) {
 }
 
 SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r) {
-	SceneObject* camera = new SceneObject("Camera");
+	SceneObject* camera = addObject("Camera");
 	CameraComponent* cameraComp = new CameraComponent(m_windowSize.x, m_windowSize.y);
 	camera->addComponent(cameraComp);
 	camera->m_transform.setPosition(p);
 	camera->m_transform.setRotation(r);
-	addObject(std::unique_ptr<SceneObject>(camera));
 
 	return camera;
 }
@@ -94,6 +94,25 @@ CameraComponent* Scene::getCamera() const {
 	});
 	return cameraComp;
 }
+
+
+SceneObject* Scene::addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat) {
+	auto gridMesh = MeshManager::getInstance()->getMesh("Grid");
+	if (!gridMesh) {
+		gridMesh = createGridMesh(w, d, spacing);
+		MeshManager::getInstance()->addMesh(gridMesh);
+	}
+
+	SceneObject* grid = addObject("Grid");
+	MeshRenderComponent* meshRenderComp = new MeshRenderComponent(gridMesh, false);
+	grid->addComponent(meshRenderComp);
+
+	if (mat)
+		meshRenderComp->addMaterial(mat);
+	
+	return grid;
+}
+
 
 SceneObject* Scene::findObjectWithID(ID id) const {
 	return m_rootObject->findChildWithID(id);
@@ -149,4 +168,43 @@ void Scene::depthFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 
 void Scene::breathFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 	m_rootObject->breadthFirstTraverse(op);
+}
+
+
+
+std::shared_ptr<MeshGroup> Scene::createGridMesh(float width, float depth, float spacing) {
+	std::vector<Vertex_t> vertices;
+	std::vector<Index_t> indices;
+
+	size_t row = ceil(depth / spacing);
+	size_t col = ceil(width / spacing);
+	vertices.reserve((row + col) * 2);
+	depth = row * spacing;
+	width = col * spacing;
+
+	for (size_t i = 0; i < row; i++) {
+		Vertex_t v1, v2;
+		v1.position = glm::vec3(-width / 2, 0.f, spacing * i - depth / 2);
+		v1.normal = glm::vec3(0.f, 1.f, 0.f);
+		v2.position = glm::vec3(width / 2, 0.f, spacing * i - depth / 2);
+		v2.normal = glm::vec3(0.f, 1.f, 0.f);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+	}
+
+	for (size_t j = 0; j < col; j++) {
+		Vertex_t v1, v2;
+		v1.position = glm::vec3(spacing * j - width / 2, 0, -depth / 2);
+		v1.normal = glm::vec3(0, 1, 0);
+		v2.position = glm::vec3(spacing * j - width / 2, 0, depth / 2);
+		v2.normal = glm::vec3(0, 1, 0);
+		vertices.push_back(v1);
+		vertices.push_back(v2);
+	}
+
+	auto meshGrp = std::make_shared<MeshGroup>();
+	meshGrp->setName("Grid");
+	meshGrp->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Line);
+	
+	return meshGrp;
 }

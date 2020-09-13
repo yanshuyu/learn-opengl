@@ -16,7 +16,8 @@ public:
 	~MeshManager() {};
 
 	std::shared_ptr<MeshGroup> addModel(const std::string& file, MeshLoadOption options = MeshLoadOption::None, const std::string& name = "");
-	
+	bool addMesh(std::shared_ptr<MeshGroup> mesh, const std::string& name = "");
+
 	std::shared_ptr<MeshGroup> getMesh(ID id) const;
 	std::shared_ptr<MeshGroup> getMesh(const std::string& name)const;
 

@@ -3,6 +3,13 @@
 #include<glm/glm.hpp>
 
 
+#define World_X_Axis glm::vec3(1.f, 0.f, 0.f)
+#define World_Y_Axis glm::vec3(0.f, 1.f, 0.f)
+#define World_Z_Axis glm::vec3(0.f, 0.f, 1.f)
+#define Local_Right_Axis glm::vec3(1.f, 0.f, 0.f)
+#define Local_Up_Axis glm::vec3(0.f, 1.f, 0.f)
+#define Local_Forward_Axis glm::vec3(0.f, 0.f, -1.f)
+
 class SceneObject;
 class CameraComponent;
 
@@ -44,14 +51,19 @@ public:
 	void rotateBy(const glm::vec3& r);
 	void scaleBy(const glm::vec3& s);
 
+	//void applyRotation();
 	void applyTransform();
 	void resetTransform();
 
 	//
 	// cartesian coordinator system
 	//
-	void getCartesianAxesLocal(glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis);
-	void getCartesianAxesWorld(glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis);
+	glm::vec3 getForward() const;
+	glm::vec3 getUp() const;
+	glm::vec3 getRight() const;
+	
+	void getCartesianAxesLocal(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const;
+	void getCartesianAxesWorld(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const;
 
 	//
 	// matrix for transform
@@ -78,12 +90,18 @@ public:
 
 private:
 	void calcTransform();
-	void calcCartesianAxes(glm::mat4 transform, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis);
+	void updateLocalAxes();
+	void normalizeRotation();
 
 private:
 	glm::vec3 m_position;
 	glm::vec3 m_rotation;
 	glm::vec3 m_scale;
+	
+	glm::vec3 m_rightAxis;
+	glm::vec3 m_upAxis;
+	glm::vec3 m_forwardAxis;
+	
 	glm::mat4 m_transform;
 	glm::mat4 m_applyedTransform;
 };

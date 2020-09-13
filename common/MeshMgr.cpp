@@ -49,6 +49,20 @@ std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLo
 	return meshGroup;
 }
 
+
+bool MeshManager::addMesh(std::shared_ptr<MeshGroup> mesh, const std::string& name) {
+	std::string meshName(name);
+	if (meshName.empty())
+		meshName = mesh->getName();
+	
+	if (getMesh(meshName) != nullptr)
+		return false;
+
+	m_meshes.insert({ meshName, mesh });
+	
+	return true;
+}
+
 std::shared_ptr<MeshGroup> MeshManager::getMesh(ID id) const {
 	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
 		if (mesh.second && mesh.second->id() == id)

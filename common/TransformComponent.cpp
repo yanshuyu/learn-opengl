@@ -8,16 +8,19 @@ const std::string TransformComponent::s_identifier = "TransformComponent";
 TransformComponent::TransformComponent(SceneObject* owner) :m_position(glm::vec3(0))
 , m_rotation(glm::vec3(0))
 , m_scale(glm::vec3(1))
-, m_transform(glm::mat4(1))
-, m_applyedTransform(glm::mat4(1)) {
+, m_rightAxis(Local_Right_Axis)
+, m_upAxis(Local_Up_Axis)
+, m_forwardAxis(Local_Forward_Axis)
+, m_transform(glm::mat4(1.f))
+, m_applyedTransform(glm::mat4(1.f)) {
 	m_owner = owner;
 }
 
 TransformComponent::TransformComponent(SceneObject* owner, const glm::vec3& pos, const glm::vec3& rotate, const glm::vec3& scale)
-: m_position(pos)
-, m_rotation(rotate)
-, m_scale(scale) {
-	m_owner = owner;
+: TransformComponent(owner) {
+	m_position = pos;
+	m_rotation = rotate;
+	m_scale = scale;
 	calcTransform();
 }
 
@@ -25,6 +28,9 @@ TransformComponent& TransformComponent::operator = (const TransformComponent& ot
 	m_position = other.m_position;
 	m_rotation = other.m_rotation;
 	m_scale = other.m_rotation;
+	m_rightAxis = other.m_rightAxis;
+	m_upAxis = other.m_upAxis;
+	m_forwardAxis = other.m_forwardAxis;
 	m_transform = other.m_transform;
 	m_applyedTransform = other.m_applyedTransform;
 	
@@ -62,21 +68,38 @@ void TransformComponent::scaleBy(const glm::vec3& s) {
 	calcTransform();
 }
 
+void TransformComponent::calcTransform() {
+	normalizeRotation();
+
+	glm::mat4 m(1);
+	m = glm::translate(m, m_position);
+	m = glm::rotate(m, glm::radians(m_rotation.z), World_Z_Axis);
+	m = glm::rotate(m, glm::radians(m_rotation.y), World_Y_Axis);
+	m = glm::rotate(m, glm::radians(m_rotation.x), World_X_Axis);
+	m = glm::scale(m, m_scale);
+	m_transform = m;
+
+	updateLocalAxes();
+}
+
 void TransformComponent::applyTransform() {
 	m_applyedTransform *= m_transform;
-	m_position = glm::vec3(0);
-	m_rotation = glm::vec3(0);
-	m_scale = glm::vec3(1);
-	m_transform = glm::mat4(1);
+	m_transform = glm::mat4(1.f);
+	m_position = glm::vec3(0.f);
+	m_rotation = glm::vec3(0.f);
+	m_scale = glm::vec3(1.f);
 }
 
 
 void TransformComponent::resetTransform() {
-	m_position = glm::vec3(0);
-	m_rotation = glm::vec3(0);
-	m_scale = glm::vec3(1);
-	m_transform = glm::mat4(1);
-	m_applyedTransform = glm::mat4(1);
+	m_position = glm::vec3(0.f);
+	m_rotation = glm::vec3(0.f);
+	m_scale = glm::vec3(1.f);
+	m_rightAxis = Local_Right_Axis;
+	m_upAxis = Local_Up_Axis;
+	m_forwardAxis = Local_Forward_Axis;
+	m_transform = glm::mat4(1.f);
+	m_applyedTransform = glm::mat4(1.f);
 }
 
 
@@ -84,38 +107,34 @@ Component* TransformComponent::copy() const {
 	return nullptr;
 }
 
-void TransformComponent::calcTransform() {
-	glm::mat4 m(1);
-	m = glm::translate(m, m_position);
-	m = glm::rotate(m, glm::radians(m_rotation.z), glm::vec3(0, 0, 1));
-	m = glm::rotate(m, glm::radians(m_rotation.y), glm::vec3(0, 1, 0));
-	m = glm::rotate(m, glm::radians(m_rotation.x), glm::vec3(1, 0, 0));
-	m = glm::scale(m, m_scale);
 
-	m_transform = m;
+glm::vec3 TransformComponent::getForward() const {
+	return m_forwardAxis;
 }
 
-void TransformComponent::getCartesianAxesLocal(glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) {
-	calcCartesianAxes( getMatrix(), xAxis, yAxis, zAxis);
+glm::vec3 TransformComponent::getUp() const {
+	return m_upAxis;
 }
 
-void TransformComponent::getCartesianAxesWorld(glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) {
-	calcCartesianAxes(getMatrixWorld(), xAxis, yAxis, zAxis);
+glm::vec3 TransformComponent::getRight() const {
+	return m_rightAxis;
 }
 
-void TransformComponent::calcCartesianAxes(glm::mat4 transform, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) {
-	glm::vec3 X(1, 0, 0);
-	glm::vec3 Y(0, 1, 0);
-	glm::vec3 Z(0, 0, 1);
 
-	X = glm::normalize(transform * glm::vec4(X, 0));
-	Y = glm::normalize(transform * glm::vec4(Y, 0));
-	Z = glm::normalize(glm::cross(X, Y));
-	Y = glm::normalize(glm::cross(Z, X));
-	
-	xAxis = X;
-	yAxis = Y;
-	zAxis = Z;
+void TransformComponent::getCartesianAxesLocal(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const {
+	origin = m_position;
+	xAxis = m_rightAxis;
+	yAxis = m_upAxis;
+	zAxis = m_forwardAxis;
+}
+
+void TransformComponent::getCartesianAxesWorld(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const  {
+	glm::mat4 transform = getParentMatrixRecursive() * m_applyedTransform;
+	origin = transform * glm::vec4(m_position, 1.f);
+	xAxis = glm::normalize(transform * glm::vec4(m_rightAxis, 0.f));
+	yAxis = glm::normalize(transform * glm::vec4(m_upAxis, 0.f));
+	zAxis = glm::normalize(glm::cross(yAxis, xAxis));
+	yAxis = glm::normalize(glm::cross(xAxis, zAxis));
 }
 
 
@@ -152,4 +171,26 @@ glm::mat4 TransformComponent::getParentMatrixRecursive() const {
 	}
 	
 	return m;
+}
+
+void TransformComponent::updateLocalAxes() {
+	glm::mat4 m = m_transform;
+	m_rightAxis = glm::normalize(m * glm::vec4(World_X_Axis, 0.f));
+	m_upAxis = glm::normalize(m * glm::vec4(World_Y_Axis, 0.f));
+	m_forwardAxis = glm::normalize(glm::cross(m_upAxis, m_rightAxis));
+	m_upAxis = glm::normalize(glm::cross(m_rightAxis, m_forwardAxis));
+}
+
+void TransformComponent::normalizeRotation() {
+	if (m_rotation.x > 360 || m_rotation.x < -360) {
+		m_rotation.x = fmodf(m_rotation.x, 360.f);
+	}
+
+	if (m_rotation.y > 360 || m_rotation.y < -360) {
+		m_rotation.y = fmodf(m_rotation.y, 360.f);
+	}
+
+	if (m_rotation.z > 360 || m_rotation.z < -360) {
+		m_rotation.z = fmodf(m_rotation.z, 360.f);
+	}
 }

@@ -51,17 +51,13 @@ void CameraComponent::setWindowSize(float w, float h) {
 
 glm::mat4 CameraComponent::viewMatrix() const {
 	ASSERT(m_owner != nullptr);
-	glm::vec3 pos(0);
-	glm::vec3 xAxis(1, 0, 0);
-	glm::vec3 yAxis(0, 1, 0);
-	glm::vec3 zAxis(0, 0, 1);
-	glm::mat4 transform(1);
-	
-	transform = m_owner->m_transform.getMatrixWorld();
-	m_owner->m_transform.getCartesianAxesWorld(xAxis, yAxis, zAxis);
-	pos = transform * glm::vec4(0.f, 0.f, 0.f, 1.f);
+	glm::vec3 pos(0.f);
+	glm::vec3 right(0.f);
+	glm::vec3 forward(0.f, 0.f, -1.f);
+	glm::vec3 up(0.f, 1.f, 0.f);
+	m_owner->m_transform.getCartesianAxesWorld(pos, right, up, forward);
 
-	return glm::lookAt(pos, pos - zAxis, yAxis);
+	return glm::lookAt(pos, pos + forward, up);
 }
 
 glm::mat4 CameraComponent::projectionMatrix() const {
