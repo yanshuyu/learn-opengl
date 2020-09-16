@@ -30,20 +30,26 @@ bool ShaderProgram::compileAndLink() {
 		return false;
 	
 #if _DEBUG
-	std::cout << "\"" << m_name << "\"" << " parsed vs: \n" << vsrc << std::endl;
-	std::cout << "\"" << m_name << "\"" << " parsed fs: \n" << fsrc << std::endl;
+	std::stringstream msg;
+	msg << "\"" << m_name << "\"" << " parsed vs: \n" << vsrc << std::endl;
+	msg << "\"" << m_name << "\"" << " parsed fs: \n" << fsrc << std::endl;
+	CONSOLELOG(msg.str());
 #endif
 
 	Shader vs(vsrc, Shader::Type::VertexShader);
 	if (!vs.compile()) {
-		std::cerr << "Compile Vertex Shader Error: " << vs.getInfoLog() << std::endl;
+		std::stringstream msg;
+		msg << "Compile Vertex Shader Error: " << vs.getInfoLog() << std::endl;
+		CONSOLELOG(msg.str());
 		vs.release();
 		return false;
 	}
 
 	Shader fs(fsrc, Shader::Type::FragmentShader);
 	if (!fs.compile()) {
-		std::cerr << "Compile Fragment Shader Error: " << fs.getInfoLog() << std::endl;
+		std::stringstream msg;
+		msg << "Compile Fragment Shader Error: " << fs.getInfoLog() << std::endl;
+		CONSOLELOG(msg.str());
 		fs.release();
 		return false;
 	}

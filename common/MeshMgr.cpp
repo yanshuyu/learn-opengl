@@ -1,6 +1,7 @@
 #include"MeshMgr.h"
 #include"Util.h"
 #include<fstream>
+#include<sstream>
 #include<algorithm>
 #include<iostream>
 #include<queue>
@@ -34,9 +35,10 @@ std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLo
 	gatherMeshes(scene, scene->mRootNode, meshGroup.get(), aiMatrix4x4(), options);
 
 #ifdef _DEBUG
-	std::cout << "Loaded mesh group " << "\"" << meshGroup->m_name << "\": " << *meshGroup.get() << std::endl;
-	std::cout << std::endl << std::endl;
-	std::cout << "Parsed mesh bones hiearcy: " << std::endl;
+	std::stringstream msg;
+	msg << "Loaded mesh group " << "\"" << meshGroup->m_name << "\": " << *meshGroup.get() << std::endl;
+	msg << "Parsed mesh bones hiearcy: " << std::endl;
+	CONSOLELOG(msg.str());
 	dumpBoneHiearcy(rootBone);
 #endif // _DEBUG
 
@@ -117,7 +119,7 @@ void MeshManager::removeAllMesh() {
 
 
 void MeshManager::gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform, MeshLoadOption options) {
-	aiMatrix4x4 transform = node->mTransformation * parentTransform;
+	aiMatrix4x4 transform = parentTransform * node->mTransformation;
 	for (size_t i = 0; i < node->mNumMeshes; i++) {
 		const aiMesh* mesh = scene->mMeshes[ node->mMeshes[i] ];
 		meshGroup->addMesh(scene, mesh, transform, options);
