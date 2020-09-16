@@ -82,7 +82,7 @@ bool SceneObject::addComponent(Component* c) {
 	if (!c)
 		return false;
 
-	if (findComponent_if(c->indentifier()) != m_components.end())
+	if (findComponent_if(c->identifier()) != m_components.end())
 		return false;
 
 	c->m_owner = this;
@@ -94,7 +94,7 @@ bool SceneObject::addComponent(std::unique_ptr<Component>&& c) {
 	if (!c)
 		return false;
 
-	if (findComponent_if(c->indentifier()) != m_components.end())
+	if (findComponent_if(c->identifier()) != m_components.end())
 		return false;
 	
 	c->m_owner = this;
@@ -333,7 +333,7 @@ void SceneObject::breadthFirstTraverse(std::function<bool(SceneObject*, bool&)> 
 SceneObject::ComponentVector::iterator SceneObject::findComponent_if(const std::string& identifier) {
 	auto c = m_components.begin();
 	for (; c != m_components.end(); c++) {
-		if ((*c)->indentifier() == identifier) 
+		if ((*c)->identifier() == identifier) 
 			break;
 	}
 
@@ -344,7 +344,7 @@ SceneObject::ComponentVector::iterator SceneObject::findComponent_if(const std::
 SceneObject::ComponentVector::const_iterator SceneObject::findComponent_if(const std::string& identifier) const {
 	auto c = m_components.cbegin();
 	for (; c != m_components.cend(); c++) {
-		if ((*c)->indentifier() == identifier)
+		if ((*c)->identifier() == identifier)
 			break;
 	}
 

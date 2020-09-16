@@ -4,6 +4,7 @@
 #include<sstream>
 #include<algorithm>
 #include<iterator>
+#include<memory>
 
 
 ShaderProgram::ShaderProgram(const std::string& name, const std::string& file):m_name(name)
@@ -36,22 +37,27 @@ bool ShaderProgram::compileAndLink() {
 	CONSOLELOG(msg.str());
 #endif
 
-	Shader vs(vsrc, Shader::Type::VertexShader);
-	if (!vs.compile()) {
-		std::stringstream msg;
-		msg << "Compile Vertex Shader Error: " << vs.getInfoLog() << std::endl;
-		CONSOLELOG(msg.str());
-		vs.release();
-		return false;
+	std::shared_ptr<Shader> vs;
+	std::shared_ptr<Shader> fs;
+
+	if (!vsrc.empty()) {
+		vs = std::make_shared<Shader>(vsrc, Shader::Type::VertexShader);
+		if (!vs->compile()) {
+			std::stringstream msg;
+			msg << "[Shader Load error] Compile error: " << vs->getInfoLog() << std::endl;
+			CONSOLELOG(msg.str());
+			return false;
+		}
 	}
 
-	Shader fs(fsrc, Shader::Type::FragmentShader);
-	if (!fs.compile()) {
-		std::stringstream msg;
-		msg << "Compile Fragment Shader Error: " << fs.getInfoLog() << std::endl;
-		CONSOLELOG(msg.str());
-		fs.release();
-		return false;
+	if (!fsrc.empty()) {
+		fs = std::make_shared<Shader>(fsrc, Shader::Type::FragmentShader);
+		if (!fs->compile()) {
+			std::stringstream msg;
+			msg << "[Shader Load error] Fragment error: " << fs->getInfoLog() << std::endl;
+			CONSOLELOG(msg.str());
+			return false;
+		}
 	}
 
 	m_handler = glCreateProgram();
@@ -59,8 +65,11 @@ bool ShaderProgram::compileAndLink() {
 	if (m_handler == 0)
 		return false;
 
-	glAttachShader(m_handler, vs.getHandler());
-	glAttachShader(m_handler, fs.getHandler());
+	if (vs)
+		glAttachShader(m_handler, vs->getHandler());
+	if (fs)
+		glAttachShader(m_handler, fs->getHandler());
+	
 	glLinkProgram(m_handler);
 
 	GLint linked = GL_FALSE;
@@ -202,7 +211,7 @@ bool ShaderProgram::parseShaderSource(std::string& vs, std::string& fs) {
 	vs.assign(srcs[0].str());
 	fs.assign(srcs[1].str());
 
-	return !vs.empty() && !fs.empty();
+	return !vs.empty() || !fs.empty();
 }
 
 

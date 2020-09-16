@@ -16,7 +16,7 @@ public:
 	virtual void update(double dt) {}
 	virtual void render(RenderContext* context) {}
 
-	virtual std::string indentifier() const = 0;
+	virtual std::string identifier() const = 0;
 	virtual Component* copy() const = 0;
 
 	void removeFromOwner() const;

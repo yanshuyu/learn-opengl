@@ -37,6 +37,6 @@ bool ExtractFileNameFromPath(const std::string& path, std::string& name, bool in
 }
 
 void ConsoleLog(const char* file, const char* func, int line, const std::string& msg){
-	printf("%s @Function: %s @Line: %i: log: %s", file, func, line, msg.c_str());
+	printf("%s @Function: %s @Line: %i: log: %s\n", file, func, line, msg.c_str());
 	fflush(stdout);
 }

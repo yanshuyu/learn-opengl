@@ -36,7 +36,7 @@ public:
 	//
 	Component* copy() const override;
 
-	inline std::string indentifier() const override {
+	inline std::string identifier() const override {
 		return TransformComponent::s_identifier;
 	}
 
@@ -62,8 +62,8 @@ public:
 	glm::vec3 getUp() const;
 	glm::vec3 getRight() const;
 	
-	void getCartesianAxesLocal(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const;
-	void getCartesianAxesWorld(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const;
+	void getCartesianAxesLocal(glm::vec3* origin, glm::vec3* xAxis, glm::vec3* yAxis, glm::vec3* zAxis) const;
+	void getCartesianAxesWorld(glm::vec3* origin, glm::vec3* xAxis, glm::vec3* yAxis, glm::vec3* zAxis) const;
 
 	//
 	// matrix for transform

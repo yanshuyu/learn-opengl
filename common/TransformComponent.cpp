@@ -121,20 +121,38 @@ glm::vec3 TransformComponent::getRight() const {
 }
 
 
-void TransformComponent::getCartesianAxesLocal(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const {
-	origin = m_position;
-	xAxis = m_rightAxis;
-	yAxis = m_upAxis;
-	zAxis = m_forwardAxis;
+void TransformComponent::getCartesianAxesLocal(glm::vec3* origin, glm::vec3* xAxis, glm::vec3* yAxis, glm::vec3* zAxis) const {
+	if (origin)
+		*origin = m_position;
+	if (xAxis)
+		*xAxis = m_rightAxis;
+	if (yAxis)
+		*yAxis = m_upAxis;
+	if (zAxis)
+		*zAxis = m_forwardAxis;
 }
 
-void TransformComponent::getCartesianAxesWorld(glm::vec3& origin, glm::vec3& xAxis, glm::vec3& yAxis, glm::vec3& zAxis) const  {
+void TransformComponent::getCartesianAxesWorld(glm::vec3* origin, glm::vec3* xAxis, glm::vec3* yAxis, glm::vec3* zAxis) const {
 	glm::mat4 transform = getParentMatrixRecursive() * m_applyedTransform;
-	origin = transform * glm::vec4(m_position, 1.f);
-	xAxis = glm::normalize(transform * glm::vec4(m_rightAxis, 0.f));
-	yAxis = glm::normalize(transform * glm::vec4(m_upAxis, 0.f));
-	zAxis = glm::normalize(glm::cross(yAxis, xAxis));
-	yAxis = glm::normalize(glm::cross(xAxis, zAxis));
+	if (origin)
+		*origin = transform * glm::vec4(m_position, 1.f);
+
+	if (xAxis || yAxis || zAxis) {
+		glm::vec3 right(0);
+		glm::vec3 up(0);
+		glm::vec3 forward(0);
+		right = glm::normalize(transform * glm::vec4(m_rightAxis, 0.f));
+		up = glm::normalize(transform * glm::vec4(m_upAxis, 0.f));
+		forward = glm::normalize(glm::cross(up, right));
+		up = glm::normalize(glm::cross(right, forward));
+
+		if (xAxis)
+			*xAxis = right;
+		if (yAxis)
+			*yAxis = up;
+		if (zAxis)
+			*zAxis = forward;
+	}
 }
 
 

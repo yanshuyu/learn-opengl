@@ -88,7 +88,7 @@ void FirstPersonCameraController::update(double dt) {
 	}
 }
 
-std::string FirstPersonCameraController::indentifier() const {
+std::string FirstPersonCameraController::identifier() const {
 	return s_identifier;
 }
 

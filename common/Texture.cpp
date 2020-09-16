@@ -44,6 +44,16 @@ bool Texture::load() {
 		m_loaded = true;
 	}
 
+	if (!m_loaded) {
+#ifdef _DEBUG
+		std::string msg;
+		msg += "[Texture Load error] Failed to load texture: ";
+		msg += m_file;
+		CONSOLELOG(msg);
+#endif // _DEBUG
+
+	}
+
 	stbi_image_free(data);
 	
 	return m_loaded;

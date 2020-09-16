@@ -15,7 +15,7 @@ public:
 
 	static const std::string s_identifier;
 
-	inline std::string indentifier() const override {
+	inline std::string identifier() const override {
 		return s_identifier;
 	}
 

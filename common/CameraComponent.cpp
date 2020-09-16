@@ -4,18 +4,7 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glad/glad.h>
 
-const std::string CameraComponent::s_indentifier = "CameraComponent";
-
-CameraComponent::Viewport::Viewport(): Viewport(0,0,1,1) {
-
-}
-
-CameraComponent::Viewport::Viewport(float _x, float _y, float _w, float _h) : x(_x)
-, y(_y)
-, width(_w)
-, height(_h) {
-
-}
+const std::string CameraComponent::s_identifier = "CameraComponent";
 
 CameraComponent::CameraComponent(float wndWidth, float wndHeight) : Component()
 , m_windowWidth(wndWidth)
@@ -28,7 +17,8 @@ CameraComponent::CameraComponent(float wndWidth, float wndHeight) : Component()
 , m_projMode(CameraComponent::ProjectionMode::Perspective) {
 	NotificationCenter::getInstance()->addObserver(this, WindowResizedNotification::s_name, [this](const Notification* n) {
 		auto wndResizeNc = static_cast<const WindowResizedNotification*>(n);
-		this->setWindowSize(wndResizeNc->m_width, wndResizeNc->m_height);
+		if (wndResizeNc->m_width > 0 && wndResizeNc->m_height > 0)
+			this->setWindowSize(wndResizeNc->m_width, wndResizeNc->m_height);
 	});
 }
 
@@ -36,8 +26,8 @@ CameraComponent::~CameraComponent() {
 	NotificationCenter::getInstance()->removeObserver(this);
 }
 
-std::string CameraComponent::indentifier() const {
-	return CameraComponent::s_indentifier;
+std::string CameraComponent::identifier() const {
+	return CameraComponent::s_identifier;
 }
 
 Component* CameraComponent::copy() const {
@@ -55,7 +45,7 @@ glm::mat4 CameraComponent::viewMatrix() const {
 	glm::vec3 right(0.f);
 	glm::vec3 forward(0.f, 0.f, -1.f);
 	glm::vec3 up(0.f, 1.f, 0.f);
-	m_owner->m_transform.getCartesianAxesWorld(pos, right, up, forward);
+	m_owner->m_transform.getCartesianAxesWorld(&pos, &right, &up, &forward);
 
 	return glm::lookAt(pos, pos + forward, up);
 }
@@ -76,21 +66,42 @@ glm::mat4 CameraComponent::viewProjectionMatrix() const {
 	return projectionMatrix() * viewMatrix();
 }
 
+glm::vec3 CameraComponent::getPosition() const {
+#ifdef _DEBUG
+	ASSERT(m_owner);
+#endif // _DEBUG
+	glm::vec3 pos(0);
+	m_owner->m_transform.getCartesianAxesWorld(&pos, nullptr, nullptr, nullptr);
+
+	return pos;
+}
+
+
+glm::vec3 CameraComponent::getLookDirection() const {
+#ifdef _DEBUG
+	ASSERT(m_owner);
+#endif // _DEBUG
+	glm::vec3 direction(0.f, 0.f, -1.f);
+	m_owner->m_transform.getCartesianAxesWorld(nullptr, nullptr, nullptr, &direction);
+
+	return direction;
+}
+
 
 Camera_t CameraComponent::makeCamera() const {
+	// unnormalize viewport
 	float x = m_viewport.x * m_windowWidth;
 	float y = m_viewport.y * m_windowHeight;
 	float w = m_viewport.width * m_windowWidth - x;
 	float h = m_viewport.height * m_windowHeight - y;
 
 	Camera_t camera;
-	camera.viewPortX = x;
-	camera.viewportY = y;
-	camera.viewportWidth = w;
-	camera.viewportHeight = h;
-	camera.backgrounColor = m_backGroundColor;
 	camera.viewMatrix = viewMatrix();
 	camera.projMatrix = projectionMatrix();
+	camera.viewport = Viewport_t(x, y, w, h);
+	camera.backgrounColor = m_backGroundColor;
+	camera.near = m_near;
+	camera.far = m_far;
 
 	return camera;
 }

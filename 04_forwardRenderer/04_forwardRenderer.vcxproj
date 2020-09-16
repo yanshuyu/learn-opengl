@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\ArcballCameraController.cpp" />
     <ClCompile Include="..\common\Buffer.cpp" />
     <ClCompile Include="..\common\CameraComponent.cpp" />
     <ClCompile Include="..\common\Component.cpp" />
@@ -157,6 +158,7 @@
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
     <ClCompile Include="..\common\GLApplication.cpp" />
     <ClCompile Include="..\common\InputMgr.cpp" />
+    <ClCompile Include="..\common\LightComponent.cpp" />
     <ClCompile Include="..\common\Material.cpp" />
     <ClCompile Include="..\common\MaterialMgr.cpp" />
     <ClCompile Include="..\common\Mesh.cpp" />
@@ -167,6 +169,8 @@
     <ClCompile Include="..\common\Notification.cpp" />
     <ClCompile Include="..\common\Renderer.cpp" />
     <ClCompile Include="..\common\RendererCore.cpp" />
+    <ClCompile Include="..\common\RenderTaskExecutor.cpp" />
+    <ClCompile Include="..\common\RenderTechnique.cpp" />
     <ClCompile Include="..\common\Scene.cpp" />
     <ClCompile Include="..\common\SceneObject.cpp" />
     <ClCompile Include="..\common\Shader.cpp" />
@@ -183,6 +187,7 @@
     <ClCompile Include="ForwardRendererApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\ArcballCameraController.h" />
     <ClInclude Include="..\common\Buffer.h" />
     <ClInclude Include="..\common\CameraComponent.h" />
     <ClInclude Include="..\common\Component.h" />
@@ -191,6 +196,7 @@
     <ClInclude Include="..\common\ForwardRenderer.h" />
     <ClInclude Include="..\common\GLApplication.h" />
     <ClInclude Include="..\common\InputMgr.h" />
+    <ClInclude Include="..\common\LightComponent.h" />
     <ClInclude Include="..\common\Material.h" />
     <ClInclude Include="..\common\MaterialMgr.h" />
     <ClInclude Include="..\common\Mesh.h" />
@@ -202,6 +208,8 @@
     <ClInclude Include="..\common\pch.h" />
     <ClInclude Include="..\common\Renderer.h" />
     <ClInclude Include="..\common\RendererCore.h" />
+    <ClInclude Include="..\common\RenderTaskExecutor.h" />
+    <ClInclude Include="..\common\RenderTechnique.h" />
     <ClInclude Include="..\common\Scene.h" />
     <ClInclude Include="..\common\SceneObject.h" />
     <ClInclude Include="..\common\Shader.h" />
@@ -217,6 +225,7 @@
     <ClInclude Include="ForwardRendererApp.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\res\shader\PreZDepth.shader" />
     <None Include="..\res\shader\Unlit.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

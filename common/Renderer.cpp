@@ -1,54 +1,108 @@
 #include"Renderer.h"
 #include"Util.h"
+#include"Scene.h"
+#include"ShaderProgamMgr.h"
 
-Renderer::Renderer() :m_clearColor{ 0 }
-, m_clearDepth(1.0f)
-, m_clearMask(0){
-	setClearColor(m_clearColor[0], m_clearColor[1], m_clearColor[2], 1);
-	setClearDepth(m_clearDepth);
-	setClearMask(m_clearMask);
+
+Renderer::Renderer(RenderTechnique* rt): Renderer(std::unique_ptr<RenderTechnique>(rt)) {
+
 }
 
-void Renderer::setViewPort(int x, int y, int width, int height) {
-	GLCALL(glViewport(x, y, width, height));
+Renderer::Renderer(std::unique_ptr<RenderTechnique>&& rt) : m_renderTechnique(std::move(rt))
+, m_renderContext() {
+	m_renderContext.setRenderer(this);
 }
 
 
-void Renderer::setClearColor(float r, float g, float b, float a) {
-	m_clearColor[0] = r;
-	m_clearColor[1] = g;
-	m_clearColor[2] = b;
-	m_clearColor[3] = a;
-	GLCALL(glClearColor(m_clearColor[0], m_clearColor[1], m_clearColor[2], m_clearColor[3]));
+bool Renderer::initialize() {
+	return m_renderTechnique->intialize();
+}
+
+
+void Renderer::clenUp() {
+	m_renderTechnique->cleanUp();
+}
+
+
+void Renderer::renderScene(Scene* s) {
+	auto sri = s->gatherSceneRenderInfo();
+	m_renderTechnique->prepareForSceneRenderInfo(sri);
+	m_renderTechnique->beginFrame();
+
+	// pre-z pass
+	m_renderContext.clearMatrix();
+	m_renderTechnique->beginDepthPass();
+	s->render(&m_renderContext);
+	m_renderTechnique->endDepthPass();
+
+	// G pass
+	m_renderContext.clearMatrix();
+	m_renderTechnique->beginGeometryPass();
+	s->render(&m_renderContext);
+	m_renderTechnique->endGeometryPass();
+
+	// ulit pass
+	if (sri.lights.empty()) {
+		m_renderContext.clearMatrix();
+		m_renderTechnique->beginUnlitPass();
+		s->render(&m_renderContext);
+		m_renderTechnique->endUnlitPass();
+
+	} else {
+
+		// light passes
+		for (const auto& l : sri.lights) {
+			m_renderContext.clearMatrix();
+			m_renderTechnique->beginLightPass(l);
+			s->render(&m_renderContext);
+			m_renderTechnique->endLightPass(l);
+		}
+	}
+
+	// transparency pass
+
+
+	m_renderTechnique->endFrame();
+}
+
+
+void Renderer::subsimtTask(const RenderTask_t& task) {
+	m_renderTechnique->performTask(task);
+}
+
+
+void Renderer::setRenderTechnique(RenderTechnique* rt) {
+	m_renderTechnique.reset(rt);
+}
+
+
+void Renderer::setRenderTechnique(std::unique_ptr<RenderTechnique>&& rt) {
+	m_renderTechnique = std::move(rt);
+}
+
+
+
+void Renderer::setViewPort(const Viewport_t& vp) {
+	m_renderTechnique->setViewPort(vp);
+}
+
+
+void Renderer::setClearColor(const glm::vec4& color) {
+	m_renderTechnique->setClearColor(color);
 }
 
 
 void Renderer::setClearDepth(float d) {
-	m_clearDepth = d;
-	GLCALL(glClearDepth(m_clearDepth));
+	m_renderTechnique->setClearDepth(d);
 }
 
 
-void Renderer::setClearMask(int m) {
-	m_clearMask = m;
-	GLCALL(glClearStencil(m_clearMask));
+void Renderer::setClearStencil(int m) {
+	m_renderTechnique->setClearStencil(m);
 }
 
 
 void Renderer::clearScrren(int flags) {
-	GLCALL(glClear(flags));
+	m_renderTechnique->clearScrren(flags);
 }
 
-void Renderer::subsimtTask(const RenderTask_t& task) {
-
-}
-
-void Renderer::beginDepthPass() {
-	GLCALL(glEnable(GL_DEPTH_TEST));
-	GLCALL(glDepthFunc(GL_LESS));
-	GLCALL(glDepthMask(GL_TRUE));
-}
-
-void Renderer::endDepthPass() {
-
-}

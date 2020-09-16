@@ -106,7 +106,7 @@ void MeshRenderComponent::render(RenderContext* context) {
 
 
 void MeshRenderComponent::loadEmbededMaterials() {
-	if (m_meshes) {
+	if (m_meshes && m_meshes->embededMaterialCount() > 0) {
 		m_materials.resize(m_meshes->meshesCount(), nullptr);
 		for (size_t i = 0; i < m_meshes->meshesCount(); i++) {
 			m_materials[i] = m_meshes->embededMaterialForMesh(m_meshes->meshAt(i));

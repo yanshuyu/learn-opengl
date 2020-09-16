@@ -10,7 +10,7 @@ public:
 	static void destory(FirstPersonCameraController* c);
 
 	void update(double dt) override;
-	std::string indentifier() const override;
+	std::string identifier() const override;
 	Component* copy() const override;
 
 	inline void setSpeed(float s) {

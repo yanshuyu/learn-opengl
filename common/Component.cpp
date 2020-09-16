@@ -9,5 +9,5 @@ Component::Component():m_isEnable(true) {
 
 void Component::removeFromOwner() const {
 	if (m_owner)
-		m_owner->removeComponent(this->indentifier());
+		m_owner->removeComponent(this->identifier());
 }

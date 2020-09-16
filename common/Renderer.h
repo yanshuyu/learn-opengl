@@ -2,12 +2,15 @@
 #include<glad/glad.h>
 #include"RendererCore.h"
 #include"ShaderProgram.h"
+#include"RenderTechnique.h"
 
 class Scene;
 
+
 class Renderer {
 public:
-	Renderer();
+	Renderer(RenderTechnique* rt);
+	Renderer(std::unique_ptr<RenderTechnique>&& rt);
 	virtual ~Renderer() {}
 
 	Renderer(const Renderer& other) = delete;
@@ -15,45 +18,41 @@ public:
 	Renderer& operator = (const Renderer& other) = delete;
 	Renderer& operator = (Renderer&& rv) = delete;
 
-	void setClearColor(float r, float g, float b, float a);
+	void setClearColor(const glm::vec4& color);
 	void setClearDepth(float d);
-	void setClearMask(int m);
-	void setViewPort(int x, int y, int width, int height);
-	void clearScrren(int flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	void setClearStencil(int m);
+	void setViewPort(const Viewport_t& vp);
+	void clearScrren(int flags);
 
-	virtual bool initialize() { return true; }
-	virtual void renderScene(Scene* s) = 0;
-	virtual void subsimtTask(const RenderTask_t& task) = 0;
+	void setRenderTechnique(RenderTechnique* rt);
+	void setRenderTechnique(std::unique_ptr<RenderTechnique>&& rt);
 
-	inline  const float* const getClearColor() const {
-		return &m_clearColor[0];
+	bool initialize();
+	void clenUp();
+	void renderScene(Scene* s);
+	void subsimtTask(const RenderTask_t& task);
+
+	inline  glm::vec4 getClearColor() const {
+		return m_renderTechnique->getClearColor();
 	}
 
 	inline float getClearDepth() const {
-		return m_clearDepth;
+		return m_renderTechnique->getClearDepth();
 	}
 
-	inline int getClearMask() const {
-		return m_clearMask;
+	inline int getClearStencil() const {
+		return m_renderTechnique->getClearStencil();
 	}
 
-
-protected:
-	virtual void beginDepthPass();
-	virtual void endDepthPass();
-
-	virtual void beginUnlitPass() = 0;
-	virtual void endUnlitPass() = 0;
-
-	virtual void beginLightpass(const Light_t& light) = 0;
-	virtual void endLightPass() = 0;
-
-	ShaderProgram* getActiveShaderProgram() const {
-		return m_activeShader.get();
+	inline Viewport_t getViewport() const {
+		return m_renderTechnique->getViewport();
 	}
 
-	float m_clearColor[4];
-	float m_clearDepth;
-	int m_clearMask;
-	std::shared_ptr<ShaderProgram> m_activeShader;
+	inline RenderTechnique* getRenderTechnique() const {
+		return m_renderTechnique.get();
+	}
+
+private:
+	RenderContext m_renderContext;
+	std::unique_ptr<RenderTechnique> m_renderTechnique;
 };

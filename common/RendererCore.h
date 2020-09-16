@@ -8,27 +8,47 @@
 class Renderer;
 
 
+enum class TextureSlot {
+	DefualtSlot,
+	DiffuseMap,
+	NormalMap,
+	MaxSlot,
+};
+
+
+enum class LightType {
+	DirectioanalLight,
+	PointLight,
+	SpotLight,
+};
+
+
+struct Viewport_t {
+	float x;
+	float y;
+	float width;
+	float height;
+
+	Viewport_t();
+	Viewport_t(float _x, float _y, float _w, float _h);
+};
+
+bool operator == (const Viewport_t& lhs, const Viewport_t& rhs);
+bool operator != (const Viewport_t& lhs, const Viewport_t& rhs);
+
+
 struct Camera_t {
 	glm::mat4 viewMatrix;
 	glm::mat4 projMatrix;
 	glm::vec4 backgrounColor;
-	float viewPortX;
-	float viewportY;
-	float viewportWidth;
-	float viewportHeight;
+	Viewport_t viewport;
+	float near;
+	float far;
 };
 
 
-
 struct Light_t {
-	enum class LightType {
-		DirectionalLight,
-		PointLight,
-		SpotLight,
-		CapsuleLight,
-	};
-
-	LightType lightType;
+	LightType type;
 	glm::vec3 direction;
 	glm::vec3 color;
 	glm::vec3 position;
@@ -36,7 +56,6 @@ struct Light_t {
 	float innerCone;
 	float outterCone;
 	float intensity;
-	float length;
 };
 
 
@@ -50,6 +69,13 @@ struct RenderTask_t {
 	glm::mat4 modelMatrix;
 };
 
+
+
+struct SceneRenderInfo_t {
+	Camera_t camera;
+	std::vector<Light_t> lights;
+	// maybe will add enviroment setting, ect.
+};
 
 
 class RenderContext {

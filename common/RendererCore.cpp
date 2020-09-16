@@ -1,9 +1,33 @@
 #include"RendererCore.h"
 
 
+Viewport_t::Viewport_t() : Viewport_t(0, 0, 1, 1) {
+
+}
+
+
+Viewport_t::Viewport_t(float _x, float _y, float _w, float _h) : x(_x)
+, y(_y)
+, width(_w)
+, height(_h) {
+
+}
+
+
 RenderContext::RenderContext(Renderer* renderer) :m_renderer(renderer)
 , m_transformStack() {
 
+}
+
+bool operator == (const Viewport_t& lhs, const Viewport_t& rhs) {
+	return lhs.x == rhs.x
+		&& lhs.y == rhs.y
+		&& lhs.width == rhs.width
+		&& lhs.height == rhs.height;
+}
+
+bool operator != (const Viewport_t& lhs, const Viewport_t& rhs) {
+	return !(lhs == rhs);
 }
 
 

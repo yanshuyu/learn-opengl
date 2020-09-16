@@ -3,7 +3,7 @@
 #include"Renderer.h"
 #include<functional>
 
-class Renderer;
+
 class Notification;
 
 
@@ -31,8 +31,14 @@ public:
 	void addObject(std::unique_ptr<SceneObject>&& object);
 	
 	SceneObject* addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat = nullptr);
+	SceneObject* addPlane(float w, float d, std::shared_ptr<Material> mat = nullptr);
+	SceneObject* addCube(std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f));
 	CameraComponent* getCamera() const;
+
+	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f);
+	SceneObject* addPointLight(const glm::vec3& color, float range = 50, float intensity = 1.f);
+	SceneObject* addSpotLight(const glm::vec3& color, float innerAngle = 30.f, float outterAngle = 60.f, float range = 50.f,float intesity = 1.f);
 
 	SceneObject* findObjectWithID(ID id) const;
 	SceneObject* findObjectWithTag(ID tag) const;
@@ -57,9 +63,8 @@ public:
 	//
 	// rendering
 	//
-	void preRender(Renderer* renderer);
+	SceneRenderInfo_t gatherSceneRenderInfo();
 	void render(RenderContext* context);
-	void afterRender(Renderer* renderer);
 	
 	//
 	// public getter setter
@@ -83,9 +88,6 @@ public:
 	inline void setWindowSize(float w, float h) {
 		m_windowSize = glm::vec2(w, h);
 	}
-
-private:
-	std::shared_ptr<MeshGroup> createGridMesh(float width, float depth, float spaceing);
 
 
 private:

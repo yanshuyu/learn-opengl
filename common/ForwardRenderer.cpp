@@ -4,110 +4,178 @@
 #include"Scene.h"
 
 
-ForwardRenderer::ForwardRenderer() :Renderer()
-, m_renderContext(this)
-, m_renderingScene(nullptr)
-, m_unlitShader(nullptr)
-, m_camera() {
+ForwardRenderer::ForwardRenderer(): RenderTechnique()
+, m_activeShader(nullptr)
+, m_currentPass(RenderPass::None)
+, m_sceneInfo() {
 
 }
 
+void ForwardRenderer::clearScrren(int flags) {
+	GLCALL(glClear(flags));
+}
 
-bool ForwardRenderer::initialize() {
+bool ForwardRenderer::intialize() {
 	GLCALL(glEnable(GL_DEPTH_TEST));
-    GLCALL(glDepthFunc(GL_LESS));
+	GLCALL(glDepthFunc(GL_LESS));
 
 	GLCALL(glEnable(GL_CULL_FACE));
 	GLCALL(glCullFace(GL_BACK));
 	GLCALL(glFrontFace(GL_CCW));
 
-	return true;
+
+	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new ZPassRenderTaskExecutor(RenderTaskExecutor::RendererType::Forward));
+	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(RenderTaskExecutor::RendererType::Forward));
+	
+	bool ok = true;
+	for (auto& executor : m_taskExecutors) {
+		if (!executor.second->initialize()) {
+			ok = false;
+#ifdef _DEBUG
+			ASSERT(false);
+#endif // _DEBUG
+			break;
+		}
+	}
+	
+	return ok;
 }
 
 
-void ForwardRenderer::renderScene(Scene* s) {
-	m_renderingScene = s;
-	s->preRender(this);
-
-	m_camera = s->getCamera()->makeCamera();
-	setClearColor(m_camera.backgrounColor.r, m_camera.backgrounColor.g, m_camera.backgrounColor.b, m_camera.backgrounColor.a);
-	setViewPort(m_camera.viewPortX, m_camera.viewportY, m_camera.viewportWidth, m_camera.viewportHeight);
-	clearScrren();
-	m_renderContext.clearMatrix();
-	
-	beginUnlitPass();
-	s->render(&m_renderContext);
-	endUnlitPass();
-	
-	s->afterRender(this);
+void ForwardRenderer::cleanUp() {
+	m_taskExecutors.clear();
 }
 
-void ForwardRenderer::subsimtTask(const RenderTask_t& task) {
-	prepareTask(task);
-	performTask(task);
+void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t& si) {
+	m_sceneInfo = si;
+}
+
+void ForwardRenderer::beginFrame() {
+	auto& camera = m_sceneInfo.camera;
+	if (camera.backgrounColor != m_clearColor)
+		setClearColor(camera.backgrounColor);
+
+	if (camera.viewport != m_viewPort)
+		setViewPort(camera.viewport);
+
+	clearScrren(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+
+void ForwardRenderer::endFrame() {
+	if (m_activeShader) {
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
+	
+	GLCALL(glBindVertexArray(0));
+
+	for (size_t s = size_t(TextureSlot::DefualtSlot); s < size_t(TextureSlot::MaxSlot); s++) {
+		GLCALL(glActiveTexture(GL_TEXTURE0 + s));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
+	}
+
+	GLCALL(glDepthMask(GL_TRUE));
+	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+}
+
+
+void ForwardRenderer::beginDepthPass() {
+	GLCALL(glEnable(GL_DEPTH_TEST));
+	GLCALL(glDepthFunc(GL_LESS));
+	GLCALL(glDepthMask(GL_TRUE));
+	GLCALL(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
+
+	auto shaderMgr = ShaderProgramManager::getInstance();
+	auto preZShader = shaderMgr->getProgram("PreZDepth");
+	if (!preZShader)
+		preZShader = shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "PreZDepth.shader");
+
+	ASSERT(preZShader);
+
+	preZShader->bind();
+
+	m_activeShader = preZShader.get();
+	m_currentPass = RenderPass::DepthPass;
+}
+
+
+void ForwardRenderer::endDepthPass() {
+	GLCALL(glEnable(GL_DEPTH_TEST));
+	GLCALL(glDepthFunc(GL_LEQUAL));
+	GLCALL(glDepthMask(GL_FALSE));
+	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+
+	m_activeShader->unbind();
+	m_activeShader = nullptr;
+	m_currentPass = RenderPass::None;
+}
+
+
+void ForwardRenderer::beginGeometryPass() {
+	m_currentPass = RenderPass::GeometryPass;
+}
+
+void ForwardRenderer::endGeometryPass() {
+	m_currentPass = RenderPass::None;
 }
 
 void ForwardRenderer::beginUnlitPass() {
-	if (!m_unlitShader) {
-		m_unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
-		if (!m_unlitShader)
+	auto m_unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
+	if (!m_unlitShader)
 			m_unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/Unlit.shader");
-	}
+	
 	ASSERT(m_unlitShader != nullptr);
-	m_activeShader = m_unlitShader;
-	m_unlitShader->bind();
-}
 
+	m_unlitShader->bind();
+
+	m_activeShader = m_unlitShader.get();
+	m_currentPass = RenderPass::UnlitPass;
+}
 
 void ForwardRenderer::endUnlitPass() {
-	//m_unlitShader->unbind();
+	m_activeShader->unbind();
+	m_activeShader = nullptr;
+	m_currentPass = RenderPass::None;
 }
 
-void ForwardRenderer::beginLightpass(const Light_t& light) {
+void ForwardRenderer::beginLightPass(const Light_t& l) {
+	m_currentPass = RenderPass::LightPass;
+}
+
+void ForwardRenderer::endLightPass(const Light_t& l) {
+	m_currentPass = RenderPass::None;
+}
+
+void ForwardRenderer::beginTransparencyPass() {
 
 }
 
-void ForwardRenderer::endLightPass() {
+void ForwardRenderer::endTransparencyPass() {
 
 }
 
-void ForwardRenderer::prepareTask(const RenderTask_t& task) {
-	task.vao->bind();
-	
-	// set mvp matrix
-	if (m_activeShader->hasUniform("u_mvp")) {
-		glm::mat4 mvp = m_camera.projMatrix * m_camera.viewMatrix * task.modelMatrix;
-		m_activeShader->setUniformMat4v("u_mvp", &mvp[0][0]);
-	}
-	
-	// set material
-	if (m_activeShader->hasUniform("u_diffuseColor")) {
-		m_activeShader->setUniform4("u_diffuseColor",
-			task.material->m_diffuseColor.r,
-			task.material->m_diffuseColor.g,
-			task.material->m_diffuseColor.b,
-			task.material->m_opacity);
-	}
-
-	// set textures
-	if (task.material->hasDiffuseTexture()) {
-		task.material->m_diffuseMap->bind(0);
-		m_activeShader->setUniform1("u_diffuseMap", 0);
-	}
+RenderTechnique::RenderPass ForwardRenderer::currentRenderPass() const {
+	return m_currentPass;
 }
+
 
 void ForwardRenderer::performTask(const RenderTask_t& task) {
-	switch (task.primitive)
-	{
-	case PrimitiveType::Triangle: {
-		if (task.indexCount > 0) {
-			GLCALL(glDrawElements(GL_TRIANGLES, task.indexCount, GL_UNSIGNED_INT, 0));
-		} else {
-			GLCALL(glDrawArrays(GL_TRIANGLES, 0, task.vertexCount / 3));
-		}
-	} break;
+	if (m_currentPass == RenderPass::None || m_currentPass == RenderPass::GeometryPass)
+		return;
 
-	default:
-		break;
+	if (m_currentPass == RenderPass::LightPass)
+		return;
+
+	auto taskExecutor = m_taskExecutors.find(m_currentPass);
+	
+	if (taskExecutor == m_taskExecutors.end()) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+
+		return;
 	}
+
+	taskExecutor->second->executeTask(task, m_sceneInfo, m_activeShader);
 }

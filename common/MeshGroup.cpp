@@ -214,7 +214,7 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 		if (!diffuseMap) {
 #ifdef _DEBUG	
 			std::string msg;
-			msg += "Failed to load texture: ";
+			msg += "[Material Load error] Failed to load texture: ";
 			msg += (mat->getName() + "_" + diffuseTextureName);
 			CONSOLELOG(msg);
 #endif // _DEBUG
@@ -228,7 +228,7 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 		if (!normalMap) {
 #ifdef _DEBUG
 			std::string msg;
-			msg += "Failed to load texture: ";
+			msg += "[Material Load error] Failed to load texture: ";
 			msg += (mat->getName() + "_" + normalTextureName);
 			CONSOLELOG(msg);
 #endif // _DEBUG

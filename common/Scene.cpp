@@ -3,6 +3,7 @@
 #include"MeshMgr.h"
 #include"NotificationCenter.h"
 #include"CameraComponent.h"
+#include"LightComponent.h"
 #include<glm/gtc/matrix_transform.hpp>
 
 
@@ -42,16 +43,33 @@ void Scene::update(double dt) {
 }
 
 
-void Scene::preRender(Renderer* renderer) {
+SceneRenderInfo_t Scene::gatherSceneRenderInfo() {
+	SceneRenderInfo_t sri;
+	bool foundCamera = false;
+	depthFirstVisit([&](SceneObject* obj, bool& stop) -> bool {
+		for (size_t i = 0; i < obj->componentCount(); i++) {
+			Component* comp = obj->componentAt(i);
+			
+			if (!comp->m_isEnable)
+				continue;
 
+			if (comp->identifier() == CameraComponent::s_identifier && !foundCamera) {
+				sri.camera = static_cast<CameraComponent*>(comp)->makeCamera();
+				foundCamera = true;
+			}
+
+			if (comp->identifier() == LightComponent::s_identifier)
+				sri.lights.push_back(static_cast<LightComponent*>(comp)->makeLight());
+		}
+		
+		return true;
+	});
+
+	return sri;
 }
 
 void Scene::render(RenderContext* context) {
 	m_rootObject->render(context);
-}
-
-void Scene::afterRender(Renderer* renderer) {
-
 }
 
 
@@ -75,7 +93,8 @@ SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r) {
 	camera->addComponent(cameraComp);
 	camera->m_transform.setPosition(p);
 	camera->m_transform.setRotation(r);
-
+	cameraComp->m_backGroundColor = { 0.25f, 0.332f, 0.13f, 1.0f };
+	
 	return camera;
 }
 
@@ -83,7 +102,7 @@ SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r) {
 CameraComponent* Scene::getCamera() const {
 	CameraComponent* cameraComp = nullptr;
 	breathFirstVisit([&](const SceneObject* obj, bool& stop) {
-		if (auto c = obj->findComponent(CameraComponent::s_indentifier)) {
+		if (auto c = obj->findComponent(CameraComponent::s_identifier)) {
 			if (c->m_isEnable) {
 				cameraComp = static_cast<CameraComponent*>(c);
 				stop = true;
@@ -97,14 +116,10 @@ CameraComponent* Scene::getCamera() const {
 
 
 SceneObject* Scene::addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat) {
-	auto gridMesh = MeshManager::getInstance()->getMesh("Grid");
-	if (!gridMesh) {
-		gridMesh = createGridMesh(w, d, spacing);
-		MeshManager::getInstance()->addMesh(gridMesh);
-	}
-
 	SceneObject* grid = addObject("Grid");
-	MeshRenderComponent* meshRenderComp = new MeshRenderComponent(gridMesh, false);
+	auto gridMesh = MeshManager::getInstance()->createGrid(w, d, spacing);
+	auto meshRenderComp = MeshRenderComponent::create();
+	meshRenderComp->setMeshes(gridMesh);
 	grid->addComponent(meshRenderComp);
 
 	if (mat)
@@ -113,6 +128,71 @@ SceneObject* Scene::addGrid(float w, float d, float spacing, std::shared_ptr<Mat
 	return grid;
 }
 
+
+SceneObject* Scene::addPlane(float w, float d, std::shared_ptr<Material> mat) {
+	SceneObject* plane = addObject("Plane");
+	auto planeMesh = MeshManager::getInstance()->createPlane(w, d);
+	auto meshRenderComp = MeshRenderComponent::create();
+	meshRenderComp->setMeshes(planeMesh);
+	plane->addComponent(meshRenderComp);
+
+	if (mat)
+		meshRenderComp->addMaterial(mat);
+
+	return nullptr;
+}
+
+
+SceneObject* Scene::addCube(std::shared_ptr<Material> mat) {
+	SceneObject* cube = addObject("Cube");
+	auto cubeMesh = MeshManager::getInstance()->createCube();
+	auto meshRenderComp = MeshRenderComponent::create();
+	meshRenderComp->setMeshes(cubeMesh);
+	cube->addComponent(meshRenderComp);
+
+	if (mat)
+		meshRenderComp->addMaterial(mat);
+
+	return  cube;
+}
+
+
+SceneObject* Scene::addDirectionalLight(const glm::vec3& color, float intensity) {
+	auto light = addObject("DirectionalLight");
+	auto lightComp = LightComponent::create();
+	lightComp->setType(LightType::DirectioanalLight);
+	lightComp->setColor(color);
+	lightComp->setIntensity(intensity);
+	light->addComponent(lightComp);
+
+	return light;
+}
+
+SceneObject* Scene::addPointLight(const glm::vec3& color, float range, float intensity) {
+	auto light = addObject("PointLight");
+	auto lightComp = LightComponent::create();
+	lightComp->setType(LightType::PointLight);
+	lightComp->setColor(color);
+	lightComp->setRange(range);
+	lightComp->setIntensity(intensity);
+	light->addComponent(lightComp);
+
+	return light;
+}
+
+SceneObject* Scene::addSpotLight(const glm::vec3& color, float innerAngle, float outterAngle, float range, float intensity) {
+	auto light = addObject("SpotLight");
+	auto lightComp = LightComponent::create();
+	lightComp->setType(LightType::SpotLight);
+	lightComp->setColor(color);
+	lightComp->setRange(range);
+	lightComp->setIntensity(intensity);
+	lightComp->setSpotInnerAngle(innerAngle);
+	lightComp->setSpotOutterAngle(outterAngle);
+	light->addComponent(lightComp);
+
+	return light;
+}
 
 SceneObject* Scene::findObjectWithID(ID id) const {
 	return m_rootObject->findChildWithID(id);
@@ -170,41 +250,3 @@ void Scene::breathFirstVisit(std::function<bool(SceneObject*, bool&)> op) const 
 	m_rootObject->breadthFirstTraverse(op);
 }
 
-
-
-std::shared_ptr<MeshGroup> Scene::createGridMesh(float width, float depth, float spacing) {
-	std::vector<Vertex_t> vertices;
-	std::vector<Index_t> indices;
-
-	size_t row = ceil(depth / spacing);
-	size_t col = ceil(width / spacing);
-	vertices.reserve((row + col) * 2);
-	depth = row * spacing;
-	width = col * spacing;
-
-	for (size_t i = 0; i < row; i++) {
-		Vertex_t v1, v2;
-		v1.position = glm::vec3(-width / 2, 0.f, spacing * i - depth / 2);
-		v1.normal = glm::vec3(0.f, 1.f, 0.f);
-		v2.position = glm::vec3(width / 2, 0.f, spacing * i - depth / 2);
-		v2.normal = glm::vec3(0.f, 1.f, 0.f);
-		vertices.push_back(v1);
-		vertices.push_back(v2);
-	}
-
-	for (size_t j = 0; j < col; j++) {
-		Vertex_t v1, v2;
-		v1.position = glm::vec3(spacing * j - width / 2, 0, -depth / 2);
-		v1.normal = glm::vec3(0, 1, 0);
-		v2.position = glm::vec3(spacing * j - width / 2, 0, depth / 2);
-		v2.normal = glm::vec3(0, 1, 0);
-		vertices.push_back(v1);
-		vertices.push_back(v2);
-	}
-
-	auto meshGrp = std::make_shared<MeshGroup>();
-	meshGrp->setName("Grid");
-	meshGrp->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Line);
-	
-	return meshGrp;
-}
