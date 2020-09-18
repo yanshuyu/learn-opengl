@@ -65,9 +65,9 @@ void Mesh::fill(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices
 void Mesh::genRenderBuffers() {
 	ASSERT(m_vertics.size() > 0);
 	m_vao = std::make_unique<VertexArray>();
-	m_vbo = std::make_unique<Buffer>(m_vertics.data(), sizeof(Vertex_t) * m_vertics.size(), GL_ARRAY_BUFFER, GL_STATIC_DRAW, m_vertics.size());
+	m_vbo = std::make_unique<Buffer>(m_vertics.data(), sizeof(Vertex_t) * m_vertics.size(), Buffer::Target::VertexBuffer, Buffer::Usage::StaticDraw, m_vertics.size());
 	if (m_indices.size() > 0) {
-		m_ibo = std::make_unique<Buffer>(m_indices.data(), sizeof(Index_t) * m_indices.size(), GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, m_indices.size());
+		m_ibo = std::make_unique<Buffer>(m_indices.data(), sizeof(Index_t) * m_indices.size(), Buffer::Target::IndexBuffer, Buffer::Usage::StaticDraw, m_indices.size());
 	}
 	
 	VertexLayoutDescription layoutDesc;
@@ -79,9 +79,9 @@ void Mesh::genRenderBuffers() {
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 2); // uv
 
 	m_vao->bind();
-	m_vbo->bind();
+	m_vbo->bind(Buffer::Target::VertexBuffer);
 	if (m_ibo) 
-		m_ibo->bind();
+		m_ibo->bind(Buffer::Target::IndexBuffer);
 	m_vao->storeVertexLayout(layoutDesc);
 	m_vao->unbind();
 	m_vbo->unbind();

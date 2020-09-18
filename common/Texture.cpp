@@ -191,6 +191,7 @@ Texture::Format Texture::getGenericFormat(size_t channelCnt) {
 
 void Texture::release() {
 	if (m_handler) {
+		unbind();
 		glDeleteTextures(1, &m_handler);
 		m_handler = 0;
 		m_width = 0;
