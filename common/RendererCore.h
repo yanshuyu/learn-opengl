@@ -1,18 +1,30 @@
 #pragma once
-#include"VertexArray.h"
 #include<glm/glm.hpp>
-#include"Mesh.h"
-#include"Material.h"
 #include<stack>
+#include<vector>
 
+
+class VertexArray;
+class Material;
 class Renderer;
 
+typedef unsigned int Index_t;
 
-enum class TextureSlot {
-	DefualtSlot,
-	DiffuseMap,
-	NormalMap,
-	MaxSlot,
+struct Vertex_t {
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec3 tangent;
+	glm::vec3 biTangent;
+	glm::vec2 uv;
+};
+
+
+enum class PrimitiveType {
+	Point,
+	Line,
+	Triangle,
+	Polygon,
+	Unknown,
 };
 
 

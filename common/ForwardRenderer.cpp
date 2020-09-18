@@ -70,8 +70,8 @@ void ForwardRenderer::endFrame() {
 	
 	GLCALL(glBindVertexArray(0));
 
-	for (size_t s = size_t(TextureSlot::DefualtSlot); s < size_t(TextureSlot::MaxSlot); s++) {
-		GLCALL(glActiveTexture(GL_TEXTURE0 + s));
+	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
+		GLCALL(glActiveTexture(GL_TEXTURE0 + unit));
 		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
 	}
 

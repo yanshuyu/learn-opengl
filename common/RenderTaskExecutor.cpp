@@ -1,4 +1,6 @@
 #include"RenderTaskExecutor.h"
+#include"VertexArray.h"
+#include"Material.h"
 
 RenderTaskExecutor::RenderTaskExecutor(RendererType rt) :m_rendererType(rt) {
 
@@ -83,8 +85,8 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask,
 			int hasTexture = renderTask.material->hasDiffuseTexture() ? 1 : 0;
 			shader->setUniform1("u_hasDiffuseMap", hasTexture);
 			if (hasTexture) {
-				renderTask.material->m_diffuseMap->bind(int(TextureSlot::DiffuseMap));
-				shader->setUniform1("u_diffuseMap", int(TextureSlot::DiffuseMap));
+				renderTask.material->m_diffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+				shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
 			}
 		}
 

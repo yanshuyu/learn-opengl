@@ -1,5 +1,7 @@
 #include"RendererCore.h"
-
+#include"VertexArray.h"
+#include"Mesh.h"
+#include"Material.h"
 
 Viewport_t::Viewport_t() : Viewport_t(0, 0, 1, 1) {
 

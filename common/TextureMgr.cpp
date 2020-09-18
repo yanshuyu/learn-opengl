@@ -12,9 +12,8 @@ std::shared_ptr<Texture> TextureManager::addTexture(const std::string& file, con
 	if (texture != nullptr)
 		return texture;
 	
-	texture = std::make_shared<Texture>(file);
-	
-	if (!texture->load())
+	texture = std::make_shared<Texture>();
+	if (!texture->loadImage2DFromFile(file))
 		return nullptr;
 
 	m_textures.insert(std::make_pair(textureName, texture));

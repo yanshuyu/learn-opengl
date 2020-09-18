@@ -3,34 +3,15 @@
 #include<glad/glad.h>
 #include"Buffer.h"
 #include"VertexArray.h"
+#include"RendererCore.h"
 #include"Util.h"
 #include<vector>
 #include<string>
 #include<memory>
 
+
 class MeshGroup;
 class MeshManager;
-
-
-typedef unsigned int Index_t;
-
-
-struct Vertex_t {
-	glm::vec3 position;
-	glm::vec3 normal;
-	glm::vec3 tangent;
-	glm::vec3 biTangent;
-	glm::vec2 uv;
-};
-
-
-enum class PrimitiveType {
-	Point,
-	Line,
-	Triangle,
-	Polygon,
-	Unknown,
-};
 
 
 enum MeshLoadOption {

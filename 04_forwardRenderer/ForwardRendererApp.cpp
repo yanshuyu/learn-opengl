@@ -20,6 +20,8 @@ bool ForwardRendererApp::initailize() {
 	auto matManModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Mesh_MAT.FBX", MeshLoadOption::LoadMaterial);
 	auto cubeTexture = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "wall.jpg");
 
+	//auto glLogo = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "opengl_logo.png");
+
 	m_scene = std::make_unique<Scene>(glm::vec2(m_wndWidth, m_wndHeight), "model_loading_demo_scene");
 	m_renderer = std::unique_ptr<Renderer>(new Renderer(new ForwardRenderer()));
 

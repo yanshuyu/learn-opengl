@@ -1,4 +1,6 @@
 #include"RenderTechnique.h"
+#include"Util.h"
+#include<glad/glad.h>
 
 
 RenderTechnique::RenderTechnique() : m_clearColor{0.f, 0.f, 0.f, 1.f}
