@@ -57,10 +57,13 @@ public:
 	Buffer& operator = (const Buffer& other) = delete;
 
 	void bind(Target target) const;
+	void bindBase(Target target, size_t index) const; // bind to indexed buffer target
+	void bindRange(Target target, size_t index, size_t dataOffset, size_t dataSz) const; // bind range data of buffer to indexed buffer target
 	void unbind() const;
 	void release();
 
-	void loadData(const void* data, size_t dataSz, Usage usage, size_t elementCnt = 0);
+	bool loadData(const void* data, size_t dataSz, Usage usage, size_t elementCnt = 0);
+	bool loadSubData(const void* data, size_t dataOffset, size_t dataSz); //updates a subset of a buffer's data store
 
 	void* map(MapAccess access);
 	void* mapRange(MapBitFiled mbf, size_t offset, size_t len);

@@ -23,6 +23,16 @@ void Buffer::bind(Target target) const {
 	m_target = target;
 }
 
+void Buffer::bindBase(Target target, size_t index) const {
+	GLCALL(glBindBufferBase(int(target), index, m_handler));
+	m_target = target;
+}
+
+void Buffer::bindRange(Target target, size_t index, size_t dataOffset, size_t dataSz) const {
+	GLCALL(glBindBufferRange(int(target), index, m_handler, dataOffset, dataSz));
+	m_target = target;
+}
+
 void Buffer::unbind() const {
 	if (m_target != Target::Unknown) {
 		GLCALL(glBindBuffer(int(m_target), 0));
@@ -30,11 +40,24 @@ void Buffer::unbind() const {
 	}
 }
 
-void Buffer::loadData(const void* data, size_t dataSz, Usage usage, size_t elementCnt) {
+bool Buffer::loadData(const void* data, size_t dataSz, Usage usage, size_t elementCnt) {
+	if (m_target == Target::Unknown)
+		return false;
+
 	GLCALL(glBufferData(int(m_target), dataSz, data, int(usage)));
 	m_usage = usage;
 	m_size = dataSz;
 	m_elementCount = elementCnt;
+	return true;
+}
+
+
+bool Buffer::loadSubData(const void* data, size_t dataOffset, size_t dataSz) {
+	if (m_target == Target::Unknown)
+		return false;
+
+	GLCALL(glBufferSubData(int(m_target), dataOffset, dataSz, data));
+	return true;
 }
 
 void* Buffer::map(Buffer::MapAccess access) {
