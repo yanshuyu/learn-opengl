@@ -100,6 +100,7 @@ Camera_t CameraComponent::makeCamera() const {
 	camera.projMatrix = projectionMatrix();
 	camera.viewport = Viewport_t(x, y, w, h);
 	camera.backgrounColor = m_backGroundColor;
+	camera.position = getPosition();
 	camera.near = m_near;
 	camera.far = m_far;
 

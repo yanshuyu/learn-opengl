@@ -60,20 +60,20 @@ bool ShaderProgram::compileAndLink() {
 		}
 	}
 
-	m_handler = glCreateProgram();
+	GLCALL(m_handler = glCreateProgram());
 	
 	if (m_handler == 0)
 		return false;
 
 	if (vs)
-		glAttachShader(m_handler, vs->getHandler());
+		GLCALL(glAttachShader(m_handler, vs->getHandler()));
 	if (fs)
-		glAttachShader(m_handler, fs->getHandler());
+		GLCALL(glAttachShader(m_handler, fs->getHandler()));
 	
-	glLinkProgram(m_handler);
+	GLCALL(glLinkProgram(m_handler));
 
 	GLint linked = GL_FALSE;
-	glGetProgramiv(m_handler, GL_LINK_STATUS, &linked);
+	GLCALL(glGetProgramiv(m_handler, GL_LINK_STATUS, &linked));
 
 	if (!linked) {
 		release();
@@ -164,10 +164,7 @@ bool ShaderProgram::hasUniform(const std::string& name) const {
 }
 
 bool ShaderProgram::hasUniformBlock(const std::string& name) const {
-	auto pos = std::find_if(m_uniformBlocks.begin(), m_uniformBlocks.end(), [&](const ShaderProgram::UniformBlock& ub) {
-		return ub.name == name;
-	});
-	return pos != m_uniformBlocks.end();
+	return getUniformBlockIndex(name) != -1;
 }
 
 void ShaderProgram::bind() const {
@@ -176,6 +173,21 @@ void ShaderProgram::bind() const {
 
 void ShaderProgram::unbind() const {
 	GLCALL(glUseProgram(0));
+}
+
+bool ShaderProgram::bindUniformBlock(const std::string& name, UniformBlockBindingPoint bp) {
+	int blockIdx = getUniformBlockIndex(name);
+	if (blockIdx == -1)
+		return false;
+
+	GLCALL(glUniformBlockBinding(m_handler, blockIdx, int(bp)));
+	return true;
+}
+
+void ShaderProgram::unbindUniformBlock(const std::string& name) {
+	int blockIdx = getUniformBlockIndex(name);
+	if (blockIdx != -1)
+		GLCALL(glUniformBlockBinding(m_handler, blockIdx, 0));
 }
 
 bool ShaderProgram::parseShaderSource(std::string& vs, std::string& fs) {
@@ -221,12 +233,6 @@ void ShaderProgram::queryProgramInfo() {
 	GLint attriMaxLen = 0;
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_ATTRIBUTES, &attriCount));
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attriMaxLen));
-	
-	GLCALL(auto uvpos = glGetAttribLocation(m_handler, "a_uv"));
-	GLCALL(auto norpos = glGetAttribLocation(m_handler, "a_normal"));
-
-	GLint c = 0;
-	glGetProgramInterfaceiv(m_handler, GL_PROGRAM_INPUT, GL_ACTIVE_RESOURCES, &c);
 
 	if (attriCount > 0) {
 		GLchar* nameBuffer = new GLchar[attriMaxLen];
@@ -312,6 +318,7 @@ void ShaderProgram::queryProgramInfo() {
 			ub.uniformIndices.resize(compUniformCount);
 			GLCALL(glGetActiveUniformBlockiv(m_handler, i, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, &ub.uniformIndices[0]));
 
+			m_uniformBlocks.push_back(ub);
 		}
 		delete[] nameBuffer;
 	}
@@ -330,6 +337,17 @@ int ShaderProgram::getUniformLocation(const std::string& name) const {
 	return pos->location;
 }
 
+
+int ShaderProgram::getUniformBlockIndex(const std::string& name) const {
+	auto pos = std::find_if(m_uniformBlocks.begin(), m_uniformBlocks.end(), [&](const ShaderProgram::UniformBlock& ub) {
+		return ub.name == name;
+	});
+
+	if (pos == m_uniformBlocks.end())
+		return -1;
+	
+	return pos->index;
+}
 
 void ShaderProgram::dumpProgramInfo() const {
 	std::cout << "Shader program \"" << m_name <<"(" << m_handler << ")" << "\" info:\n" << "\tattributes: [ ";

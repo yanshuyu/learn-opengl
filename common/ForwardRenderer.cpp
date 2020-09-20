@@ -1,13 +1,15 @@
 #include"ForwardRenderer.h"
 #include"ShaderProgamMgr.h"
 #include"CameraComponent.h"
+#include"Buffer.h"
 #include"Scene.h"
 
 
 ForwardRenderer::ForwardRenderer(): RenderTechnique()
 , m_activeShader(nullptr)
 , m_currentPass(RenderPass::None)
-, m_sceneInfo() {
+, m_sceneInfo()
+, m_directionalLightUBO(nullptr) {
 
 }
 
@@ -23,10 +25,15 @@ bool ForwardRenderer::intialize() {
 	GLCALL(glCullFace(GL_BACK));
 	GLCALL(glFrontFace(GL_CCW));
 
+	m_directionalLightUBO.reset(new Buffer());
+	m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
+	m_directionalLightUBO->loadData(nullptr, sizeof(DirectionalLightBlock), Buffer::Usage::StaticDraw);
+	m_directionalLightUBO->unbind();
 
 	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new ZPassRenderTaskExecutor(RenderTaskExecutor::RendererType::Forward));
 	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(RenderTaskExecutor::RendererType::Forward));
-	
+	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(RenderTaskExecutor::RendererType::Forward));
+
 	bool ok = true;
 	for (auto& executor : m_taskExecutors) {
 		if (!executor.second->initialize()) {
@@ -43,6 +50,7 @@ bool ForwardRenderer::intialize() {
 
 
 void ForwardRenderer::cleanUp() {
+	m_directionalLightUBO.release();
 	m_taskExecutors.clear();
 }
 
@@ -97,6 +105,8 @@ void ForwardRenderer::beginDepthPass() {
 
 	m_activeShader = preZShader.get();
 	m_currentPass = RenderPass::DepthPass;
+
+
 }
 
 
@@ -121,15 +131,15 @@ void ForwardRenderer::endGeometryPass() {
 }
 
 void ForwardRenderer::beginUnlitPass() {
-	auto m_unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
-	if (!m_unlitShader)
-			m_unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/Unlit.shader");
+	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
+	if (!unlitShader)
+			unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/Unlit.shader");
 	
-	ASSERT(m_unlitShader != nullptr);
+	ASSERT(unlitShader != nullptr);
 
-	m_unlitShader->bind();
+	unlitShader->bind();
 
-	m_activeShader = m_unlitShader.get();
+	m_activeShader = unlitShader.get();
 	m_currentPass = RenderPass::UnlitPass;
 }
 
@@ -140,11 +150,34 @@ void ForwardRenderer::endUnlitPass() {
 }
 
 void ForwardRenderer::beginLightPass(const Light_t& l) {
+	GLCALL(glEnable(GL_BLEND));
+	GLCALL(glBlendFunc(GL_ONE, GL_ONE));
+	GLCALL(glBlendEquation(GL_FUNC_ADD));
+
 	m_currentPass = RenderPass::LightPass;
+	switch (l.type) {
+		case LightType::DirectioanalLight:
+			beginDirectionalLightPass(l);
+			break;
+
+		default:
+			ASSERT(false);
+			break;
+	}
 }
 
 void ForwardRenderer::endLightPass(const Light_t& l) {
-	m_currentPass = RenderPass::None;
+	switch (l.type) {
+	case LightType::DirectioanalLight:
+		endDirectionalLightPass();
+		break;
+
+	default:
+		ASSERT(false);
+		break;
+	}
+
+	GLCALL(glDisable(GL_BLEND));
 }
 
 void ForwardRenderer::beginTransparencyPass() {
@@ -164,9 +197,6 @@ void ForwardRenderer::performTask(const RenderTask_t& task) {
 	if (m_currentPass == RenderPass::None || m_currentPass == RenderPass::GeometryPass)
 		return;
 
-	if (m_currentPass == RenderPass::LightPass)
-		return;
-
 	auto taskExecutor = m_taskExecutors.find(m_currentPass);
 	
 	if (taskExecutor == m_taskExecutors.end()) {
@@ -178,4 +208,45 @@ void ForwardRenderer::performTask(const RenderTask_t& task) {
 	}
 
 	taskExecutor->second->executeTask(task, m_sceneInfo, m_activeShader);
+}
+
+
+
+void ForwardRenderer::beginDirectionalLightPass(const Light_t& l) {
+	auto directionalLightShader = ShaderProgramManager::getInstance()->getProgram("DirectionalLight");
+	if (!directionalLightShader)
+		directionalLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DirectionalLight.shader");
+	ASSERT(directionalLightShader);
+
+	directionalLightShader->bind();
+	m_activeShader = directionalLightShader.get();
+
+	// set camera position
+	if (directionalLightShader->hasUniform("u_cameraPosW")) {
+		glm::vec3 camPos = m_sceneInfo.camera.position;
+		directionalLightShader->setUniform3v("u_cameraPosW", &camPos[0]);
+	}
+
+	// set directional light block
+	if (directionalLightShader->hasUniformBlock("LightBlock")) {
+		DirectionalLightBlock dlb;
+		dlb.color = glm::vec4(glm::vec3(l.color), l.intensity);
+		dlb.inverseDiretion = -l.direction;
+		m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
+		m_directionalLightUBO->loadSubData(&dlb, 0, sizeof(dlb));
+
+		m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::DirectionalLightBlock));
+		directionalLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::DirectionalLightBlock);
+	}
+}
+
+
+void ForwardRenderer::endDirectionalLightPass() {
+	if (m_activeShader) {
+		m_activeShader->unbindUniformBlock("LightBlock");
+		m_directionalLightUBO->unbind();
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
+	m_currentPass = RenderPass::None;
 }

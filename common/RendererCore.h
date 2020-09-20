@@ -53,9 +53,12 @@ struct Camera_t {
 	glm::mat4 viewMatrix;
 	glm::mat4 projMatrix;
 	glm::vec4 backgrounColor;
+	glm::vec3 position;
 	Viewport_t viewport;
 	float near;
 	float far;
+
+	static Camera_t createDefault(float vpWidth, float vpHeight);
 };
 
 

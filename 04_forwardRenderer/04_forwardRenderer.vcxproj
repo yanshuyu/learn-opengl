@@ -225,6 +225,7 @@
     <ClInclude Include="ForwardRendererApp.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\res\shader\DirectionalLight.shader" />
     <None Include="..\res\shader\PreZDepth.shader" />
     <None Include="..\res\shader\Unlit.shader" />
   </ItemGroup>

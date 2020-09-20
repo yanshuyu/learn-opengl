@@ -2,9 +2,16 @@
 #include"RenderTechnique.h"
 #include"RenderTaskExecutor.h"
 #include<unordered_map>
+#include<memory>
 
+class Buffer;
 
 class ForwardRenderer : public RenderTechnique {
+	struct DirectionalLightBlock {
+		glm::vec4 color;
+		glm::vec3 inverseDiretion;
+	};
+
 public:
 	ForwardRenderer();
 
@@ -43,9 +50,15 @@ public:
 	void performTask(const RenderTask_t& task) override;
 
 private:
+	void beginDirectionalLightPass(const Light_t& l);
+	void endDirectionalLightPass();
+
+private:
 	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
 	SceneRenderInfo_t m_sceneInfo;
+
+	std::unique_ptr<Buffer> m_directionalLightUBO;
 	
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 };

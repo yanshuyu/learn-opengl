@@ -12,28 +12,31 @@ bool ForwardRendererApp::initailize() {
 	if (!__super::initailize())
 		return false;
 
+	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto meshMgr = MeshManager::getInstance();
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
 
+
+	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "DirectionalLight.shader");
 	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx", MeshLoadOption::LoadMaterial);
 	auto matManModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Mesh_MAT.FBX", MeshLoadOption::LoadMaterial);
 	auto cubeTexture = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "wall.jpg");
-
-	//auto glLogo = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "opengl_logo.png");
+	auto cubeMat = matMgr->addMaterial("CubeMaterial");
+	auto planeMat = matMgr->addMaterial("PlaneMaterial");
 
 	m_scene = std::make_unique<Scene>(glm::vec2(m_wndWidth, m_wndHeight), "model_loading_demo_scene");
 	m_renderer = std::unique_ptr<Renderer>(new Renderer(new ForwardRenderer()));
 
-	//m_scene->addGrid(300, 300, 10);
 
-	m_scene->addPlane(150, 150);
+	m_scene->addPlane(150, 150, planeMat);
+	planeMat->m_shininess = 0.1f;
 
-	auto cubeMat = matMgr->addMaterial("CubeMaterial");
-	cubeMat->m_diffuseMap = cubeTexture;
 
 	auto cube = m_scene->addCube(cubeMat);
 	cube->m_transform.setScale({ 4.f, 4.f, 4.f });
+	cubeMat->m_diffuseMap = cubeTexture;
+	cubeMat->m_shininess = 0.1f;
 
 	auto obj = m_scene->addObject("monster");
 	auto meshRender = MeshRenderComponent::create();
@@ -69,6 +72,9 @@ bool ForwardRendererApp::initailize() {
 
 	auto camera = m_scene->addCamera(glm::vec3(0, 4, 16));
 	camera->addComponent(FirstPersonCameraController::create());
+
+	auto dirLight =  m_scene->addDirectionalLight({ 1.f, 1.f, 1.f }, 0.8f);
+	dirLight->m_transform.setRotation({ -30.f , 30.f, 0.f });
 
 	ASSERT(m_scene->initialize());
 	ASSERT(m_renderer->initialize());

@@ -1,6 +1,6 @@
 #include"Material.h"
 
-const int Material::s_maxShininess = 50;
+const int Material::s_maxShininess = 100;
 
 Material::Material(const std::string& name) :m_name(name)
 , m_id(0)

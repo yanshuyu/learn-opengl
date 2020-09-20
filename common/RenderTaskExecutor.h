@@ -1,8 +1,11 @@
 #pragma once
 #include"RendererCore.h"
-#include"ShaderProgram.h"
 #include<functional>
+#include<memory>
 
+
+class Buffer;
+class ShaderProgram;
 
 class RenderTaskExecutor {
 public:
@@ -44,4 +47,22 @@ class UlitPassRenderTaskExecutror : public RenderTaskExecutor {
 public:
 	UlitPassRenderTaskExecutror(RendererType rt);
 	void executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) override;
+};
+
+
+class LightPassRenderTaskExecuter : public RenderTaskExecutor {
+	struct  MaterialBlock {
+		glm::vec4 diffuseFactor;
+		glm::vec4 specularFactor;
+		glm::vec3 emissiveColor;
+	};
+
+public:
+	LightPassRenderTaskExecuter(RendererType rt);
+	bool initialize() override;
+	void executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) override;
+	void release() override;
+
+private:
+	std::unique_ptr<Buffer> m_materialUBO;
 };

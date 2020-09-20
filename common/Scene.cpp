@@ -65,6 +65,9 @@ SceneRenderInfo_t Scene::gatherSceneRenderInfo() {
 		return true;
 	});
 
+	if (!foundCamera)
+		sri.camera = Camera_t::createDefault(m_windowSize.x, m_windowSize.y);
+
 	return sri;
 }
 
@@ -87,33 +90,16 @@ void Scene::addObject(std::unique_ptr<SceneObject>&& object) {
 	m_rootObject->addChild(std::move(object));
 }
 
-SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r) {
+SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm::vec3& bgColor) {
 	SceneObject* camera = addObject("Camera");
 	CameraComponent* cameraComp = new CameraComponent(m_windowSize.x, m_windowSize.y);
 	camera->addComponent(cameraComp);
 	camera->m_transform.setPosition(p);
 	camera->m_transform.setRotation(r);
-	cameraComp->m_backGroundColor = { 0.25f, 0.332f, 0.13f, 1.0f };
+	cameraComp->m_backGroundColor = glm::vec4(bgColor, 1.f);
 	
 	return camera;
 }
-
-
-CameraComponent* Scene::getCamera() const {
-	CameraComponent* cameraComp = nullptr;
-	breathFirstVisit([&](const SceneObject* obj, bool& stop) {
-		if (auto c = obj->findComponent(CameraComponent::s_identifier)) {
-			if (c->m_isEnable) {
-				cameraComp = static_cast<CameraComponent*>(c);
-				stop = true;
-				return false;
-			}
-		}
-		return true;
-	});
-	return cameraComp;
-}
-
 
 SceneObject* Scene::addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat) {
 	SceneObject* grid = addObject("Grid");

@@ -33,8 +33,7 @@ public:
 	SceneObject* addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addPlane(float w, float d, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addCube(std::shared_ptr<Material> mat = nullptr);
-	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f));
-	CameraComponent* getCamera() const;
+	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f), const glm::vec3& bgColor = glm::vec3(0.f));
 
 	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f);
 	SceneObject* addPointLight(const glm::vec3& color, float range = 50, float intensity = 1.f);

@@ -34,6 +34,15 @@ public:
 		std::vector<int> uniformIndices;
 	};
 
+
+	enum class UniformBlockBindingPoint {
+		Unknown,
+		MaterialBlock,
+		DirectionalLightBlock,
+		PointLightBlock,
+		SpotLightBlock,
+	};
+
 public:
 	ShaderProgram(const std::string& name, const std::string& file);
 	~ShaderProgram();
@@ -59,6 +68,9 @@ public:
 
 	void bind() const;
 	void unbind() const;
+
+	bool bindUniformBlock(const std::string& name, UniformBlockBindingPoint bp);
+	void unbindUniformBlock(const std::string& name);
 
 	template<typename T>
 	bool setUniform1(const std::string& name, T t1) const;;
@@ -93,6 +105,7 @@ protected:
 	bool parseShaderSource(std::string& vs, std::string& fs);
 	void queryProgramInfo();
 	int getUniformLocation(const std::string& name) const;
+	int getUniformBlockIndex(const std::string& name) const;
 
 protected:
 	GLuint m_handler;

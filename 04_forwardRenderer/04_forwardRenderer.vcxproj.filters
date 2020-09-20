@@ -247,5 +247,8 @@
     <None Include="..\res\shader\PreZDepth.shader">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\DirectionalLight.shader">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

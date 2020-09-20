@@ -10,6 +10,7 @@ public:
 		Defualt,
 		DiffuseMap,
 		NormalMap,
+		EmissiveMap,
 		CubeMap,
 		MaxUnit,
 	};

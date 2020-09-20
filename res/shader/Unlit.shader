@@ -4,14 +4,14 @@
 layout(location = 0) in vec3 a_pos;
 layout(location = 4) in vec2 a_uv;
 
-layout(location = 0) uniform mat4 u_mvp;
+layout(location = 0) uniform mat4 u_MVP;
 
 out vec2 f_uv;
 
 invariant gl_Position;
 
 void main() {
-	gl_Position = u_mvp * vec4(a_pos, 1.0);
+	gl_Position = u_MVP * vec4(a_pos, 1.0);
 	f_uv = a_uv;
 }
 
