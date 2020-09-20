@@ -9,7 +9,9 @@ ForwardRenderer::ForwardRenderer(): RenderTechnique()
 , m_activeShader(nullptr)
 , m_currentPass(RenderPass::None)
 , m_sceneInfo()
-, m_directionalLightUBO(nullptr) {
+, m_directionalLightUBO(nullptr)
+, m_pointLightUBO(nullptr)
+, m_spotLightUBO(nullptr) {
 
 }
 
@@ -29,6 +31,16 @@ bool ForwardRenderer::intialize() {
 	m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
 	m_directionalLightUBO->loadData(nullptr, sizeof(DirectionalLightBlock), Buffer::Usage::StaticDraw);
 	m_directionalLightUBO->unbind();
+
+	m_pointLightUBO.reset(new Buffer());
+	m_pointLightUBO->bind(Buffer::Target::UniformBuffer);
+	m_pointLightUBO->loadData(nullptr, sizeof(PointLightBlock), Buffer::Usage::StaticDraw);
+	m_pointLightUBO->unbind();
+
+	m_spotLightUBO.reset(new Buffer());
+	m_spotLightUBO->bind(Buffer::Target::UniformBuffer);
+	m_spotLightUBO->loadData(nullptr, sizeof(SpotLightBlock), Buffer::Usage::StaticDraw);
+	m_spotLightUBO->unbind();
 
 	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new ZPassRenderTaskExecutor(RenderTaskExecutor::RendererType::Forward));
 	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(RenderTaskExecutor::RendererType::Forward));
@@ -51,6 +63,8 @@ bool ForwardRenderer::intialize() {
 
 void ForwardRenderer::cleanUp() {
 	m_directionalLightUBO.release();
+	m_pointLightUBO.release();
+	m_spotLightUBO->release();
 	m_taskExecutors.clear();
 }
 
@@ -160,6 +174,14 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			beginDirectionalLightPass(l);
 			break;
 
+		case LightType::PointLight:
+			beginPointLightPass(l);
+			break;
+
+		case LightType::SpotLight:
+			beginSpotLightPass(l);
+			break;
+
 		default:
 			ASSERT(false);
 			break;
@@ -170,6 +192,14 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	switch (l.type) {
 	case LightType::DirectioanalLight:
 		endDirectionalLightPass();
+		break;
+
+	case LightType::PointLight:
+		endPointLightPass();
+		break;
+	
+	case LightType::SpotLight:
+		endSpotLightPass();
 		break;
 
 	default:
@@ -235,8 +265,8 @@ void ForwardRenderer::beginDirectionalLightPass(const Light_t& l) {
 		m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
 		m_directionalLightUBO->loadSubData(&dlb, 0, sizeof(dlb));
 
-		m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::DirectionalLightBlock));
-		directionalLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::DirectionalLightBlock);
+		m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
+		directionalLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 	}
 }
 
@@ -249,4 +279,91 @@ void ForwardRenderer::endDirectionalLightPass() {
 		m_activeShader = nullptr;
 	}
 	m_currentPass = RenderPass::None;
+}
+
+
+
+void ForwardRenderer::beginPointLightPass(const Light_t& l) {
+	auto pointLightShader = ShaderProgramManager::getInstance()->getProgram("PointLight");
+	if (!pointLightShader)
+		pointLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/PointLight.shader");
+	ASSERT(pointLightShader);
+
+	pointLightShader->bind();
+	m_activeShader = pointLightShader.get();
+
+	// set camera position
+	if (pointLightShader->hasUniform("u_cameraPosW")) {
+		glm::vec3 camPos = m_sceneInfo.camera.position;
+		pointLightShader->setUniform3v("u_cameraPosW", &camPos[0]);
+	}
+
+	// set point light block
+	if (pointLightShader->hasUniformBlock("LightBlock")) {
+		PointLightBlock plb;
+		plb.position = glm::vec4(l.position, l.range);
+		plb.color = glm::vec4(l.color, l.intensity);
+
+		m_pointLightUBO->bind(Buffer::Target::UniformBuffer);
+		m_pointLightUBO->loadSubData(&plb, 0, sizeof(plb));
+		m_pointLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
+		pointLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+	}
+}
+
+
+void ForwardRenderer::endPointLightPass() {
+	if (m_activeShader) {
+		m_activeShader->unbindUniformBlock("LightBlock");
+		m_pointLightUBO->unbind();
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
+	m_currentPass = RenderPass::None;
+}
+
+
+void ForwardRenderer::beginSpotLightPass(const Light_t& l) {
+	auto spotLightShader = ShaderProgramManager::getInstance()->getProgram("SpotLight");
+	if (!spotLightShader)
+		spotLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/SpotLight.shader");
+	ASSERT(spotLightShader);
+
+	spotLightShader->bind();
+	m_activeShader = spotLightShader.get();
+
+	// set camera position
+	if (spotLightShader->hasUniform("u_cameraPosW")) {
+		glm::vec3 camPos = m_sceneInfo.camera.position;
+		spotLightShader->setUniform3v("u_cameraPosW", &camPos[0]);
+	}
+
+
+	// set spot light block
+	if (spotLightShader->hasUniformBlock("LightBlock")) {
+		SpotLightBlock slb;
+		slb.position = glm::vec4(l.position, l.range);
+		slb.color = glm::vec4(l.color, l.intensity);
+		slb.inverseDirection = -l.direction;
+		slb.angles = glm::vec2(glm::radians(l.innerCone), glm::radians(l.outterCone));
+		
+		m_spotLightUBO->bind(Buffer::Target::UniformBuffer);
+		m_spotLightUBO->loadSubData(&slb, 0, sizeof(slb));
+		m_spotLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
+		spotLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+	}
+
+}
+
+
+void ForwardRenderer::endSpotLightPass() {
+	if (m_activeShader) {
+		m_activeShader->unbindUniformBlock("LightBlock");
+		m_spotLightUBO->unbind();
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
+
+	m_currentPass = RenderPass::None;
+
 }

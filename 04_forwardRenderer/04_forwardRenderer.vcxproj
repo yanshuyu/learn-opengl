@@ -226,7 +226,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\DirectionalLight.shader" />
+    <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PreZDepth.shader" />
+    <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\Unlit.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

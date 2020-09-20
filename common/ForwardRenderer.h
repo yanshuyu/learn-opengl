@@ -12,6 +12,18 @@ class ForwardRenderer : public RenderTechnique {
 		glm::vec3 inverseDiretion;
 	};
 
+	struct PointLightBlock {
+		glm::vec4 position;
+		glm::vec4 color;
+	};
+
+	struct SpotLightBlock {
+		glm::vec4 position;
+		glm::vec4 color;
+		glm::vec3 inverseDirection;
+		glm::vec2 angles;
+	};
+
 public:
 	ForwardRenderer();
 
@@ -53,12 +65,20 @@ private:
 	void beginDirectionalLightPass(const Light_t& l);
 	void endDirectionalLightPass();
 
+	void beginPointLightPass(const Light_t& l);
+	void endPointLightPass();
+
+	void beginSpotLightPass(const Light_t& l);
+	void endSpotLightPass();
+
 private:
 	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
 	SceneRenderInfo_t m_sceneInfo;
 
 	std::unique_ptr<Buffer> m_directionalLightUBO;
+	std::unique_ptr<Buffer> m_pointLightUBO;
+	std::unique_ptr<Buffer> m_spotLightUBO;
 	
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 };

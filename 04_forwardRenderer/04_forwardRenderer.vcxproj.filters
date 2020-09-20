@@ -250,5 +250,11 @@
     <None Include="..\res\shader\DirectionalLight.shader">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\PointLight.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\SpotLight.shader">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

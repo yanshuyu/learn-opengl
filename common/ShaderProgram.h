@@ -38,9 +38,7 @@ public:
 	enum class UniformBlockBindingPoint {
 		Unknown,
 		MaterialBlock,
-		DirectionalLightBlock,
-		PointLightBlock,
-		SpotLightBlock,
+		LightBlock,
 	};
 
 public:
