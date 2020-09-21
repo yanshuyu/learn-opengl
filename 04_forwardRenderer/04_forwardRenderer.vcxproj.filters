@@ -129,6 +129,12 @@
     <ClCompile Include="..\common\RenderTaskExecutor.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\FrameBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Buffer.h">
@@ -237,6 +243,12 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\RenderTaskExecutor.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FrameBuffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderBuffer.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

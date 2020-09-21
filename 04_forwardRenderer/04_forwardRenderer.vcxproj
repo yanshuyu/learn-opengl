@@ -156,6 +156,7 @@
     <ClCompile Include="..\common\Exceptions.cpp" />
     <ClCompile Include="..\common\FirstPersonCameraController.cpp" />
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
+    <ClCompile Include="..\common\FrameBuffer.cpp" />
     <ClCompile Include="..\common\GLApplication.cpp" />
     <ClCompile Include="..\common\InputMgr.cpp" />
     <ClCompile Include="..\common\LightComponent.cpp" />
@@ -167,6 +168,7 @@
     <ClCompile Include="..\common\MeshRenderComponent.cpp" />
     <ClCompile Include="..\common\NoticificationCenter.cpp" />
     <ClCompile Include="..\common\Notification.cpp" />
+    <ClCompile Include="..\common\RenderBuffer.cpp" />
     <ClCompile Include="..\common\Renderer.cpp" />
     <ClCompile Include="..\common\RendererCore.cpp" />
     <ClCompile Include="..\common\RenderTaskExecutor.cpp" />
@@ -194,6 +196,7 @@
     <ClInclude Include="..\common\Exceptions.h" />
     <ClInclude Include="..\common\FirstPersonCameraController.h" />
     <ClInclude Include="..\common\ForwardRenderer.h" />
+    <ClInclude Include="..\common\FrameBuffer.h" />
     <ClInclude Include="..\common\GLApplication.h" />
     <ClInclude Include="..\common\InputMgr.h" />
     <ClInclude Include="..\common\LightComponent.h" />
@@ -206,6 +209,7 @@
     <ClInclude Include="..\common\Notification.h" />
     <ClInclude Include="..\common\NotificationCenter.h" />
     <ClInclude Include="..\common\pch.h" />
+    <ClInclude Include="..\common\RenderBuffer.h" />
     <ClInclude Include="..\common\Renderer.h" />
     <ClInclude Include="..\common\RendererCore.h" />
     <ClInclude Include="..\common\RenderTaskExecutor.h" />
