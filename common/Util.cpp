@@ -18,22 +18,20 @@ bool GLCheckError() {
 	return !hasError;
 }
 
-bool ExtractFileNameFromPath(const std::string& path, std::string& name, bool includeExt) {
+std::string ExtractFileNameFromPath(const std::string& path, bool includeExt) {
 	auto fst = path.find_last_of("\\");
 	if (fst == std::string::npos)
 		fst = path.find_last_of("/");
-	if (fst == std::string::npos)
-		return false;
+	
+	fst = fst == std::string::npos ? 0 : fst + 1;
 
 	auto last = path.length();
-	if (!includeExt)
-		last = path.find_last_of(".");
-	if (last == std::string::npos)
-		return false;
+	if (!includeExt) {
+		auto dot_pos = path.find_last_of(".");
+		last = dot_pos == std::string::npos ? last : dot_pos;
+	}
 
-	name = path.substr(++fst, last - fst);
-	
-	return true;
+	return path.substr(fst, last - fst);
 }
 
 void ConsoleLog(const char* file, const char* func, int line, const std::string& msg){

@@ -23,6 +23,7 @@ bool ForwardRendererApp::initailize() {
 	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "Spotlight.shader");
 	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx", MeshLoadOption::LoadMaterial);
 	auto matManModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Mesh_MAT.FBX", MeshLoadOption::LoadMaterial);
+	auto backPackModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "backpack.obj", MeshLoadOption::LoadMaterial);
 	auto cubeTexture = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "wall.jpg");
 	auto cubeMat = matMgr->addMaterial("CubeMaterial");
 	auto planeMat = matMgr->addMaterial("PlaneMaterial");
@@ -51,6 +52,17 @@ bool ForwardRendererApp::initailize() {
 	obj->m_transform.setPosition({ -15.f, 0.f, 0.f });
 	//obj->m_isVisible = false;
 
+	obj = m_scene->addObject("backPack");
+	meshRender = MeshRenderComponent::create();
+	meshRender->setMeshes(backPackModel);
+	if (!obj->addComponent(meshRender)) {
+		MeshRenderComponent::destory(meshRender);
+		ASSERT(false);
+	}
+	obj->m_transform.setPosition({ 0.f, 5.f, 15.f });
+	obj->m_transform.setScale({ 2.f, 2.f, 2.f });
+
+
 	obj = m_scene->addObject("materialMan");
 	meshRender = MeshRenderComponent::create();
 	meshRender->setMeshes(matManModel);
@@ -75,15 +87,15 @@ bool ForwardRendererApp::initailize() {
 	auto camera = m_scene->addCamera(glm::vec3(0, 4, 16));
 	camera->addComponent(FirstPersonCameraController::create());
 
-	//auto dirLight =  m_scene->addDirectionalLight({ 0.9f, 0.33f, 0.2f }, 0.4f);
-	//dirLight->m_transform.setRotation({ -30.f , 30.f, 0.f });
+	auto dirLight =  m_scene->addDirectionalLight({ 0.9f, 0.33f, 0.2f }, 0.4f);
+	dirLight->m_transform.setRotation({ -30.f , 30.f, 0.f });
 
 	auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 1.f }, 80, 0.8f);
 	pointLight->m_transform.setPosition({ 0.f, 35.f, 25.f });
 
-	//auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 1.f }, 30.f, 60.f, 40.f, 0.8f);
-	//spotLight->m_transform.setPosition({ 0.f, 20.f, 0.f });
-	//spotLight->m_transform.setRotation({ -90.f, 0.f, 0.f });
+	auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 1.f }, 30.f, 60.f, 40.f, 0.8f);
+	spotLight->m_transform.setPosition({ 0.f, 20.f, 0.f });
+	spotLight->m_transform.setRotation({ -90.f, 0.f, 0.f });
 
 	ASSERT(m_scene->initialize());
 	ASSERT(m_renderer->initialize());

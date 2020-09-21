@@ -21,5 +21,5 @@ typedef unsigned long ID;
 
 void ConsoleLog(const char* file, const char* func, int line, const std::string& msg);
 
-bool ExtractFileNameFromPath(const std::string& path, std::string& name, bool includeExt = true);
+std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = true);
 

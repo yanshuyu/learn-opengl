@@ -71,6 +71,7 @@ public:
 private:
 	void loadGeometry(const aiMesh* aMesh, std::vector<Vertex_t>& vertices, std::vector<Index_t>& indices, PrimitiveType& pt);
 	std::shared_ptr<Material> loadMaterial(const aiScene* aScene, const aiMesh* aMesh);
+	std::shared_ptr<Texture> loadTexture(const std::string& name);
 
 private:
 	std::vector<std::unique_ptr<Mesh>> m_meshes;

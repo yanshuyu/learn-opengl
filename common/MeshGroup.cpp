@@ -173,8 +173,12 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 
 	bool hasDiffuseMap = false;
 	bool hasNormalMap = false;
+	bool hasEmissiveMap = false;
+	bool hasSpecularMap = false;
 	std::string diffuseTextureName;
 	std::string normalTextureName;
+	std::string specularTextureName;
+	std::string emissiveTextureName;
 
 	const aiMaterial* aMat = aScene->mMaterials[aMesh->mMaterialIndex];
 	aMat->Get(AI_MATKEY_COLOR_DIFFUSE, aiDiffuseColor);
@@ -187,16 +191,29 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 	if (aMat->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 		aiString path;
 		aMat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-		diffuseTextureName.assign(path.C_Str());
-		hasDiffuseMap = ExtractFileNameFromPath(diffuseTextureName, diffuseTextureName);
+		diffuseTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasDiffuseMap = !diffuseTextureName.empty();
 	}
 
 	if (aMat->GetTextureCount(aiTextureType_NORMALS) > 0) {
-		hasNormalMap = true;
 		aiString path;
 		aMat->GetTexture(aiTextureType_NORMALS, 0, &path);
-		normalTextureName.assign(path.C_Str());
-		hasNormalMap = ExtractFileNameFromPath(normalTextureName, normalTextureName);
+		normalTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasNormalMap = !normalTextureName.empty();
+	}
+
+	if (aMat->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_SPECULAR, 0, &path);
+		specularTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasSpecularMap = !specularTextureName.empty();
+	}
+
+	if (aMat->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_EMISSIVE, 0, &path);
+		emissiveTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasEmissiveMap = !emissiveTextureName.empty();
 	}
 
 	auto mat = std::make_shared<Material>();
@@ -207,11 +224,8 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 	mat->m_shininess = aiShininess;
 	mat->setName(m_name + "_" + aMesh->mName.C_Str() + "_" + aiName.C_Str());
 	if (hasDiffuseMap) {
-		auto textureMgr = TextureManager::getInstance();
-		auto diffuseMap = textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + diffuseTextureName, diffuseTextureName);
-		mat->m_diffuseMap = diffuseMap;
-
-		if (!diffuseMap) {
+		mat->m_diffuseMap = loadTexture(diffuseTextureName);
+		if (!mat->m_diffuseMap) {
 #ifdef _DEBUG	
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
@@ -222,10 +236,8 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 		}
 	}
 	if (hasNormalMap) {
-		auto textureMgr = TextureManager::getInstance();
-		auto normalMap = textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + normalTextureName, normalTextureName);
-		mat->m_normalMap = normalMap;
-		if (!normalMap) {
+		mat->m_normalMap = loadTexture(normalTextureName);
+		if (!mat->m_normalMap) {
 #ifdef _DEBUG
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
@@ -235,8 +247,43 @@ std::shared_ptr<Material> MeshGroup::loadMaterial(const aiScene* aScene, const a
 
 		}
 	}
+	if (hasSpecularMap) {
+		mat->m_specularMap = loadTexture(specularTextureName);
+			if (!mat->m_specularMap) {
+#ifdef _DEBUG
+				std::string msg;
+				msg += "[Material Load error] Failed to load texture: ";
+				msg += (mat->getName() + "_" + specularTextureName);
+				CONSOLELOG(msg);
+#endif // _DEBUG
+
+			}
+	}
+	if (hasEmissiveMap) {
+		mat->m_emissiveMap = loadTexture(emissiveTextureName);
+			if (!mat->m_emissiveMap) {
+#ifdef _DEBUG
+				std::string msg;
+				msg += "[Material Load error] Failed to load texture: ";
+				msg += (mat->getName() + "_" + emissiveTextureName);
+				CONSOLELOG(msg);
+#endif // _DEBUG
+
+			}
+	}
 
 	return mat;
+}
+
+
+std::shared_ptr<Texture> MeshGroup::loadTexture(const std::string& name) {
+	auto textureMgr = TextureManager::getInstance();
+	auto loadedTex = textureMgr->getTexture(name);
+	
+	if (loadedTex != nullptr)
+		return loadedTex;
+
+	return textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + name, name);
 }
 
 

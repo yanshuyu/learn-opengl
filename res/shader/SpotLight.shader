@@ -39,10 +39,17 @@ in vec2 f_uv;
 layout(location = 2) uniform sampler2D u_diffuseMap;
 layout(location = 3) uniform bool u_hasDiffuseMap;
 
-layout(location = 4) uniform sampler2D u_emissiveMap;
-layout(location = 5) uniform bool u_hasEmissiveMap;
+layout(location = 4) uniform sampler2D u_normalMap;
+layout(location = 5) uniform bool u_hasNormalMap;
 
-layout(location = 6) uniform vec3 u_cameraPosW;
+layout(location = 6) uniform sampler2D u_specularMap;
+layout(location = 7) uniform bool u_hasSpecularMap;
+
+layout(location = 8) uniform sampler2D u_emissiveMap;
+layout(location = 9) uniform bool u_hasEmissiveMap;
+
+
+layout(location = 10) uniform vec3 u_cameraPosW;
 
 
 layout(std140) uniform LightBlock{
@@ -61,7 +68,7 @@ layout(std140) uniform MatrialBlock{
 
 
 
-vec4 calcSpotLight(in vec3 diffuseTexColor, in vec3 emissiveTexColor) {
+vec4 calcSpotLight(in vec3 diffuseTexColor, in vec3 specularTexColor, in vec3 emissiveTexColor) {
 	// diffuse
 	vec3 toLight = normalize(u_toLight);
 	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance(u_lightPos.xyz, pos_W));
@@ -73,7 +80,7 @@ vec4 calcSpotLight(in vec3 diffuseTexColor, in vec3 emissiveTexColor) {
 	//specular
 	vec3 toView = normalize(u_cameraPosW - pos_W);
 	float dotV = clamp(dot(normalize(toLight + toView), normalize(normal_W)), 0.f, 1.f);
-	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * u_lightColor.a * pow(dotV, u_specularFactor.a) * rangeAtten * angleAtten;
+	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * specularTexColor * u_lightColor.a * pow(dotV, u_specularFactor.a) * rangeAtten * angleAtten;
 
 	// emissive
 	vec3 emissive = emissiveTexColor * u_emissiveColor;
@@ -87,6 +94,7 @@ out vec4 frag_color;
 
 void main() {
 	vec3 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, f_uv).rgb : vec3(1.f);
+	vec3 specTexColor = u_hasSpecularMap ? texture(u_specularMap, f_uv).rgb : vec3(1.f);
 	vec3 emissiveTexColor = u_hasEmissiveMap ? texture(u_emissiveMap, f_uv).rgb : vec3(0.f);
-	frag_color = calcSpotLight(diffuseTexColor, emissiveTexColor);
+	frag_color = calcSpotLight(diffuseTexColor, specTexColor, emissiveTexColor);
 }

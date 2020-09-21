@@ -13,8 +13,9 @@
 std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLoadOption options, const std::string& name) {
 	std::string modelName(name);
 	if (modelName.empty())
-		if (!ExtractFileNameFromPath(file, modelName))
-			modelName = file;
+		modelName = ExtractFileNameFromPath(file);
+	if (modelName.empty())
+		modelName = file;
 
 	Assimp::Importer importer;
 	auto scene = importer.ReadFile(file, aiProcessPreset_TargetRealtime_Quality);

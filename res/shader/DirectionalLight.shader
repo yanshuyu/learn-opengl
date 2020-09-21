@@ -38,10 +38,18 @@ in vec2 f_uv;
 layout(location = 2) uniform sampler2D u_diffuseMap;
 layout(location = 3) uniform bool u_hasDiffuseMap;
 
-layout(location = 4) uniform sampler2D u_emissiveMap;
-layout(location = 5) uniform bool u_hasEmissiveMap;
+layout(location = 4) uniform sampler2D u_normalMap;
+layout(location = 5) uniform bool u_hasNormalMap;
 
-layout(location = 6) uniform vec3 u_cameraPosW;
+layout(location = 6) uniform sampler2D u_specularMap;
+layout(location = 7) uniform bool u_hasSpecularMap;
+
+layout(location = 8) uniform sampler2D u_emissiveMap;
+layout(location = 9) uniform bool u_hasEmissiveMap;
+
+
+layout(location = 10) uniform vec3 u_cameraPosW;
+
 
 layout(std140) uniform LightBlock {
 	vec4 u_lightColor; //(a for intensity)
@@ -58,14 +66,14 @@ layout(std140) uniform MatrialBlock {
 out vec4 frag_color;
 
 
-vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 emissiveTexColor) {
+vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 specluarTexColor, in vec3 emissiveTexColor) {
 	// diffuse
 	float dotL = clamp(dot(normalize(u_toLight), normalize(normal_W)), 0.f, 1.f);
 	vec3 diffuse = u_lightColor.rgb * u_diffuseFactor.rgb * diffuseTexColor * u_lightColor.a * dotL;
 
 	// specular
 	float dotV = clamp(dot(normalize(normalize(u_cameraPosW - pos_W) + normalize(u_toLight)), normalize(normal_W)), 0.f, 1.f);
-	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * u_lightColor.a * pow(dotV, u_specularFactor.a);
+	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * specluarTexColor * u_lightColor.a * pow(dotV, u_specularFactor.a);
 
 	// emissive
 	vec3 emissive = u_emissiveColor * emissiveTexColor;
@@ -76,9 +84,10 @@ vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 emissiveTexColor) {
 
 void main() {
 	vec3 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, f_uv).rgb : vec3(1.f);
+	vec3 specularTexColor = u_hasSpecularMap ? texture(u_specularMap, f_uv).rgb : vec3(1.f);
 	vec3 emissiveTexColor = u_hasEmissiveMap ? texture(u_emissiveMap, f_uv).rgb : vec3(0.f);
 	
-	frag_color = calcDirectionalLight(diffuseTexColor, emissiveTexColor);
+	frag_color = calcDirectionalLight(diffuseTexColor, specularTexColor, emissiveTexColor);
 }
 
 

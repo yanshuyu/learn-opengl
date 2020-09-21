@@ -23,6 +23,10 @@ public:
 		return m_diffuseMap != nullptr;
 	}
 
+	inline bool hasSpecularTexture() const {
+		return m_specularMap != nullptr;
+	}
+
 	inline bool hasNormalTexture() const {
 		return m_normalMap != nullptr;
 	}
@@ -51,8 +55,9 @@ public:
 	float m_shininess;
 	float m_ambientAbsorb;
 	std::shared_ptr<Texture> m_diffuseMap;
-	std::shared_ptr<Texture> m_normalMap;
+	std::shared_ptr<Texture> m_specularMap;
 	std::shared_ptr<Texture> m_emissiveMap;
+	std::shared_ptr<Texture> m_normalMap;
 
 protected:
 	ID m_id;

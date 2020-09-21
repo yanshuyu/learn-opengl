@@ -170,6 +170,24 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, co
 			}
 		}
 
+		if (shader->hasUniform("u_normalMap")) {
+			int hasNormalMap = renderTask.material->hasNormalTexture();
+			shader->setUniform1("u_hasNormalMap", hasNormalMap);
+			if (hasNormalMap) {
+				renderTask.material->m_normalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+				shader->setUniform1("u_normalMap", int(Texture::Unit::NormalMap));
+			}
+		}
+
+		if (shader->hasUniform("u_specularMap")) {
+			int hasSpecMap = renderTask.material->hasSpecularTexture();
+			shader->setUniform1("u_hasSpecularMap", hasSpecMap);
+			if (hasSpecMap) {
+				renderTask.material->m_specularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+				shader->setUniform1("u_specularMap", int(Texture::Unit::SpecularMap));
+			}
+		}
+
 		if (shader->hasUniform("u_emissiveMap")) {
 			int hasEmissiveMap = renderTask.material->hasEmissiveTexture();
 			shader->setUniform1("u_hasEmissiveMap", hasEmissiveMap);

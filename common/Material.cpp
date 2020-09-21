@@ -11,8 +11,9 @@ Material::Material(const std::string& name) :m_name(name)
 , m_shininess(0.5)
 , m_ambientAbsorb(0)
 , m_diffuseMap(nullptr)
-, m_normalMap(nullptr)
-, m_emissiveMap(nullptr){
+, m_specularMap(nullptr)
+, m_emissiveMap(nullptr)
+, m_normalMap(nullptr) {
 	m_id = reinterpret_cast<ID>(this);
 }
 
@@ -23,6 +24,7 @@ Material::Material(Material&& rv)noexcept : m_diffuseColor(std::move(rv.m_diffus
 , m_shininess(std::move(rv.m_shininess))
 , m_ambientAbsorb(std::move(rv.m_ambientAbsorb))
 , m_diffuseMap(std::move(rv.m_diffuseMap))
+, m_specularMap(std::move(rv.m_specularMap))
 , m_normalMap(std::move(rv.m_normalMap))
 , m_emissiveMap(std::move(rv.m_emissiveMap))
 , m_id(0){
@@ -38,6 +40,7 @@ Material::Material(const Material& other) {
 	m_shininess = other.m_shininess;
 	m_ambientAbsorb = other.m_ambientAbsorb;
 	m_diffuseMap = other.m_diffuseMap;
+	m_specularMap = other.m_specularMap;
 	m_normalMap = other.m_normalMap;
 	m_emissiveMap = other.m_emissiveMap;
 	m_id = reinterpret_cast<ID>(this);
@@ -52,6 +55,7 @@ Material& Material::operator = (Material&& rv) noexcept {
 	m_shininess = std::move(rv.m_shininess);
 	m_ambientAbsorb = std::move(rv.m_ambientAbsorb);
 	m_diffuseMap = std::move(rv.m_diffuseMap);
+	m_specularMap = std::move(rv.m_specularMap);
 	m_normalMap = std::move(rv.m_normalMap);
 	m_emissiveMap = std::move(rv.m_emissiveMap);
 	

@@ -8,8 +8,9 @@
 std::shared_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& file, const std::string& name) {
 	std::string shaderName(name);
 	if (shaderName.empty())
-		if (!ExtractFileNameFromPath(file, shaderName, false))
-			shaderName = file;
+		shaderName = ExtractFileNameFromPath(file, false);
+	if (shaderName.empty())
+		shaderName = file;
 	
 	auto program = getProgram(shaderName);
 
