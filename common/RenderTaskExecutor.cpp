@@ -3,11 +3,14 @@
 #include"Material.h"
 #include"Buffer.h"
 #include"ShaderProgram.h"
+#include"ForwardRenderer.h"
+#include"DeferredRenderer.h"
 
 
+static MaterialBlock s_materialBlock;
 
 
-RenderTaskExecutor::RenderTaskExecutor(RendererType rt) :m_rendererType(rt) {
+RenderTaskExecutor::RenderTaskExecutor(RenderTechnique* rt) :m_renderer(rt) {
 
 }
 
@@ -18,24 +21,32 @@ RenderTaskExecutor::~RenderTaskExecutor() {
 
 
 
-ZPassRenderTaskExecutor::ZPassRenderTaskExecutor(RendererType rt) :RenderTaskExecutor(rt) {
+ZPassRenderTaskExecutor::ZPassRenderTaskExecutor(RenderTechnique* rt) :RenderTaskExecutor(rt) {
 
 }
 
-void ZPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask,
-											const SceneRenderInfo_t& renderInfo,
-											ShaderProgram* shader) {
-	auto& camera = renderInfo.camera;
+void ZPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask) {
+	const SceneRenderInfo_t* sri = nullptr;
+	ShaderProgram* shader = nullptr;
+	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
+		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
+		sri = renderer->m_sceneInfo;
+		shader = renderer->m_activeShader;
+	}else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
+		auto renderer = static_cast<DeferredRenderer*>(m_renderer);
+		sri = renderer->m_sceneInfo;
+		shader = renderer->m_activeShader;
+	} else {
+		ASSERT(false);
+	}
+
+	if (!sri || !shader)
+		return;
+
+	auto& camera = sri->camera;
 	renderTask.vao->bind();
 	
-	if (m_rendererType == RendererType::Forward) {
-		// z-pass output depth test
-		if (shader->hasUniform("u_near"))
-			shader->setUniform1("u_near", camera.near);
-
-		if (shader->hasUniform("u_far"))
-			shader->setUniform1("u_far", camera.far);
-	
+	//if (m_rendererType == RendererType::Forward) {	
 		// set mvp matrix
 		if (shader->hasUniform("u_MVP")) {
 			glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
@@ -56,21 +67,19 @@ void ZPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask,
 				GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
 			}
 		}
-	}
+	//}
 }
 
 
-UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(RendererType rt) :RenderTaskExecutor(rt) {
+UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(RenderTechnique* rt) :RenderTaskExecutor(rt) {
 
 }
 
-void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask,
-												const SceneRenderInfo_t& renderInfo,
-												ShaderProgram* shader) {
-	auto& camera = renderInfo.camera;
-	renderTask.vao->bind();
-
-	if (m_rendererType == RendererType::Forward) {
+void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask) {
+	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
+		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
+		auto& camera = renderer->m_sceneInfo->camera;
+		auto shader = renderer->m_activeShader;
 		// set mvp matrix
 		if (shader->hasUniform("u_MVP")) {
 			glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
@@ -94,51 +103,60 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask,
 				shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
 			}
 		}
+	}else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
 
-		// draw
-		if (renderTask.primitive == PrimitiveType::Triangle) {
-			if (renderTask.indexCount > 0) {
-				GLCALL(glDrawElements(GL_TRIANGLES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
-			}
-			else {
-				GLCALL(glDrawArrays(GL_TRIANGLES, 0, renderTask.vertexCount));
-			}
+	}else {
+		ASSERT(false);
+	}
 
+	renderTask.vao->bind();
+
+	// draw
+	if (renderTask.primitive == PrimitiveType::Triangle) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_TRIANGLES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
 		}
-		else if (renderTask.primitive == PrimitiveType::Line) {
-			if (renderTask.indexCount > 0) {
-				GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
-			}
-			else {
-				GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
-			}
+		else {
+			GLCALL(glDrawArrays(GL_TRIANGLES, 0, renderTask.vertexCount));
+		}
+
+	}
+	else if (renderTask.primitive == PrimitiveType::Line) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
 		}
 	}
 }
 
 
 
-LightPassRenderTaskExecuter::LightPassRenderTaskExecuter(RendererType rt) : RenderTaskExecutor(rt) {
+LightPassRenderTaskExecuter::LightPassRenderTaskExecuter(RenderTechnique* rt) : RenderTaskExecutor(rt) {
 
 }
 
 bool LightPassRenderTaskExecuter::initialize() {
 	m_materialUBO.reset(new Buffer());
 	m_materialUBO->bind(Buffer::Target::UniformBuffer);
-	m_materialUBO->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::StaticDraw);
+	bool ok = m_materialUBO->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::StaticDraw);
 	m_materialUBO->unbind();
 
-	return true;
+	return ok;
 }
 
 
-void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) {
-	if (m_rendererType == RendererType::Forward) {
+void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask) {
+	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
+		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
+		auto shader = renderer->m_activeShader;
+		
 		renderTask.vao->bind();
 
 		// set matrixs
 		if (shader->hasUniform("u_MVP")) {
-			auto& camera = renderInfo.camera;
+			auto& camera = renderer->m_sceneInfo->camera;
 			glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
 			shader->setUniformMat4v("u_MVP", &mvp[0][0]);
 		}
@@ -150,12 +168,11 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, co
 
 		// set materials
 		if (shader->hasUniformBlock("MatrialBlock")) {
-			MaterialBlock matBlock;
-			matBlock.diffuseFactor = glm::vec4(renderTask.material->m_diffuseColor, renderTask.material->m_opacity);
-			matBlock.specularFactor = glm::vec4(renderTask.material->m_specularColor, renderTask.material->m_shininess * Material::s_maxShininess);
-			matBlock.emissiveColor = renderTask.material->m_emissiveColor;
+			s_materialBlock.diffuseFactor = glm::vec4(renderTask.material->m_diffuseColor, renderTask.material->m_opacity);
+			s_materialBlock.specularFactor = glm::vec4(renderTask.material->m_specularColor, renderTask.material->m_shininess * Material::s_maxShininess);
+			s_materialBlock.emissiveColor = renderTask.material->m_emissiveColor;
 			m_materialUBO->bind(Buffer::Target::UniformBuffer);
-			m_materialUBO->loadSubData(&matBlock, 0, sizeof(matBlock));
+			m_materialUBO->loadSubData(&s_materialBlock, 0, sizeof(s_materialBlock));
 			m_materialUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::MaterialBlock));
 			shader->bindUniformBlock("MatrialBlock", ShaderProgram::UniformBlockBindingPoint::MaterialBlock);
 		}
@@ -220,5 +237,112 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, co
 
 
 void LightPassRenderTaskExecuter::release() {
+	m_materialUBO->release();
+}
+
+
+
+GeometryPassRenderTaskExecutor::GeometryPassRenderTaskExecutor(RenderTechnique* rt) :RenderTaskExecutor(rt)
+, m_materialUBO(nullptr) {
+
+}
+
+bool GeometryPassRenderTaskExecutor::initialize() {
+	m_materialUBO.reset(new Buffer());
+	m_materialUBO->bind(Buffer::Target::UniformBuffer);
+	bool ok = m_materialUBO->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::StaticDraw);
+	m_materialUBO->unbind();
+
+	return ok;
+}
+
+void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask) {
+	auto renderer = static_cast<DeferredRenderer*>(m_renderer);
+	auto shader = renderer->m_activeShader;
+
+	renderTask.vao->bind();
+
+	// set matrixs
+	if (shader->hasUniform("u_MVP")) {
+		auto& camera = renderer->m_sceneInfo->camera;
+		glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
+		shader->setUniformMat4v("u_MVP", &mvp[0][0]);
+	}
+
+	if (shader->hasUniform("u_ModelMat")) {
+		glm::mat4 m = renderTask.modelMatrix;
+		shader->setUniformMat4v("u_ModelMat", &m[0][0]);
+	}
+
+	// set materials
+	if (shader->hasUniformBlock("MatrialBlock")) {
+		s_materialBlock.diffuseFactor = glm::vec4(renderTask.material->m_diffuseColor, renderTask.material->m_opacity);
+		s_materialBlock.specularFactor = glm::vec4(renderTask.material->m_specularColor, renderTask.material->m_shininess);
+		s_materialBlock.emissiveColor = renderTask.material->m_emissiveColor;
+		m_materialUBO->bind(Buffer::Target::UniformBuffer);
+		m_materialUBO->loadSubData(&s_materialBlock, 0, sizeof(s_materialBlock));
+		m_materialUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::MaterialBlock));
+		shader->bindUniformBlock("MatrialBlock", ShaderProgram::UniformBlockBindingPoint::MaterialBlock);
+	}
+
+	// set textures
+	if (shader->hasUniform("u_diffuseMap")) {
+		int hasDiffuseMap = renderTask.material->hasDiffuseTexture();
+		shader->setUniform1("u_hasDiffuseMap", hasDiffuseMap);
+		if (hasDiffuseMap) {
+			renderTask.material->m_diffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
+		}
+	}
+
+	if (shader->hasUniform("u_normalMap")) {
+		int hasNormalMap = renderTask.material->hasNormalTexture();
+		shader->setUniform1("u_hasNormalMap", hasNormalMap);
+		if (hasNormalMap) {
+			renderTask.material->m_normalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+			shader->setUniform1("u_normalMap", int(Texture::Unit::NormalMap));
+		}
+	}
+
+	if (shader->hasUniform("u_specularMap")) {
+		int hasSpecMap = renderTask.material->hasSpecularTexture();
+		shader->setUniform1("u_hasSpecularMap", hasSpecMap);
+		if (hasSpecMap) {
+			renderTask.material->m_specularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+			shader->setUniform1("u_specularMap", int(Texture::Unit::SpecularMap));
+		}
+	}
+
+	if (shader->hasUniform("u_emissiveMap")) {
+		int hasEmissiveMap = renderTask.material->hasEmissiveTexture();
+		shader->setUniform1("u_hasEmissiveMap", hasEmissiveMap);
+		if (hasEmissiveMap) {
+			renderTask.material->m_emissiveMap->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
+			shader->setUniform1("u_emissiveMap", int(Texture::Unit::EmissiveMap));
+		}
+	}
+
+	// draw
+	if (renderTask.primitive == PrimitiveType::Triangle) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_TRIANGLES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_TRIANGLES, 0, renderTask.vertexCount));
+		}
+
+	}
+	else if (renderTask.primitive == PrimitiveType::Line) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
+		}
+	}
+	
+}
+
+void GeometryPassRenderTaskExecutor::release() {
 	m_materialUBO->release();
 }

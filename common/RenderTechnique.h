@@ -1,5 +1,6 @@
 #pragma once
 #include"RendererCore.h"
+#include<string>
 
 
 class RenderTechnique {
@@ -49,6 +50,8 @@ public:
 	virtual void endTransparencyPass() = 0;
 
 	virtual RenderPass currentRenderPass() const = 0;
+	virtual std::string identifier() const = 0;
+
 
 	virtual void performTask(const RenderTask_t& task) = 0;
 

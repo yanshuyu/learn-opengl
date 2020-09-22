@@ -6,6 +6,9 @@
 #include<sstream>
 
 
+const std::string ForwardRenderer::s_identifier = "ForwardRenderer";
+
+
 ForwardRenderer::ForwardRenderer(): RenderTechnique()
 , m_activeShader(nullptr)
 , m_currentPass(RenderPass::None)
@@ -43,9 +46,9 @@ bool ForwardRenderer::intialize() {
 	m_spotLightUBO->loadData(nullptr, sizeof(SpotLightBlock), Buffer::Usage::StaticDraw);
 	m_spotLightUBO->unbind();
 
-	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new ZPassRenderTaskExecutor(RenderTaskExecutor::RendererType::Forward));
-	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(RenderTaskExecutor::RendererType::Forward));
-	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(RenderTaskExecutor::RendererType::Forward));
+	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new ZPassRenderTaskExecutor(this));
+	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(this));
+	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(this));
 
 	bool ok = true;
 	for (auto& executor : m_taskExecutors) {
@@ -226,10 +229,6 @@ void ForwardRenderer::endTransparencyPass() {
 
 }
 
-RenderTechnique::RenderPass ForwardRenderer::currentRenderPass() const {
-	return m_currentPass;
-}
-
 
 void ForwardRenderer::performTask(const RenderTask_t& task) {
 #ifdef _DEBUG
@@ -247,7 +246,7 @@ void ForwardRenderer::performTask(const RenderTask_t& task) {
 		return;
 	}
 
-	taskExecutor->second->executeTask(task, m_sceneInfo, m_activeShader);
+	taskExecutor->second->executeTask(task);
 }
 
 

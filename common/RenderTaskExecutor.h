@@ -6,61 +6,65 @@
 
 class Buffer;
 class ShaderProgram;
+class RenderTechnique;
+
+
+struct  MaterialBlock {
+	glm::vec4 diffuseFactor;
+	glm::vec4 specularFactor;
+	glm::vec3 emissiveColor;
+};
+
 
 class RenderTaskExecutor {
-public:
-	enum class RendererType {
-		Forward,
-		Deferred,
-	};
 
 public:
-	RenderTaskExecutor(RendererType rt);
+	RenderTaskExecutor(RenderTechnique* rt);
 	virtual ~RenderTaskExecutor();
 
 	virtual bool initialize() { return true; }
-	virtual void executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) = 0;
+	virtual void executeTask(const RenderTask_t& renderTask) = 0;
 	virtual void release() {};
 
-	inline void setRendererType(RendererType rt) {
-		m_rendererType = rt;
-	}
-
-	inline RendererType getRendererType() const {
-		return m_rendererType;
-	}
 
 protected:
-	RendererType m_rendererType;
+	RenderTechnique* m_renderer;
 };
 
 
 class ZPassRenderTaskExecutor: public RenderTaskExecutor {
 public:
-	ZPassRenderTaskExecutor(RendererType rt);
-	void executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) override;
+	ZPassRenderTaskExecutor(RenderTechnique* rt);
+	void executeTask(const RenderTask_t& renderTask) override;
 };
 
 
 
 class UlitPassRenderTaskExecutror : public RenderTaskExecutor {
 public:
-	UlitPassRenderTaskExecutror(RendererType rt);
-	void executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) override;
+	UlitPassRenderTaskExecutror(RenderTechnique* rt);
+	void executeTask(const RenderTask_t& renderTask) override;
 };
 
 
 class LightPassRenderTaskExecuter : public RenderTaskExecutor {
-	struct  MaterialBlock {
-		glm::vec4 diffuseFactor;
-		glm::vec4 specularFactor;
-		glm::vec3 emissiveColor;
-	};
-
 public:
-	LightPassRenderTaskExecuter(RendererType rt);
+	LightPassRenderTaskExecuter(RenderTechnique* rt);
 	bool initialize() override;
-	void executeTask(const RenderTask_t& renderTask, const SceneRenderInfo_t& renderInfo, ShaderProgram* shader) override;
+	void executeTask(const RenderTask_t& renderTask) override;
+	void release() override;
+
+private:
+	std::unique_ptr<Buffer> m_materialUBO;
+};
+
+
+class GeometryPassRenderTaskExecutor : public RenderTaskExecutor {
+public:
+	GeometryPassRenderTaskExecutor(RenderTechnique* rt);
+
+	bool initialize() override;
+	void executeTask(const RenderTask_t& renderTask) override;
 	void release() override;
 
 private:

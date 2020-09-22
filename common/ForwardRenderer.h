@@ -24,6 +24,10 @@ class ForwardRenderer : public RenderTechnique {
 		glm::vec2 angles;
 	};
 
+	friend class ZPassRenderTaskExecutor;
+	friend class UlitPassRenderTaskExecutror;
+	friend class LightPassRenderTaskExecuter;
+
 public:
 	ForwardRenderer();
 
@@ -31,6 +35,8 @@ public:
 	ForwardRenderer(ForwardRenderer&& rv) = delete;
 	ForwardRenderer& operator = (const ForwardRenderer& other) = delete;
 	ForwardRenderer& operator = (ForwardRenderer&& rv) = delete;
+
+	static const std::string s_identifier;
 
 	void clearScrren(int flags) override;
 
@@ -58,9 +64,15 @@ public:
 	void beginTransparencyPass() override;
 	void endTransparencyPass() override;
 
-	RenderPass currentRenderPass() const override;
-
 	void performTask(const RenderTask_t& task) override;
+
+	RenderPass currentRenderPass() const override {
+		return m_currentPass;
+	}
+
+	std::string identifier() const override {
+		return s_identifier;
+	}
 
 private:
 	void beginDirectionalLightPass(const Light_t& l);
