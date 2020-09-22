@@ -37,11 +37,11 @@ bool ShaderProgram::compileAndLink() {
 	CONSOLELOG(msg.str());
 #endif
 
-	std::shared_ptr<Shader> vs;
-	std::shared_ptr<Shader> fs;
+	std::unique_ptr<Shader> vs = nullptr;
+	std::unique_ptr<Shader> fs = nullptr;
 
 	if (!vsrc.empty()) {
-		vs = std::make_shared<Shader>(vsrc, Shader::Type::VertexShader);
+		vs = std::make_unique<Shader>(vsrc, Shader::Type::VertexShader);
 		if (!vs->compile()) {
 			std::stringstream msg;
 			msg << "[Shader Load error] Compile error: " << vs->getInfoLog() << std::endl;
@@ -51,7 +51,7 @@ bool ShaderProgram::compileAndLink() {
 	}
 
 	if (!fsrc.empty()) {
-		fs = std::make_shared<Shader>(fsrc, Shader::Type::FragmentShader);
+		fs = std::make_unique<Shader>(fsrc, Shader::Type::FragmentShader);
 		if (!fs->compile()) {
 			std::stringstream msg;
 			msg << "[Shader Load error] Fragment error: " << fs->getInfoLog() << std::endl;
@@ -65,10 +65,12 @@ bool ShaderProgram::compileAndLink() {
 	if (m_handler == 0)
 		return false;
 
-	if (vs)
+	if (vs) {
 		GLCALL(glAttachShader(m_handler, vs->getHandler()));
-	if (fs)
+	}
+	if (fs) {
 		GLCALL(glAttachShader(m_handler, fs->getHandler()));
+	}
 	
 	GLCALL(glLinkProgram(m_handler));
 

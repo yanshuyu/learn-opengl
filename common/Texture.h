@@ -49,7 +49,7 @@ public:
 		R8 = GL_R8,
 		R8_SNORM = GL_R8_SNORM,
 		RG8 = GL_RG8,
-		RG8__SNORM = GL_RG8_SNORM,
+		RG8_SNORM = GL_RG8_SNORM,
 		RGB8 = GL_RGB8,
 		RGB8_SNORM = GL_RGB8_SNORM,
 		RGBA8 = GL_RGBA8,
@@ -98,7 +98,7 @@ public:
 		RGB16I = GL_RGB16I,
 		RGB16UI = GL_RGB16UI,
 		RGBA16I = GL_RGBA16I,
-		RGBA18UI = GL_RGBA16UI,
+		RGBA16UI = GL_RGBA16UI,
 
 		R32I = GL_R32I,
 		R32UI = GL_R32UI,
@@ -119,6 +119,7 @@ public:
 		UInt = GL_UNSIGNED_INT,
 		HFloat = GL_HALF_FLOAT,
 		Float = GL_FLOAT,
+		UInt_24_8 = GL_UNSIGNED_INT_24_8, // depth_ stencil
 	};
 
 	enum class FilterType {
