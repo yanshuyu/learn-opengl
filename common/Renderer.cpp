@@ -32,29 +32,28 @@ void Renderer::renderScene(Scene* s) {
 	// pre-z pass
 	m_renderContext.clearMatrix();
 	m_renderTechnique->beginDepthPass();
-	s->render(&m_renderContext);
+	if(m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
 	m_renderTechnique->endDepthPass();
 
 	// G pass
 	m_renderContext.clearMatrix();
 	m_renderTechnique->beginGeometryPass();
-	s->render(&m_renderContext);
+	if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
 	m_renderTechnique->endGeometryPass();
 
 	// ulit pass
-	if (sri.lights.empty()) {
+	if (sri->lights.empty()) {
 		m_renderContext.clearMatrix();
 		m_renderTechnique->beginUnlitPass();
-		s->render(&m_renderContext);
+		if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
 		m_renderTechnique->endUnlitPass();
 
 	} else {
-
 		// light passes
-		for (const auto& l : sri.lights) {
+		for (const auto& l : sri->lights) {
 			m_renderContext.clearMatrix();
 			m_renderTechnique->beginLightPass(l);
-			s->render(&m_renderContext);
+			if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
 			m_renderTechnique->endLightPass(l);
 		}
 	}

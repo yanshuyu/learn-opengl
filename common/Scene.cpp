@@ -43,9 +43,13 @@ void Scene::update(double dt) {
 }
 
 
-SceneRenderInfo_t Scene::gatherSceneRenderInfo() {
-	SceneRenderInfo_t sri;
+SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
+	static SceneRenderInfo_t sri;
+	
 	bool foundCamera = false;
+	sri.camera = Camera_t::createDefault(m_windowSize.x, m_windowSize.y);
+	sri.lights.clear();
+
 	depthFirstVisit([&](SceneObject* obj, bool& stop) -> bool {
 		for (size_t i = 0; i < obj->componentCount(); i++) {
 			Component* comp = obj->componentAt(i);
@@ -65,10 +69,7 @@ SceneRenderInfo_t Scene::gatherSceneRenderInfo() {
 		return true;
 	});
 
-	if (!foundCamera)
-		sri.camera = Camera_t::createDefault(m_windowSize.x, m_windowSize.y);
-
-	return sri;
+	return &sri;
 }
 
 void Scene::render(RenderContext* context) {

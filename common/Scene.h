@@ -62,7 +62,7 @@ public:
 	//
 	// rendering
 	//
-	SceneRenderInfo_t gatherSceneRenderInfo();
+	SceneRenderInfo_t* gatherSceneRenderInfo() const;
 	void render(RenderContext* context);
 	
 	//

@@ -25,7 +25,8 @@ public:
 	void setClearStencil(int m);
 	void setViewPort(const Viewport_t& vp);
 
-	virtual void prepareForSceneRenderInfo(const SceneRenderInfo_t& si) = 0;
+	virtual void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) = 0;
+	virtual bool shouldVisitScene() const = 0;
 
 	virtual void clearScrren(int flags) = 0;
 

@@ -3,12 +3,13 @@
 #include"CameraComponent.h"
 #include"Buffer.h"
 #include"Scene.h"
+#include<sstream>
 
 
 ForwardRenderer::ForwardRenderer(): RenderTechnique()
 , m_activeShader(nullptr)
 , m_currentPass(RenderPass::None)
-, m_sceneInfo()
+, m_sceneInfo(nullptr)
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr) {
@@ -68,19 +69,27 @@ void ForwardRenderer::cleanUp() {
 	m_taskExecutors.clear();
 }
 
-void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t& si) {
+void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t* si) {
 	m_sceneInfo = si;
 }
 
+
+bool ForwardRenderer::shouldVisitScene() const {
+	if (m_currentPass == RenderPass::GeometryPass || m_currentPass == RenderPass::None)
+		return false;
+
+	return true;
+}
+
 void ForwardRenderer::beginFrame() {
-	auto& camera = m_sceneInfo.camera;
+	auto& camera = m_sceneInfo->camera;
 	if (camera.backgrounColor != m_clearColor)
 		setClearColor(camera.backgrounColor);
 
 	if (camera.viewport != m_viewPort)
 		setViewPort(camera.viewport);
 
-	clearScrren(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	clearScrren(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 
@@ -119,8 +128,6 @@ void ForwardRenderer::beginDepthPass() {
 
 	m_activeShader = preZShader.get();
 	m_currentPass = RenderPass::DepthPass;
-
-
 }
 
 
@@ -207,6 +214,7 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 		break;
 	}
 
+	m_currentPass = RenderPass::None;
 	GLCALL(glDisable(GL_BLEND));
 }
 
@@ -224,16 +232,18 @@ RenderTechnique::RenderPass ForwardRenderer::currentRenderPass() const {
 
 
 void ForwardRenderer::performTask(const RenderTask_t& task) {
-	if (m_currentPass == RenderPass::None || m_currentPass == RenderPass::GeometryPass)
-		return;
+#ifdef _DEBUG
+	ASSERT(m_currentPass != RenderPass::None && m_currentPass != RenderPass::GeometryPass)
+#endif // _DEBUG
 
 	auto taskExecutor = m_taskExecutors.find(m_currentPass);
-	
 	if (taskExecutor == m_taskExecutors.end()) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
-
+		std::stringstream msg;
+		msg << "renderer no task executor for pass: " << int(m_currentPass) << "\n";
+		CONSOLELOG(msg.str());
 		return;
 	}
 
@@ -253,7 +263,7 @@ void ForwardRenderer::beginDirectionalLightPass(const Light_t& l) {
 
 	// set camera position
 	if (directionalLightShader->hasUniform("u_cameraPosW")) {
-		glm::vec3 camPos = m_sceneInfo.camera.position;
+		glm::vec3 camPos = m_sceneInfo->camera.position;
 		directionalLightShader->setUniform3v("u_cameraPosW", &camPos[0]);
 	}
 
@@ -294,7 +304,7 @@ void ForwardRenderer::beginPointLightPass(const Light_t& l) {
 
 	// set camera position
 	if (pointLightShader->hasUniform("u_cameraPosW")) {
-		glm::vec3 camPos = m_sceneInfo.camera.position;
+		glm::vec3 camPos = m_sceneInfo->camera.position;
 		pointLightShader->setUniform3v("u_cameraPosW", &camPos[0]);
 	}
 
@@ -334,7 +344,7 @@ void ForwardRenderer::beginSpotLightPass(const Light_t& l) {
 
 	// set camera position
 	if (spotLightShader->hasUniform("u_cameraPosW")) {
-		glm::vec3 camPos = m_sceneInfo.camera.position;
+		glm::vec3 camPos = m_sceneInfo->camera.position;
 		spotLightShader->setUniform3v("u_cameraPosW", &camPos[0]);
 	}
 

@@ -66,6 +66,11 @@ layout(std140) uniform MatrialBlock {
 out vec4 frag_color;
 
 
+vec3 sRGB2RGB(in vec3 color) {
+	return color * color;
+}
+
+
 vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 specluarTexColor, in vec3 emissiveTexColor) {
 	// diffuse
 	float dotL = clamp(dot(normalize(u_toLight), normalize(normal_W)), 0.f, 1.f);
@@ -83,9 +88,9 @@ vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 specluarTexColor, in 
 
 
 void main() {
-	vec3 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, f_uv).rgb : vec3(1.f);
-	vec3 specularTexColor = u_hasSpecularMap ? texture(u_specularMap, f_uv).rgb : vec3(1.f);
-	vec3 emissiveTexColor = u_hasEmissiveMap ? texture(u_emissiveMap, f_uv).rgb : vec3(0.f);
+	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, f_uv).rgb) : vec3(1.f);
+	vec3 specularTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, f_uv).rgb) : vec3(1.f);
+	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, f_uv).rgb) : vec3(0.f);
 	
 	frag_color = calcDirectionalLight(diffuseTexColor, specularTexColor, emissiveTexColor);
 }

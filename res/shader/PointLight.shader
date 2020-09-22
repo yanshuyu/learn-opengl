@@ -63,8 +63,13 @@ layout(std140) uniform LightBlock{
 layout(std140) uniform MatrialBlock{
 	vec4 u_diffuseFactor; //(a for alpha)
 	vec4 u_specularFactor; // (a for shininess)
-	vec3 u_emissiveColor; // (a for embient absord)
+	vec3 u_emissiveColor;
 };
+
+
+vec3 sRGB2RGB(in vec3 color) {
+	return color * color;
+}
 
 
 vec4 calcPointLight(in vec3 diffuseTexColor, in vec3 specularTexColor , in vec3 emissiveTexColor) {
@@ -91,8 +96,8 @@ out vec4 frag_color;
 
 
 void main() {
-	vec3 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, f_uv).rgb : vec3(1.f);
-	vec3 sepcTexColor = u_hasSpecularMap ? texture(u_specularMap, f_uv).rgb : vec3(1.f);
-	vec3 emissiveTexColor = u_hasEmissiveMap ? texture(u_emissiveMap, f_uv).rgb : vec3(0.f);
+	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, f_uv).rgb) : vec3(1.f);
+	vec3 sepcTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, f_uv).rgb) : vec3(1.f);
+	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, f_uv).rgb) : vec3(0.f);
 	frag_color = calcPointLight(diffuseTexColor, sepcTexColor, emissiveTexColor);
 }

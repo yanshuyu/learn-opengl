@@ -37,7 +37,8 @@ public:
 	bool intialize() override;
 	void cleanUp() override;
 
-	void prepareForSceneRenderInfo(const SceneRenderInfo_t& si) override;
+	void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) override;
+	bool shouldVisitScene() const override;
 
 	void beginFrame() override;
 	void endFrame() override;
@@ -74,7 +75,7 @@ private:
 private:
 	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
-	SceneRenderInfo_t m_sceneInfo;
+	const SceneRenderInfo_t* m_sceneInfo;
 
 	std::unique_ptr<Buffer> m_directionalLightUBO;
 	std::unique_ptr<Buffer> m_pointLightUBO;
