@@ -13,6 +13,7 @@ public:
 		SpecularMap,
 		EmissiveMap,
 		CubeMap,
+		Position,
 		MaxUnit,
 	};
 

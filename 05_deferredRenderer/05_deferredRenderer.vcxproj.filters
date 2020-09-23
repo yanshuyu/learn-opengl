@@ -1,0 +1,293 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="main">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="dep">
+      <UniqueIdentifier>{cb8d5f8b-66ca-4429-9f37-b0122b65068d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shader">
+      <UniqueIdentifier>{66b02ee5-8093-4d82-ade8-e3e044d0f338}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\deps\src\glad.c">
+      <Filter>dep</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ArcballCameraController.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Buffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\CameraComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Component.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Exceptions.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\FirstPersonCameraController.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ForwardRenderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\FrameBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GLApplication.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\InputMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\LightComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Material.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MaterialMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Mesh.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshGroup.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshRenderComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\NoticificationCenter.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Notification.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Renderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RendererCore.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderTaskExecutor.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderTechnique.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Scene.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\SceneObject.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Shader.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ShaderProgamMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ShaderProgram.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Texture.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\TextureMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\TransformComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Util.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\VertexArray.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\VertexLayoutDescription.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="deferredRenderer_main.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="DerferredRendererApp.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\DeferredRenderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\ArcballCameraController.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Buffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\CameraComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Component.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Exceptions.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FirstPersonCameraController.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ForwardRenderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FrameBuffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GLApplication.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\InputMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\LightComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Material.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MaterialMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Mesh.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshGroup.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshRenderComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Notification.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\NotificationCenter.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pch.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderBuffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Renderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RendererCore.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderTaskExecutor.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderTechnique.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Scene.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\SceneObject.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Shader.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ShaderProgamMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ShaderProgram.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Singleton.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Texture.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TextureMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TransformComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Util.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\VertexArray.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\VertexLayoutDescription.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="DerferredRendererApp.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\DeferredRenderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\shader\DirectionalLight.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\PointLight.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\PreZDepth.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\SpotLight.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\Unlit.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\GeometryPass.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\UnlitDeferred.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\DirectionalLightDeferred.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\PointLightDeferred.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\SpotLightDeferred.shader">
+      <Filter>shader</Filter>
+    </None>
+  </ItemGroup>
+</Project>

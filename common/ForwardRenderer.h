@@ -7,29 +7,13 @@
 class Buffer;
 
 class ForwardRenderer : public RenderTechnique {
-	struct DirectionalLightBlock {
-		glm::vec4 color;
-		glm::vec3 inverseDiretion;
-	};
-
-	struct PointLightBlock {
-		glm::vec4 position;
-		glm::vec4 color;
-	};
-
-	struct SpotLightBlock {
-		glm::vec4 position;
-		glm::vec4 color;
-		glm::vec3 inverseDirection;
-		glm::vec2 angles;
-	};
-
 	friend class ZPassRenderTaskExecutor;
 	friend class UlitPassRenderTaskExecutror;
 	friend class LightPassRenderTaskExecuter;
 
 public:
 	ForwardRenderer();
+	~ForwardRenderer();
 
 	ForwardRenderer(const ForwardRenderer& other) = delete;
 	ForwardRenderer(ForwardRenderer&& rv) = delete;
@@ -65,6 +49,10 @@ public:
 	void endTransparencyPass() override;
 
 	void performTask(const RenderTask_t& task) override;
+
+	void onWindowResize(float w, float h) override {
+
+	}
 
 	RenderPass currentRenderPass() const override {
 		return m_currentPass;

@@ -3,6 +3,25 @@
 #include<string>
 
 
+struct DirectionalLightBlock {
+	glm::vec4 color;
+	glm::vec3 inverseDiretion;
+};
+
+struct PointLightBlock {
+	glm::vec4 position;
+	glm::vec4 color;
+};
+
+struct SpotLightBlock {
+	glm::vec4 position;
+	glm::vec4 color;
+	glm::vec3 inverseDirection;
+	glm::vec2 angles;
+};
+
+
+
 class RenderTechnique {
 public:
 	enum class RenderPass {
@@ -52,7 +71,7 @@ public:
 	virtual RenderPass currentRenderPass() const = 0;
 	virtual std::string identifier() const = 0;
 
-
+	virtual void onWindowResize(float w, float h) = 0;
 	virtual void performTask(const RenderTask_t& task) = 0;
 
 

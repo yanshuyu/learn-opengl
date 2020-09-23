@@ -84,7 +84,7 @@ public:
 		return m_id;
 	}
 
-	inline void setWindowSize(float w, float h) {
+	inline void onWindowReSize(float w, float h) {
 		m_windowSize = glm::vec2(w, h);
 	}
 

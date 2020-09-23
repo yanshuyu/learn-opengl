@@ -2,25 +2,90 @@
 #include"Util.h"
 #include"Scene.h"
 #include"ShaderProgamMgr.h"
+#include"ForwardRenderer.h"
+#include"DeferredRenderer.h"
 
 
-Renderer::Renderer(RenderTechnique* rt): Renderer(std::unique_ptr<RenderTechnique>(rt)) {
-
-}
-
-Renderer::Renderer(std::unique_ptr<RenderTechnique>&& rt) : m_renderTechnique(std::move(rt))
+Renderer::Renderer(float w, float h, Mode mode) : m_wndWidth(w)
+, m_wndHeight(h)
+, m_renderMode(Mode::None)
+, m_renderTechnique(nullptr)
 , m_renderContext() {
+	if (mode != Mode::None)
+		setRenderMode(mode);
 	m_renderContext.setRenderer(this);
 }
 
-
-bool Renderer::initialize() {
-	return m_renderTechnique->intialize();
+Renderer::~Renderer() {
+	clenUp();
 }
 
 
+//bool Renderer::initialize() {
+//	return __setRenderMode(m_renderMode);
+//}
+
+
 void Renderer::clenUp() {
-	m_renderTechnique->cleanUp();
+	if (m_renderTechnique) {
+		m_renderTechnique->cleanUp();
+		m_renderTechnique.release();
+		m_renderMode = Mode::None;
+	}
+}
+
+
+bool Renderer::setRenderMode(Mode mode) {
+	if (m_renderMode == mode)
+		return true;
+
+	clenUp();
+
+	if (mode == Mode::Forward) {
+		m_renderTechnique.reset(new ForwardRenderer());
+		if (!m_renderTechnique->intialize()) {
+			m_renderTechnique.release();
+			m_renderMode = Mode::None;
+			return false;
+		}
+
+		m_renderMode = mode;
+		return true;
+
+	} else if (mode == Mode::Deferred) {	
+		m_renderTechnique.reset(new DeferredRenderer(m_wndWidth, m_wndHeight));
+		if (!m_renderTechnique->intialize()) {
+			m_renderTechnique.release();
+			m_renderMode = mode;
+			return false;
+		}
+		
+		m_renderMode = mode;
+		return true;
+	}
+	
+	m_renderMode = Mode::None;
+	return true;
+}
+
+
+Renderer::Mode Renderer::getRenderMode() const {
+	return m_renderMode;
+}
+
+
+bool Renderer::isValid() const {
+	if (m_renderMode == Mode::None)
+		return false;
+
+	return m_renderTechnique != nullptr;
+}
+
+
+void Renderer::onWindowResize(float w, float h) {
+	m_wndWidth = w;
+	m_wndHeight = h;
+	m_renderTechnique->onWindowResize(w, h);
 }
 
 
@@ -60,25 +125,12 @@ void Renderer::renderScene(Scene* s) {
 
 	// transparency pass
 
-
 	m_renderTechnique->endFrame();
 }
-
 
 void Renderer::subsimtTask(const RenderTask_t& task) {
 	m_renderTechnique->performTask(task);
 }
-
-
-void Renderer::setRenderTechnique(RenderTechnique* rt) {
-	m_renderTechnique.reset(rt);
-}
-
-
-void Renderer::setRenderTechnique(std::unique_ptr<RenderTechnique>&& rt) {
-	m_renderTechnique = std::move(rt);
-}
-
 
 
 void Renderer::setViewPort(const Viewport_t& vp) {

@@ -19,6 +19,10 @@ ForwardRenderer::ForwardRenderer(): RenderTechnique()
 
 }
 
+ForwardRenderer::~ForwardRenderer() {
+	cleanUp();
+}
+
 void ForwardRenderer::clearScrren(int flags) {
 	GLCALL(glClear(flags));
 }
@@ -68,7 +72,7 @@ bool ForwardRenderer::intialize() {
 void ForwardRenderer::cleanUp() {
 	m_directionalLightUBO.release();
 	m_pointLightUBO.release();
-	m_spotLightUBO->release();
+	m_spotLightUBO.release();
 	m_taskExecutors.clear();
 }
 
@@ -193,7 +197,9 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			break;
 
 		default:
+#ifdef _DEBUG
 			ASSERT(false);
+#endif // _DEBUG
 			break;
 	}
 }
@@ -213,12 +219,15 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 		break;
 
 	default:
+#ifdef _DEBUG
 		ASSERT(false);
+#endif // _DEBUG
 		break;
 	}
 
 	m_currentPass = RenderPass::None;
 	GLCALL(glDisable(GL_BLEND));
+	GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 }
 
 void ForwardRenderer::beginTransparencyPass() {
@@ -268,7 +277,7 @@ void ForwardRenderer::beginDirectionalLightPass(const Light_t& l) {
 
 	// set directional light block
 	if (directionalLightShader->hasUniformBlock("LightBlock")) {
-		DirectionalLightBlock dlb;
+		static DirectionalLightBlock dlb;
 		dlb.color = glm::vec4(glm::vec3(l.color), l.intensity);
 		dlb.inverseDiretion = -l.direction;
 		m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
@@ -309,7 +318,7 @@ void ForwardRenderer::beginPointLightPass(const Light_t& l) {
 
 	// set point light block
 	if (pointLightShader->hasUniformBlock("LightBlock")) {
-		PointLightBlock plb;
+		static PointLightBlock plb;
 		plb.position = glm::vec4(l.position, l.range);
 		plb.color = glm::vec4(l.color, l.intensity);
 
@@ -350,7 +359,7 @@ void ForwardRenderer::beginSpotLightPass(const Light_t& l) {
 
 	// set spot light block
 	if (spotLightShader->hasUniformBlock("LightBlock")) {
-		SpotLightBlock slb;
+		static SpotLightBlock slb;
 		slb.position = glm::vec4(l.position, l.range);
 		slb.color = glm::vec4(l.color, l.intensity);
 		slb.inverseDirection = -l.direction;

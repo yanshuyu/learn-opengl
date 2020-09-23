@@ -103,9 +103,22 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask) {
 				shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
 			}
 		}
-	}else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
 
-	}else {
+	} else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
+		auto renderer = static_cast<DeferredRenderer*>(m_renderer);
+		auto shader = renderer->m_activeShader;
+
+		if (shader->hasUniform("u_diffuse")) {
+			renderer->m_diffuseBuffer->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			shader->setUniform1("u_diffuse", int(Texture::Unit::DiffuseMap));
+		}
+
+		if (shader->hasUniform("u_emissive")) {
+			renderer->m_emissiveBuffer->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
+			shader->setUniform1("u_emissive", int(Texture::Unit::EmissiveMap));
+		}
+
+	} else {
 		ASSERT(false);
 	}
 
@@ -138,6 +151,9 @@ LightPassRenderTaskExecuter::LightPassRenderTaskExecuter(RenderTechnique* rt) : 
 }
 
 bool LightPassRenderTaskExecuter::initialize() {
+	if (m_renderer->identifier() == DeferredRenderer::s_identifier)
+		return true;
+
 	m_materialUBO.reset(new Buffer());
 	m_materialUBO->bind(Buffer::Target::UniformBuffer);
 	bool ok = m_materialUBO->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::StaticDraw);
@@ -148,12 +164,12 @@ bool LightPassRenderTaskExecuter::initialize() {
 
 
 void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask) {
+	renderTask.vao->bind();
+
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
 		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
 		auto shader = renderer->m_activeShader;
-		
-		renderTask.vao->bind();
-
+	
 		// set matrixs
 		if (shader->hasUniform("u_MVP")) {
 			auto& camera = renderer->m_sceneInfo->camera;
@@ -213,24 +229,26 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask) {
 				shader->setUniform1("u_emissiveMap", int(Texture::Unit::EmissiveMap));
 			}
 		}
+	}
 
-		// draw
-		if (renderTask.primitive == PrimitiveType::Triangle) {
-			if (renderTask.indexCount > 0) {
-				GLCALL(glDrawElements(GL_TRIANGLES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
-			}
-			else {
-				GLCALL(glDrawArrays(GL_TRIANGLES, 0, renderTask.vertexCount));
-			}
+	// derferred renderer need to do nothing, just commit draw command
 
+	// draw
+	if (renderTask.primitive == PrimitiveType::Triangle) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_TRIANGLES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
 		}
-		else if (renderTask.primitive == PrimitiveType::Line) {
-			if (renderTask.indexCount > 0) {
-				GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
-			}
-			else {
-				GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
-			}
+		else {
+			GLCALL(glDrawArrays(GL_TRIANGLES, 0, renderTask.vertexCount));
+		}
+
+	}
+	else if (renderTask.primitive == PrimitiveType::Line) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
 		}
 	}
 }

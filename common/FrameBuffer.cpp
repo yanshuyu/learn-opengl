@@ -20,6 +20,11 @@ size_t FrameBuffer::maximumColorAttachment() {
 }
 
 
+void FrameBuffer::bindDefault(Target target) {
+	GLCALL(glBindFramebuffer(int(target), 0));
+}
+
+
 void FrameBuffer::bind(Target target) const {
 	GLCALL(glBindFramebuffer(int(target), m_handler));
 	m_bindTarget = target;
@@ -62,6 +67,23 @@ bool FrameBuffer::addRenderBufferAttachment(unsigned int bufHandler, AttachmentP
 	GLCALL(glNamedFramebufferRenderbuffer(m_handler, attachment, GL_RENDERBUFFER, bufHandler));
 }
 
+
+FrameBuffer::Status FrameBuffer::checkStatus() const {
+	GLCALL(int result = glCheckNamedFramebufferStatus(m_handler, GL_FRAMEBUFFER));
+	return  Status(result);
+}
+
+
+void FrameBuffer::assignDrawBufferLocation(const std::vector<unsigned int>& locations) {
+	std::vector<GLenum> drawTargets;
+	drawTargets.reserve(locations.size());
+
+	for (auto i : locations) {
+		drawTargets.push_back(GL_COLOR_ATTACHMENT0 + i);
+	}
+
+	GLCALL(glNamedFramebufferDrawBuffers(m_handler, drawTargets.size(), drawTargets.data()));
+}
 
 void FrameBuffer::release() {
 	if (m_handler) {

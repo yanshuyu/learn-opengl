@@ -77,7 +77,7 @@ vec4 calcSpotLight(in vec3 diffuseTexColor, in vec3 specularTexColor, in vec3 em
 	// diffuse
 	vec3 toLight = normalize(u_toLight);
 	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance(u_lightPos.xyz, pos_W));
-	float angleAtten =  1.f - smoothstep(u_angles.x, u_angles.y, acos(dot(normalize(pos_W - u_lightPos.xyz), -toLight)));
+	float angleAtten = smoothstep(u_angles.x, u_angles.y, acos(dot(normalize(pos_W - u_lightPos.xyz), -toLight)));
 
 	float dotL = clamp(dot(toLight, normalize(normal_W)), 0.f, 1.f);
 	vec3 diffuse = u_lightColor.rgb * u_diffuseFactor.rgb * diffuseTexColor * u_lightColor.a * dotL * rangeAtten * angleAtten;

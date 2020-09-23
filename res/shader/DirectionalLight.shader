@@ -1,5 +1,5 @@
 #shader vertex
-#version 430 core
+#version 450 core
 
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec3 a_normal;
@@ -28,7 +28,7 @@ void main() {
 
 
 #shader fragment
-#version 430 core
+#version 450 core
 
 in vec3 pos_W;
 in vec3 normal_W;

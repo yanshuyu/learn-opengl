@@ -16,6 +16,8 @@ struct Vertex_t {
 	glm::vec3 tangent;
 	glm::vec3 biTangent;
 	glm::vec2 uv;
+
+	Vertex_t();
 };
 
 
@@ -29,6 +31,7 @@ enum class PrimitiveType {
 
 
 enum class LightType {
+	Unknown,
 	DirectioanalLight,
 	PointLight,
 	SpotLight,
@@ -59,6 +62,8 @@ struct Camera_t {
 	float far;
 
 	static Camera_t createDefault(float vpWidth, float vpHeight);
+
+	Camera_t();
 };
 
 
@@ -71,6 +76,8 @@ struct Light_t {
 	float innerCone;
 	float outterCone;
 	float intensity;
+
+	Light_t();
 };
 
 
@@ -82,6 +89,8 @@ struct RenderTask_t {
 	size_t vertexCount;
 	PrimitiveType primitive;
 	glm::mat4 modelMatrix;
+
+	RenderTask_t();
 };
 
 
@@ -90,6 +99,8 @@ struct SceneRenderInfo_t {
 	Camera_t camera;
 	std::vector<Light_t> lights;
 	// maybe will add enviroment setting, ect.
+
+	SceneRenderInfo_t();
 };
 
 
