@@ -29,8 +29,9 @@ bool ForwardRendererApp::initailize() {
 	auto planeMat = matMgr->addMaterial("PlaneMaterial");
 
 	m_scene = std::make_unique<Scene>(glm::vec2(m_wndWidth, m_wndHeight), "model_loading_demo_scene");
-	m_renderer = std::unique_ptr<Renderer>(new Renderer(new ForwardRenderer()));
+	m_renderer = std::unique_ptr<Renderer>(new Renderer(m_wndWidth, m_wndHeight, Renderer::Mode::Forward));
 
+	ASSERT(m_renderer->isValid());
 
 	m_scene->addPlane(150, 150, planeMat);
 	planeMat->m_shininess = 0.1f;
@@ -98,7 +99,7 @@ bool ForwardRendererApp::initailize() {
 	spotLight->m_transform.setRotation({ -90.f, 0.f, 0.f });
 
 	ASSERT(m_scene->initialize());
-	ASSERT(m_renderer->initialize());
+	//ASSERT(m_renderer->initialize());
 }
 
 
@@ -113,5 +114,6 @@ void ForwardRendererApp::render() {
 
 void ForwardRendererApp::onWindowResized(int width, int height) {
 	__super::onWindowResized(width, height);
-	m_scene->setWindowSize(width, height);
+	m_scene->onWindowReSize(width, height);
+	m_renderer->onWindowResize(width, height);
 }

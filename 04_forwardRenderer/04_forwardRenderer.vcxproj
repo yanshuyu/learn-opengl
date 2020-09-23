@@ -153,6 +153,7 @@
     <ClCompile Include="..\common\Buffer.cpp" />
     <ClCompile Include="..\common\CameraComponent.cpp" />
     <ClCompile Include="..\common\Component.cpp" />
+    <ClCompile Include="..\common\DeferredRenderer.cpp" />
     <ClCompile Include="..\common\Exceptions.cpp" />
     <ClCompile Include="..\common\FirstPersonCameraController.cpp" />
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="..\common\Buffer.h" />
     <ClInclude Include="..\common\CameraComponent.h" />
     <ClInclude Include="..\common\Component.h" />
+    <ClInclude Include="..\common\DeferredRenderer.h" />
     <ClInclude Include="..\common\Exceptions.h" />
     <ClInclude Include="..\common\FirstPersonCameraController.h" />
     <ClInclude Include="..\common\ForwardRenderer.h" />

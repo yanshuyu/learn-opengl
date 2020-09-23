@@ -135,6 +135,9 @@
     <ClCompile Include="..\common\RenderBuffer.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\DeferredRenderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Buffer.h">
@@ -249,6 +252,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\RenderBuffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\DeferredRenderer.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>
