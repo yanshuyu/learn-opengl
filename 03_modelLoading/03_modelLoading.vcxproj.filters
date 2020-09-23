@@ -115,6 +115,27 @@
     <ClCompile Include="..\common\FirstPersonCameraController.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\ArcballCameraController.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\DeferredRenderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\FrameBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\LightComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderBuffer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderTaskExecutor.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\RenderTechnique.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Buffer.h">
@@ -211,6 +232,27 @@
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="..\common\FirstPersonCameraController.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ArcballCameraController.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\DeferredRenderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FrameBuffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\LightComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderBuffer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderTaskExecutor.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderTechnique.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

@@ -21,7 +21,7 @@ bool ModelLoadingApp::initailize() {
 	auto diffuseTexture = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "REF 1.jpg");
 
 	m_scene = std::make_unique<Scene>(glm::vec2(m_wndWidth, m_wndHeight), "model_loading_demo_scene");
-	m_renderer = std::make_unique<ForwardRenderer>();
+	m_renderer = std::unique_ptr<Renderer>(new Renderer(m_wndWidth, m_wndHeight, Renderer::Mode::Forward));
 	
 	//m_renderer->setClearColor(0, 0, 1, 1);
 
@@ -38,7 +38,7 @@ bool ModelLoadingApp::initailize() {
 	camera->addComponent(FirstPersonCameraController::create());
 
 	ASSERT(m_scene->initialize());
-	ASSERT(m_renderer->initialize());
+	//ASSERT(m_renderer->initialize());
 }
 
 
@@ -53,5 +53,5 @@ void ModelLoadingApp::render() {
 
 void ModelLoadingApp::onWindowResized(int width, int height) {
 	__super::onWindowResized(width, height);
-	m_scene->setWindowSize(width, height);
+	m_scene->onWindowReSize(width, height);
 }
