@@ -167,7 +167,7 @@ SceneObject* Scene::addPointLight(const glm::vec3& color, float range, float int
 	return light;
 }
 
-SceneObject* Scene::addSpotLight(const glm::vec3& color, float innerAngle, float outterAngle, float range, float intensity) {
+SceneObject* Scene::addSpotLight(const glm::vec3& color, float innerAngle, float outterAngle, float range, float intensity, ShadowType shadowType, float shadowStrength) {
 	auto light = addObject("SpotLight");
 	auto lightComp = LightComponent::create();
 	lightComp->setType(LightType::SpotLight);
@@ -176,6 +176,8 @@ SceneObject* Scene::addSpotLight(const glm::vec3& color, float innerAngle, float
 	lightComp->setIntensity(intensity);
 	lightComp->setSpotInnerAngle(innerAngle);
 	lightComp->setSpotOutterAngle(outterAngle);
+	lightComp->setShadowType(shadowType);
+	lightComp->setShadowStrength(shadowStrength);
 	light->addComponent(lightComp);
 
 	return light;

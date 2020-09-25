@@ -21,11 +21,11 @@ RenderTaskExecutor::~RenderTaskExecutor() {
 
 
 
-ZPassRenderTaskExecutor::ZPassRenderTaskExecutor(RenderTechnique* rt) :RenderTaskExecutor(rt) {
+DepthPassRenderTaskExecutor::DepthPassRenderTaskExecutor(RenderTechnique* rt) :RenderTaskExecutor(rt) {
 
 }
 
-void ZPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask) {
+void DepthPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask) {
 	const SceneRenderInfo_t* sri = nullptr;
 	ShaderProgram* shader = nullptr;
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
@@ -48,9 +48,14 @@ void ZPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask) {
 	
 	//if (m_rendererType == RendererType::Forward) {	
 		// set mvp matrix
-		if (shader->hasUniform("u_MVP")) {
-			glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
-			shader->setUniformMat4v("u_MVP", &mvp[0][0]);
+		if (shader->hasUniform("u_ModelMat")) {
+			glm::mat4 m = renderTask.modelMatrix;
+			shader->setUniformMat4v("u_ModelMat", &m[0][0]);
+		}
+
+		if (shader->hasUniform("u_VPMat")) {
+			glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+			shader->setUniformMat4v("u_VPMat", &vp[0][0]);
 		}
 
 		if (renderTask.primitive == PrimitiveType::Triangle) {
@@ -281,15 +286,15 @@ void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask)
 	renderTask.vao->bind();
 
 	// set matrixs
-	if (shader->hasUniform("u_MVP")) {
-		auto& camera = renderer->m_sceneInfo->camera;
-		glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
-		shader->setUniformMat4v("u_MVP", &mvp[0][0]);
-	}
-
 	if (shader->hasUniform("u_ModelMat")) {
 		glm::mat4 m = renderTask.modelMatrix;
 		shader->setUniformMat4v("u_ModelMat", &m[0][0]);
+	}
+
+	if (shader->hasUniform("u_VPMat")) {
+		auto& camera = renderer->m_sceneInfo->camera;
+		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+		shader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 
 	// set materials
@@ -363,4 +368,65 @@ void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask)
 
 void GeometryPassRenderTaskExecutor::release() {
 	m_materialUBO->release();
+}
+
+
+ShadowPassRenderTaskExecutor::ShadowPassRenderTaskExecutor(RenderTechnique* rt) : RenderTaskExecutor(rt) {
+
+}
+
+void ShadowPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask) {
+	glm::mat4 vp(1.f);
+	ShaderProgram* shader = nullptr;
+
+	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
+		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
+		shader = renderer->m_activeShader;
+		vp = renderer->m_lightVPMat;
+
+	} else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
+		auto renderer = static_cast<DeferredRenderer*>(m_renderer);
+		shader = renderer->m_activeShader;
+		vp = renderer->m_lightVPMat;
+	}
+
+	if (!shader) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+
+		return;
+	}
+
+
+	// set mvp matrix
+	if (shader->hasUniform("u_ModelMat")) {
+		glm::mat4 m = renderTask.modelMatrix;
+		shader->setUniformMat4v("u_ModelMat", &m[0][0]);
+	}
+
+	if (shader->hasUniform("u_VPMat")) {
+		shader->setUniformMat4v("u_VPMat", &vp[0][0]);
+	}
+
+	renderTask.vao->bind();
+
+	if (renderTask.primitive == PrimitiveType::Triangle) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_TRIANGLES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_TRIANGLES, 0, renderTask.vertexCount));
+		}
+
+	}
+	else if (renderTask.primitive == PrimitiveType::Line) {
+		if (renderTask.indexCount > 0) {
+			GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
+		}
+	}
+	
 }

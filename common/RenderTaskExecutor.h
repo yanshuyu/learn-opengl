@@ -32,9 +32,9 @@ protected:
 };
 
 
-class ZPassRenderTaskExecutor: public RenderTaskExecutor {
+class DepthPassRenderTaskExecutor: public RenderTaskExecutor {
 public:
-	ZPassRenderTaskExecutor(RenderTechnique* rt);
+	DepthPassRenderTaskExecutor(RenderTechnique* rt);
 	void executeTask(const RenderTask_t& renderTask) override;
 };
 
@@ -69,4 +69,12 @@ public:
 
 private:
 	std::unique_ptr<Buffer> m_materialUBO;
+};
+
+
+class ShadowPassRenderTaskExecutor : public RenderTaskExecutor {
+public:
+	ShadowPassRenderTaskExecutor(RenderTechnique* rt);
+
+	void executeTask(const RenderTask_t& renderTask) override;
 };

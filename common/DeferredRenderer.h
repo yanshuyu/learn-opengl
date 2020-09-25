@@ -23,13 +23,19 @@ class DeferredRenderer : public RenderTechnique {
 		}
 	};
 
-	friend class ZPassRenderTaskExecutor;
+	friend class DepthPassRenderTaskExecutor;
 	friend class GeometryPassRenderTaskExecutor;
 	friend class UlitPassRenderTaskExecutror;
+	friend class ShadowPassRenderTaskExecutor;
 	
 public:
-	DeferredRenderer(size_t renderWidth, size_t renderHeight);
+	DeferredRenderer(const RenderingSettings_t& settings);
 	~DeferredRenderer();
+
+	DeferredRenderer(const DeferredRenderer& other) = delete;
+	DeferredRenderer(DeferredRenderer&& rv) = delete;
+	DeferredRenderer& operator = (const DeferredRenderer& other) = delete;
+	DeferredRenderer& operator = (DeferredRenderer&& rv) = delete;
 
 	bool intialize() override;
 	void cleanUp() override;
@@ -53,6 +59,9 @@ public:
 	void beginUnlitPass() override;
 	void endUnlitPass() override;
 
+	void beginShadowPass(const Light_t& l) override;
+	void endShadowPass(const Light_t& l) override;
+
 	void beginLightPass(const Light_t& l) override;
 	void endLightPass(const Light_t& l) override;
 
@@ -60,6 +69,8 @@ public:
 	void endTransparencyPass() override;
 
 	void onWindowResize(float w, float h) override;
+	void onShadowMapResolutionChange(float w, float h) override;
+
 	void performTask(const RenderTask_t& task)  override;
 
 
@@ -73,21 +84,13 @@ public:
 
 private:
 	bool setupGBuffers();
+	bool setupShadowMap();
 	void setupFullScreenQuad();
 	void drawFullScreenQuad();
 
-	void beginDirectionalLightPass(const Light_t& l);
-	void endDirectionalLightPass();
-
-	void beginPointLightPass(const Light_t& l);
-	void endPointLightPass();
-
-	void beginSpotLightPass(const Light_t& l);
-	void endSpotLightPass();
-
 private:
-	size_t m_renderWidth;
-	size_t m_renderHeight;
+	RenderingSettings_t m_renderingSettings;
+
 	const SceneRenderInfo_t*  m_sceneInfo;
 	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
@@ -111,6 +114,12 @@ private:
 	std::unique_ptr<Buffer> m_directionalLightUBO;
 	std::unique_ptr<Buffer> m_pointLightUBO;
 	std::unique_ptr<Buffer> m_spotLightUBO;
+
+	// shadow mapping
+	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
+	std::unique_ptr<Texture> m_shadowMap;
+	std::unique_ptr<Buffer> m_shadowUBO;
+	glm::mat4 m_lightVPMat;
 };
 
 

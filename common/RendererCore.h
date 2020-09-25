@@ -38,6 +38,13 @@ enum class LightType {
 };
 
 
+enum class ShadowType {
+	NoShadow,
+	HardShadow,
+	SoftShadow,
+};
+
+
 struct Viewport_t {
 	float x;
 	float y;
@@ -77,9 +84,23 @@ struct Light_t {
 	float outterCone;
 	float intensity;
 
+	Camera_t shadowCamera;
+	ShadowType shadowType;
+	float shadowBias;
+	float shadowStrength;
+
+	bool isCastShadow() const;
+
 	Light_t();
 };
 
+
+struct RenderingSettings_t {
+	glm::vec2 renderSize;
+	glm::vec2 shadowMapResolution;
+
+	RenderingSettings_t();
+};
 
 
 struct RenderTask_t {

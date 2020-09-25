@@ -39,6 +39,7 @@ public:
 		Unknown,
 		MaterialBlock,
 		LightBlock,
+		ShadowBlock,
 	};
 
 public:

@@ -5,14 +5,18 @@
 #include<memory>
 
 class Buffer;
+class FrameBuffer;
+class Texture;
 
 class ForwardRenderer : public RenderTechnique {
-	friend class ZPassRenderTaskExecutor;
+
+	friend class DepthPassRenderTaskExecutor;
 	friend class UlitPassRenderTaskExecutror;
 	friend class LightPassRenderTaskExecuter;
+	friend class ShadowPassRenderTaskExecutor;
 
 public:
-	ForwardRenderer();
+	ForwardRenderer(const RenderingSettings_t& settings);
 	~ForwardRenderer();
 
 	ForwardRenderer(const ForwardRenderer& other) = delete;
@@ -42,6 +46,10 @@ public:
 	void beginUnlitPass() override;
 	void endUnlitPass() override;
 
+
+	void beginShadowPass(const Light_t& l) override;
+	void endShadowPass(const Light_t& l) override;
+
 	void beginLightPass(const Light_t& l) override;
 	void endLightPass(const Light_t& l) override;
 
@@ -50,9 +58,8 @@ public:
 
 	void performTask(const RenderTask_t& task) override;
 
-	void onWindowResize(float w, float h) override {
-
-	}
+	void onWindowResize(float w, float h) override;
+	void onShadowMapResolutionChange(float w, float h);
 
 	RenderPass currentRenderPass() const override {
 		return m_currentPass;
@@ -72,14 +79,24 @@ private:
 	void beginSpotLightPass(const Light_t& l);
 	void endSpotLightPass();
 
+	bool setupShadowMap();
+
 private:
+	RenderingSettings_t m_renderingSettings;
+
 	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
 	const SceneRenderInfo_t* m_sceneInfo;
+	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 
+	// light uniform blocks
 	std::unique_ptr<Buffer> m_directionalLightUBO;
 	std::unique_ptr<Buffer> m_pointLightUBO;
 	std::unique_ptr<Buffer> m_spotLightUBO;
 	
-	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
+	// shadow mapping
+	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
+	std::unique_ptr<Texture> m_shadowMap;
+	std::unique_ptr<Buffer> m_shadowUBO;
+	glm::mat4 m_lightVPMat;
 };

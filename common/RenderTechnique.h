@@ -2,7 +2,9 @@
 #include"RendererCore.h"
 #include<string>
 
-
+//
+// uniform block structs
+//
 struct DirectionalLightBlock {
 	glm::vec4 color;
 	glm::vec3 inverseDiretion;
@@ -20,6 +22,13 @@ struct SpotLightBlock {
 	glm::vec2 angles;
 };
 
+struct ShadowBlock {
+	glm::mat4 lightVP;
+	float shadowStrength;
+	float depthBias;
+	int shadowType;
+};
+
 
 
 class RenderTechnique {
@@ -29,6 +38,7 @@ public:
 		DepthPass,
 		GeometryPass,
 		UnlitPass,
+		ShadowPass,
 		LightPass,
 		TransparencyPass,
 	};
@@ -68,10 +78,15 @@ public:
 	virtual void beginTransparencyPass() = 0;
 	virtual void endTransparencyPass() = 0;
 
+	virtual void beginShadowPass(const Light_t& l) = 0;
+	virtual void endShadowPass(const Light_t& l) = 0;
+
 	virtual RenderPass currentRenderPass() const = 0;
 	virtual std::string identifier() const = 0;
 
 	virtual void onWindowResize(float w, float h) = 0;
+	virtual void onShadowMapResolutionChange(float w, float h) = 0;
+
 	virtual void performTask(const RenderTask_t& task) = 0;
 
 

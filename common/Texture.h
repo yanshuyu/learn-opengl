@@ -12,6 +12,7 @@ public:
 		NormalMap,
 		SpecularMap,
 		EmissiveMap,
+		ShadowMap,
 		CubeMap,
 		Position,
 		MaxUnit,
@@ -174,6 +175,7 @@ public:
 
 	void setFilterMode(FilterType type, FilterMode mode);
 	void setWrapMode(WrapType type, WrapMode mode);
+	void setBorderColor(glm::vec4 color);
 
 	inline size_t getWidth() const {
 		return m_width;

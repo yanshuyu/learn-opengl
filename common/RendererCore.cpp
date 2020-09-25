@@ -68,7 +68,22 @@ Light_t::Light_t(): type(LightType::Unknown)
 , range(0.f)
 , innerCone(0.f)
 , outterCone(0.f)
-, intensity(0.f) {
+, intensity(0.f)
+, shadowCamera()
+, shadowType(ShadowType::NoShadow) 
+, shadowBias(0.f)
+, shadowStrength(0.f) {
+
+}
+
+
+bool Light_t::isCastShadow() const {
+	return shadowType != ShadowType::NoShadow;
+}
+
+
+RenderingSettings_t::RenderingSettings_t(): renderSize(0.f)
+, shadowMapResolution(0.f) {
 
 }
 

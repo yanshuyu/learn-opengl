@@ -7,14 +7,13 @@
 #include"Material.h"
 #include"Util.h"
 #include<sstream>
-
+#include"Renderer.h"
 
 const std::string DeferredRenderer::s_identifier = "DeferredRenderer";
 
 
-DeferredRenderer::DeferredRenderer(size_t renderWidth, size_t renderHeight):RenderTechnique()
-, m_renderWidth(renderWidth)
-, m_renderHeight(renderHeight)
+DeferredRenderer::DeferredRenderer(const RenderingSettings_t& settings):RenderTechnique()
+, m_renderingSettings(settings)
 , m_sceneInfo(nullptr)
 , m_gBuffersFBO(nullptr)
 , m_posWBuffer(nullptr)
@@ -30,7 +29,11 @@ DeferredRenderer::DeferredRenderer(size_t renderWidth, size_t renderHeight):Rend
 , m_currentPass(RenderPass::None)
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
-, m_spotLightUBO(nullptr){
+, m_spotLightUBO(nullptr)
+, m_shadowMapFBO(nullptr)
+, m_shadowUBO(nullptr)
+, m_shadowMap(nullptr)
+, m_lightVPMat(1.f) {
 
 }
 
@@ -44,6 +47,14 @@ bool DeferredRenderer::intialize() {
 
 	// g-buffers
 	ok = setupGBuffers();
+#ifdef _DEBUG
+	ASSERT(ok);
+#endif // _DEBUG
+	if (!ok)
+		return false;
+
+	// shadow mapping
+	ok = setupShadowMap();
 #ifdef _DEBUG
 	ASSERT(ok);
 #endif // _DEBUG
@@ -69,10 +80,11 @@ bool DeferredRenderer::intialize() {
 	m_spotLightUBO->unbind();
 
 	// render task executor
-	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new ZPassRenderTaskExecutor(this));
+	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new DepthPassRenderTaskExecutor(this));
 	m_taskExecutors[RenderPass::GeometryPass] = std::unique_ptr<RenderTaskExecutor>(new GeometryPassRenderTaskExecutor(this));
 	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(this));
 	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(this));
+	m_taskExecutors[RenderPass::ShadowPass] = std::unique_ptr<RenderTaskExecutor>(new ShadowPassRenderTaskExecutor(this));
 
 	for (auto& executor : m_taskExecutors) {
 		if (!executor.second->initialize()) {
@@ -107,6 +119,9 @@ void DeferredRenderer::cleanUp() {
 	m_directionalLightUBO.release();
 	m_pointLightUBO.release();
 	m_spotLightUBO.release();
+
+	m_shadowMapFBO.release();
+	m_shadowMap.release();
 }
 
 
@@ -116,7 +131,9 @@ void DeferredRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t* si) {
 
 
 bool DeferredRenderer::shouldVisitScene() const {
-	if (m_currentPass == RenderPass::DepthPass || m_currentPass == RenderPass::GeometryPass)
+	if (m_currentPass == RenderPass::DepthPass 
+		|| m_currentPass == RenderPass::GeometryPass
+		|| m_currentPass == RenderPass::ShadowPass)
 		return true;
 
 	return false;
@@ -145,18 +162,27 @@ void DeferredRenderer::beginFrame() {
 }
 
 void DeferredRenderer::endFrame() {
+#ifdef _DEBUG
+	/*
+	Renderer::visualizeDepthBuffer(m_depthStencilBuffer.get(), { m_renderWidth, m_renderHeight }, { 0.f, m_renderHeight * 0.5f, m_renderWidth * 0.5f, m_renderHeight * 0.5f });
+	Renderer::visualizeTexture(m_diffuseBuffer.get(), { m_renderWidth, m_renderHeight }, { m_renderWidth * 0.5f, m_renderHeight * 0.5f, m_renderWidth * 0.5f, m_renderHeight * 0.5f });
+	Renderer::visualizeTexture(m_normalWBuffer.get(), { m_renderWidth, m_renderHeight }, { 0.f, 0.f, m_renderWidth * 0.5f, m_renderHeight * 0.5f });
+	Renderer::visualizeTexture(m_specularBuffer.get(), { m_renderWidth, m_renderHeight }, { m_renderWidth * 0.5f, 0.f, m_renderWidth * 0.5f, m_renderHeight * 0.5f });
+	*/
+	//Renderer::visualizeDepthBuffer(m_shadowMap.get(), { m_renderWidth, m_renderHeight }, { 0.f, 0.f, m_renderWidth * 0.5f, m_renderHeight * 0.5f });
+#endif // _DEBUG
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
 	}
 
-	GLCALL(glBindVertexArray(0));
 
 	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
 		GLCALL(glActiveTexture(GL_TEXTURE0 + unit));
 		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
 	}
 
+	GLCALL(glBindVertexArray(0));
 	GLCALL(glDepthMask(GL_TRUE));
 	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
 }
@@ -168,9 +194,9 @@ void DeferredRenderer::beginDepthPass() {
 	GLCALL(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
-	auto preZShader = shaderMgr->getProgram("PreZDepth");
+	auto preZShader = shaderMgr->getProgram("DepthPass");
 	if (!preZShader)
-		preZShader = shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "PreZDepth.shader");
+		preZShader = shaderMgr->addProgram("res/shader/DepthPass.shader");
 
 	ASSERT(preZShader);
 
@@ -186,8 +212,10 @@ void DeferredRenderer::endDepthPass() {
 	GLCALL(glDepthMask(GL_FALSE));
 	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
 
-	m_activeShader->unbind();
-	m_activeShader = nullptr;
+	if (m_activeShader) {
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
 	m_currentPass = RenderPass::None;
 }
 
@@ -205,10 +233,12 @@ void DeferredRenderer::beginGeometryPass() {
 void DeferredRenderer::endGeometryPass() {
 	m_gBuffersFBO->unbind();
 	FrameBuffer::bindDefault();
-	m_activeShader->unbind();
-	m_activeShader = nullptr;
+	
+	if (m_activeShader) {
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
 	m_currentPass = RenderPass::None;
-
 }
 
 void DeferredRenderer::beginUnlitPass() {
@@ -228,9 +258,58 @@ void DeferredRenderer::beginUnlitPass() {
 void DeferredRenderer::endUnlitPass() {
 	m_diffuseBuffer->unbind();
 	m_emissiveBuffer->unbind();
-	m_activeShader->unbind();
-	m_activeShader = nullptr;
+	if (m_activeShader) {
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
 	m_currentPass = RenderPass::None;
+}
+
+void DeferredRenderer::beginShadowPass(const Light_t& l) {
+	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
+	if (!preZShader)
+		preZShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DepthPass.shader");
+
+	ASSERT(preZShader);
+	
+	preZShader->bind();
+	m_shadowMapFBO->bind();
+	m_activeShader = preZShader.get();
+	m_currentPass = RenderPass::ShadowPass;
+	m_lightVPMat = l.shadowCamera.projMatrix * l.shadowCamera.viewMatrix;
+	
+	// depth pass disable depth writting, restore it
+	GLCALL(glEnable(GL_DEPTH_TEST));
+	GLCALL(glDepthFunc(GL_LESS));
+	GLCALL(glDepthMask(GL_TRUE));
+	GLCALL(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
+	setViewPort(Viewport_t(0, 0, m_renderingSettings.shadowMapResolution.x, m_renderingSettings.shadowMapResolution.y));
+
+	//using cull back face mode to output back face depth
+	GLCALL(glCullFace(GL_FRONT));
+	//GLCALL(glEnable(GL_POLYGON_OFFSET_FILL));
+	//GLCALL(glPolygonOffset(1.5f, 20.f));
+	clearScrren(GL_DEPTH_BUFFER_BIT);
+}
+
+void DeferredRenderer::endShadowPass(const Light_t& l) {
+	m_shadowMapFBO->unbind();
+	FrameBuffer::bindDefault();
+
+	if (m_activeShader) {
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
+	m_currentPass = RenderPass::None;
+
+	GLCALL(glEnable(GL_DEPTH_TEST));
+	GLCALL(glDepthFunc(GL_LEQUAL));
+	GLCALL(glDepthMask(GL_FALSE));
+	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+	GLCALL(glCullFace(GL_BACK));
+	//GLCALL(glDisable(GL_POLYGON_OFFSET_FILL));
+	//GLCALL(glPolygonOffset(0.f, 0.f));
+	setViewPort(Viewport_t(0, 0, m_renderingSettings.renderSize.x, m_renderingSettings.renderSize.y));
 }
 
 void DeferredRenderer::beginLightPass(const Light_t& l) {
@@ -297,7 +376,7 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 				slb.position = glm::vec4(l.position, l.range);
 				slb.color = glm::vec4(l.color, l.intensity);
 				slb.inverseDirection = -l.direction;
-				slb.angles = glm::vec2(glm::radians(l.innerCone), glm::radians(l.outterCone));
+				slb.angles = glm::vec2(l.innerCone, l.outterCone);
 
 				m_spotLightUBO->bind(Buffer::Target::UniformBuffer);
 				m_spotLightUBO->loadSubData(&slb, 0, sizeof(slb));
@@ -357,6 +436,26 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 		m_activeShader->setUniform1("u_emissive", int(Texture::Unit::EmissiveMap));
 	}
 
+
+	// set shadow map
+	if (m_activeShader->hasUniform("u_shadowMap")) {
+		m_activeShader->setUniform1("u_hasShadowMap", int(l.isCastShadow()));
+		if (l.isCastShadow()) {
+			m_shadowMap->bind(Texture::Unit::ShadowMap);
+			m_activeShader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
+
+			static ShadowBlock shadowBlock;
+			shadowBlock.lightVP = m_lightVPMat;
+			shadowBlock.depthBias = l.shadowBias;
+			shadowBlock.shadowStrength = l.shadowStrength;
+			shadowBlock.shadowType = int(l.shadowType);
+			m_shadowUBO->bind(Buffer::Target::UniformBuffer);
+			m_shadowUBO->loadSubData(&shadowBlock, 0, sizeof(shadowBlock));
+			m_shadowUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::ShadowBlock));
+			m_activeShader->bindUniformBlock("ShadowBlock", ShaderProgram::UniformBlockBindingPoint::ShadowBlock);
+		}
+	}
+
 	// manully submit render task
 	drawFullScreenQuad();
 }
@@ -376,11 +475,17 @@ void DeferredRenderer::endLightPass(const Light_t& l) {
 		m_activeShader = nullptr;
 	}
 
+	if (l.isCastShadow()) {
+		m_shadowMap->unbind();
+		m_shadowUBO->unbind();
+	}
+	
 	m_posWBuffer->unbind();
 	m_normalWBuffer->unbind();
 	m_diffuseBuffer->unbind();
 	m_specularBuffer->unbind();
 	m_emissiveBuffer->unbind();
+
 
 	m_currentPass = RenderPass::None;
 	
@@ -415,9 +520,15 @@ void DeferredRenderer::performTask(const RenderTask_t& task) {
 void DeferredRenderer::onWindowResize(float w, float h) {
 	if (w <= 0 || h <= 0)
 		return;
-	m_renderWidth = w;
-	m_renderHeight = h;
+	m_renderingSettings.renderSize.x = w;
+	m_renderingSettings.renderSize.y = h;
 	setupGBuffers();
+}
+
+
+void DeferredRenderer::onShadowMapResolutionChange(float w, float h) {
+	m_renderingSettings.shadowMapResolution = { w, h };
+	setupShadowMap();
 }
 
 
@@ -432,7 +543,12 @@ bool DeferredRenderer::setupGBuffers() {
 	m_depthStencilBuffer.reset(new Texture());
 
 	m_posWBuffer->bind();
-	success = m_posWBuffer->loadImage2DFromMemory(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, m_renderWidth, m_renderHeight, nullptr);
+	success = m_posWBuffer->loadImage2DFromMemory(Texture::Format::RGBA16F, 
+													Texture::Format::RGBA,
+													Texture::FormatDataType::Float, 
+													m_renderingSettings.renderSize.x,
+													m_renderingSettings.renderSize.y, 
+													nullptr);
 	m_posWBuffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	m_posWBuffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	m_posWBuffer->unbind();
@@ -441,7 +557,12 @@ bool DeferredRenderer::setupGBuffers() {
 		return false;
 
 	m_normalWBuffer->bind();
-	success = m_normalWBuffer->loadImage2DFromMemory(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, m_renderWidth, m_renderHeight, nullptr);
+	success = m_normalWBuffer->loadImage2DFromMemory(Texture::Format::RGBA16F,
+														Texture::Format::RGBA,
+														Texture::FormatDataType::Float, 
+														m_renderingSettings.renderSize.x,
+														m_renderingSettings.renderSize.y, 
+														nullptr);
 	m_normalWBuffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	m_normalWBuffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	m_normalWBuffer->unbind();
@@ -450,7 +571,12 @@ bool DeferredRenderer::setupGBuffers() {
 		return false;
 
 	m_diffuseBuffer->bind();
-	success = m_diffuseBuffer->loadImage2DFromMemory(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, m_renderWidth, m_renderHeight, nullptr);
+	success = m_diffuseBuffer->loadImage2DFromMemory(Texture::Format::RGBA,
+														Texture::Format::RGBA,
+														Texture::FormatDataType::UByte,
+														m_renderingSettings.renderSize.x,
+														m_renderingSettings.renderSize.y,
+														nullptr);
 	m_diffuseBuffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	m_diffuseBuffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	m_diffuseBuffer->unbind();
@@ -459,7 +585,12 @@ bool DeferredRenderer::setupGBuffers() {
 		return false;
 
 	m_specularBuffer->bind();
-	success = m_specularBuffer->loadImage2DFromMemory(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, m_renderWidth, m_renderHeight, nullptr);
+	success = m_specularBuffer->loadImage2DFromMemory(Texture::Format::RGBA,
+		Texture::Format::RGBA, 
+		Texture::FormatDataType::UByte,
+		m_renderingSettings.renderSize.x,
+		m_renderingSettings.renderSize.y,
+		nullptr);
 	m_specularBuffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	m_specularBuffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	m_specularBuffer->unbind();
@@ -468,7 +599,12 @@ bool DeferredRenderer::setupGBuffers() {
 		return false;
 
 	m_emissiveBuffer->bind();
-	success = m_emissiveBuffer->loadImage2DFromMemory(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, m_renderWidth, m_renderHeight, nullptr);
+	success = m_emissiveBuffer->loadImage2DFromMemory(Texture::Format::RGBA,
+		Texture::Format::RGBA,
+		Texture::FormatDataType::UByte,
+		m_renderingSettings.renderSize.x,
+		m_renderingSettings.renderSize.y,
+		nullptr);
 	m_emissiveBuffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	m_emissiveBuffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	m_emissiveBuffer->unbind();
@@ -477,7 +613,12 @@ bool DeferredRenderer::setupGBuffers() {
 		return false;
 
 	m_depthStencilBuffer->bind();
-	success = m_depthStencilBuffer->loadImage2DFromMemory(Texture::Format::Depth24_Stencil8, Texture::Format::Depth_Stencil, Texture::FormatDataType::UInt_24_8, m_renderWidth, m_renderHeight, nullptr);
+	success = m_depthStencilBuffer->loadImage2DFromMemory(Texture::Format::Depth24_Stencil8,
+		Texture::Format::Depth_Stencil,
+		Texture::FormatDataType::UInt_24_8,
+		m_renderingSettings.renderSize.x,
+		m_renderingSettings.renderSize.y,
+		nullptr);
 	m_depthStencilBuffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	m_depthStencilBuffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	m_depthStencilBuffer->unbind();
@@ -531,6 +672,43 @@ void DeferredRenderer::setupFullScreenQuad() {
 	m_quadVAO->unbind();
 	m_quadVBO->unbind();
 	m_quadIBO->unbind();
+}
+
+
+bool DeferredRenderer::setupShadowMap() {
+	m_shadowUBO.reset(new Buffer());
+	m_shadowUBO->bind(Buffer::Target::UniformBuffer);
+	m_shadowUBO->loadData(nullptr, sizeof(ShadowBlock), Buffer::Usage::StaticDraw);
+	m_shadowUBO->unbind();
+
+	m_shadowMapFBO.reset(new FrameBuffer());
+	m_shadowMap.reset(new Texture());
+	
+	bool success = true;
+	m_shadowMap->bind();
+	success = m_shadowMap->loadImage2DFromMemory(Texture::Format::Depth32,
+													Texture::Format::Depth,
+													Texture::FormatDataType::Float, 
+													m_renderingSettings.shadowMapResolution.x,
+													m_renderingSettings.shadowMapResolution.y, 
+													nullptr);
+	m_shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	m_shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	m_shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
+	m_shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
+	m_shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
+	m_shadowMap->unbind();
+
+
+	if (!success)
+		return false;
+
+	m_shadowMapFBO->bind();
+	m_shadowMapFBO->addTextureAttachment(m_shadowMap->getHandler(), FrameBuffer::AttachmentPoint::Depth);
+	FrameBuffer::Status result = m_shadowMapFBO->checkStatus();
+	m_shadowMapFBO->unbind();
+
+	return result == FrameBuffer::Status::Ok;
 }
 
 void DeferredRenderer::drawFullScreenQuad() {

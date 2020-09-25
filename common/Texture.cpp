@@ -135,7 +135,6 @@ bool Texture::loadCubeMapFromFiles(const std::string& left,
 	return true;
 }
 
-
 bool Texture::bind(Unit unit, Target target)  const {
 	if (int(unit) >= maximumAvaliableTextureUnit()) {
 #ifdef _DEBUG
@@ -167,6 +166,10 @@ void Texture::setFilterMode(FilterType type, FilterMode mode) {
 
 void Texture::setWrapMode(WrapType type, WrapMode mode) {
 	GLCALL(glTextureParameteri(m_handler, GLenum(type), GLenum(mode)));
+}
+
+void Texture::setBorderColor(glm::vec4 color) {
+	GLCALL(glTextureParameterfv(m_handler, GL_TEXTURE_BORDER_COLOR, &color[0]));
 }
 
 Texture::Format Texture::getGenericFormat(size_t channelCnt) {

@@ -15,6 +15,8 @@ public:
 	LightComponent& operator = (LightComponent&& rv) = delete;
 
 	static const std::string s_identifier;
+	static const float s_maxShadowBias;
+
 	static LightComponent* create();
 	static void destory(const LightComponent* l);
 
@@ -23,8 +25,9 @@ public:
 
 	glm::vec3 getPosition() const;
 	glm::vec3 getDirection() const;
+	
+	bool isCastShadow() const;
 	Light_t makeLight() const;
-
 
 	inline glm::vec3 getColor() const {
 		return m_color;
@@ -74,6 +77,41 @@ public:
 		m_type = t;
 	}
 
+	inline void setShadowType(ShadowType st) {
+		m_shadowType = st;
+	}
+
+	inline ShadowType getShadowType() const {
+		return m_shadowType;
+	}
+
+	inline void setShadowBias(float bias) {
+		m_shadowBias = bias;
+	}
+
+	inline float getShadowBias() const {
+		return m_shadowBias;
+	}
+
+	inline void setShadowStrength(float strength) {
+		m_shadowStrength = strength;
+	}
+
+	inline float getShadowStrength() const {
+		return m_shadowStrength;
+	}
+
+	inline void setShadowNear(float near) {
+		m_shadowNear = near;
+	}
+
+	inline float getShadowNear() const {
+		return m_shadowNear;
+	}
+
+private:
+	Camera_t makeCamere() const;
+
 private:
 	LightType m_type;
 	glm::vec3 m_color;
@@ -81,4 +119,9 @@ private:
 	float m_range;
 	float m_innerAngle;
 	float m_outterAngle;
+
+	ShadowType m_shadowType;
+	float m_shadowBias;
+	float m_shadowStrength;
+	float m_shadowNear;
 };

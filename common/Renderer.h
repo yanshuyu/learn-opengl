@@ -5,9 +5,16 @@
 #include"RenderTechnique.h"
 
 class Scene;
-
+class Texture;
 
 class Renderer {
+
+#ifdef _DEBUG
+public:
+	static void visualizeTexture(Texture* tex, const glm::vec2& windowSz, const glm::vec4& rect);
+	static void visualizeDepthBuffer(Texture* tex, const glm::vec2& windowSz, const glm::vec4& rect, float near = 0.1f, float far = 1000.f);
+#endif // _DEBUG
+
 public:
 	enum class Mode {
 		None,
@@ -16,13 +23,14 @@ public:
 	};
 
 public:
-	Renderer(float w, float h, Mode mode = Mode::None);
+	Renderer(const RenderingSettings_t& settings, Mode mode = Mode::None);
 	virtual ~Renderer();
 
 	Renderer(const Renderer& other) = delete;
 	Renderer(Renderer&& rv) = delete;
 	Renderer& operator = (const Renderer& other) = delete;
 	Renderer& operator = (Renderer&& rv) = delete;
+
 
 	//bool initialize();
 	void clenUp();
@@ -31,6 +39,7 @@ public:
 	bool isValid() const;
 	void onWindowResize(float w, float h);
 
+	void setShadowMapResolution(float w, float h);
 	void setClearColor(const glm::vec4& color);
 	void setClearDepth(float d);
 	void setClearStencil(int m);
@@ -58,8 +67,7 @@ public:
 	}
 
 private:
-	float m_wndWidth;
-	float m_wndHeight;
+	RenderingSettings_t m_renderingSettings;
 	Mode m_renderMode;
 	RenderContext m_renderContext;
 	std::unique_ptr<RenderTechnique> m_renderTechnique;
