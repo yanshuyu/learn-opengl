@@ -85,10 +85,15 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask) {
 		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
 		auto& camera = renderer->m_sceneInfo->camera;
 		auto shader = renderer->m_activeShader;
-		// set mvp matrix
-		if (shader->hasUniform("u_MVP")) {
-			glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
-			shader->setUniformMat4v("u_MVP", &mvp[0][0]);
+		// set matrix
+		if (shader->hasUniform("u_VPMat")) {
+			glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+			shader->setUniformMat4v("u_MVP", &vp[0][0]);
+		}
+
+		if (shader->hasUniform("u_ModelMat")) {
+			glm::mat4 m = renderTask.modelMatrix;
+			shader->setUniformMat4v("u_ModelMat", &m[0][0]);
 		}
 
 		// set material
@@ -176,10 +181,10 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask) {
 		auto shader = renderer->m_activeShader;
 	
 		// set matrixs
-		if (shader->hasUniform("u_MVP")) {
+		if (shader->hasUniform("u_VPMat")) {
 			auto& camera = renderer->m_sceneInfo->camera;
-			glm::mat4 mvp = camera.projMatrix * camera.viewMatrix * renderTask.modelMatrix;
-			shader->setUniformMat4v("u_MVP", &mvp[0][0]);
+			glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+			shader->setUniformMat4v("u_VPMat", &vp[0][0]);
 		}
 
 		if (shader->hasUniform("u_ModelMat")) {
