@@ -1,10 +1,12 @@
 #pragma once
 #include"SceneObject.h"
 #include"Renderer.h"
+#include"CameraComponent.h"
 #include<functional>
 
 
 class Notification;
+class LightComponent;
 
 
 class Scene {
@@ -94,6 +96,11 @@ public:
 		m_windowSize = glm::vec2(w, h);
 	}
 
+private:
+	Camera_t makeCamera(const CameraComponent* camera) const;
+	Camera_t makeLightCamera(const LightComponent* light, const CameraComponent* camera) const;
+	Light_t makeLight(const LightComponent* light,  const CameraComponent* camera) const;
+	
 
 private:
 	ID m_id;
@@ -102,4 +109,6 @@ private:
 
 	std::unique_ptr<SceneObject> m_rootObject;
 	glm::vec2 m_windowSize;
+
+	CameraComponent m_defaultCamera;
 };

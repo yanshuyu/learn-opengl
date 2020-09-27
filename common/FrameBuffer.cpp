@@ -74,7 +74,12 @@ FrameBuffer::Status FrameBuffer::checkStatus() const {
 }
 
 
-void FrameBuffer::assignDrawBufferLocation(const std::vector<unsigned int>& locations) {
+void FrameBuffer::setDrawBufferLocation(const std::vector<int>& locations) {
+	if (locations.empty()) {
+		GLCALL(glNamedFramebufferDrawBuffer(m_handler, GL_NONE));
+		return;
+	}
+
 	std::vector<GLenum> drawTargets;
 	drawTargets.reserve(locations.size());
 
@@ -84,6 +89,33 @@ void FrameBuffer::assignDrawBufferLocation(const std::vector<unsigned int>& loca
 
 	GLCALL(glNamedFramebufferDrawBuffers(m_handler, drawTargets.size(), drawTargets.data()));
 }
+
+
+void FrameBuffer::setReadBufferLocation(int location) {
+	if (location == -1) {
+		GLCALL(glNamedFramebufferReadBuffer(m_handler, GL_NONE));
+		return;
+	}
+	GLCALL(glNamedFramebufferReadBuffer(m_handler, int(GL_COLOR_ATTACHMENT0 + location)));
+}
+
+void FrameBuffer::copyData(unsigned int dstHandler, FrameBuffer::CopyFiled filedMask, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, bool usingLinearFilter) const {
+	GLenum filter = usingLinearFilter ? GL_LINEAR : GL_NEAREST;
+	GLCALL(glBlitNamedFramebuffer(m_handler, dstHandler, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, int(filedMask), filter));
+}
+
+void FrameBuffer::getDimension(int* width, int* height) const {
+	int w = 0;
+	int h = 0;
+	GLCALL(glGetNamedFramebufferParameteriv(m_handler, GL_FRAMEBUFFER_DEFAULT_WIDTH, &w));
+	GLCALL(glGetNamedFramebufferParameteriv(m_handler, GL_FRAMEBUFFER_DEFAULT_HEIGHT, &h));
+	
+	if (width)
+		*width = w;
+	if (height)
+		*height = h;
+}
+
 
 void FrameBuffer::release() {
 	if (m_handler) {

@@ -3,9 +3,10 @@
 #include"RendererCore.h"
 #include<glm/glm.hpp>
 
-
+class Scene;
 
 class LightComponent : public Component {
+	friend class  Scene;
 public:
 	LightComponent(LightType type = LightType::DirectioanalLight);
 	LightComponent(const LightComponent& other) = delete;
@@ -27,7 +28,6 @@ public:
 	glm::vec3 getDirection() const;
 	
 	bool isCastShadow() const;
-	Light_t makeLight() const;
 
 	inline glm::vec3 getColor() const {
 		return m_color;
@@ -108,9 +108,6 @@ public:
 	inline float getShadowNear() const {
 		return m_shadowNear;
 	}
-
-private:
-	Camera_t makeCamere() const;
 
 private:
 	LightType m_type;

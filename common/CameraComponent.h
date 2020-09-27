@@ -9,7 +9,7 @@ class TextureCubeApp;
 
 class CameraComponent : public Component {
 	friend class Scene;
-	friend class TextureCubeApp; // for testing pupose
+	
 public:
 	enum class ProjectionMode {
 		Perspective,
@@ -31,7 +31,7 @@ public:
 
 	std::string identifier() const override;
 	Component* copy() const override;
-	void setWindowSize(float w, float h);
+	void onWindowSizeChange(float w, float h);
 
 	glm::mat4 viewMatrix() const;
 	glm::mat4 projectionMatrix() const;
@@ -39,16 +39,28 @@ public:
 
 	glm::vec3 getPosition() const;
 	glm::vec3 getLookDirection() const;
-
-	Camera_t makeCamera() const;
+	Viewport_t getViewPort() const; // screen space view port
+	ViewFrustum_t getViewFrustum() const; // world space view frumstum
 
 public:	
+	// persp
 	float m_fov;
 	float m_near;
 	float m_far;
-	glm::vec4 m_backGroundColor;
 
-	Viewport_t m_viewport;  // normalized viewport
+	// ortho
+	float m_left;
+	float m_right;
+	float m_top;
+	float m_bottom;
+
+	// normalized viewport
+	float m_viewPortX;
+	float m_viewPortY;
+	float m_viewPortW;
+	float m_viewPortH;
+	
+	glm::vec4 m_backGroundColor;
 	ProjectionMode m_projMode;
 
 private: 

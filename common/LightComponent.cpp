@@ -11,15 +11,20 @@ const float LightComponent::s_maxShadowBias = 0.01f;
 LightComponent::LightComponent(LightType type): Component()
 , m_type(type)
 , m_color(1.f, 1.f, 1.f)
-, m_range(0.f)
+, m_range(50.f)
 , m_intensity(1.f)
 , m_innerAngle(0.f)
 , m_outterAngle(0.f)
 , m_shadowType(ShadowType::NoShadow)
-, m_shadowBias(-0.1f)
+, m_shadowBias(0.f)
 , m_shadowStrength(0.8f)
 , m_shadowNear(1.f) {
-
+	if (m_type == LightType::DirectioanalLight)
+		m_range = 1000.f;
+	if (m_type == LightType::SpotLight) {
+		m_innerAngle = 45.f;
+		m_outterAngle = 65.f;
+	}
 }
 
 
@@ -56,6 +61,9 @@ Component* LightComponent::copy() const {
 
 
 glm::vec3 LightComponent::getPosition() const {
+	if (m_type == LightType::DirectioanalLight)
+		return glm::vec3(0.f);
+
 #ifdef _DEBUG
 	ASSERT(m_owner);
 #endif // _DEBUG
@@ -67,6 +75,9 @@ glm::vec3 LightComponent::getPosition() const {
 
 
 glm::vec3 LightComponent::getDirection() const {
+	if (m_type == LightType::PointLight)
+		return glm::vec3(0.f);
+
 #ifdef _DEBUG
 	ASSERT(m_owner);
 #endif // _DEBUG
@@ -79,51 +90,4 @@ glm::vec3 LightComponent::getDirection() const {
 
 bool LightComponent::isCastShadow() const {
 	return m_shadowType != ShadowType::NoShadow;
-}
-
-
-Light_t LightComponent::makeLight() const {
-	Light_t light;
-	light.type = m_type;
-	light.position = getPosition();
-	light.direction = getDirection();
-	light.color = m_color;
-	light.range = m_range;
-	light.innerCone = glm::radians(m_innerAngle);
-	light.outterCone = glm::radians(m_outterAngle);
-	light.intensity = m_intensity;
-
-	light.shadowCamera = makeCamere();
-	light.shadowType = m_shadowType;
-	light.shadowBias = m_shadowBias * s_maxShadowBias;
-	light.shadowStrength = m_shadowStrength;
-
-	return light;
-}
-
-
-Camera_t LightComponent::makeCamere() const {
-	if (m_shadowType == ShadowType::NoShadow)
-		return Camera_t();
-
-	if (m_type == LightType::SpotLight) {
-#ifdef _DEBUG
-		ASSERT(m_owner);
-#endif // _DEBUG
-		glm::vec3 pos(0.f, 10.f, 0.f);
-		glm::vec3 look(0.f, 0.f, 0.f);
-		glm::vec3 up(0.f, 1.f, 0.f);
-		m_owner->m_transform.getCartesianAxesWorld(&pos, nullptr, &up, &look);
-
-		Camera_t lightCam;
-		lightCam.near = m_shadowNear;
-		lightCam.far = m_range;
-		lightCam.position = pos;
-		lightCam.viewMatrix = glm::lookAt(pos, pos + look, up);
-		lightCam.projMatrix = glm::perspective(glm::radians(m_outterAngle * 1.8f), 1.f, m_shadowNear, m_range);
-	
-		return lightCam;
-	}
-
-	return Camera_t();
 }

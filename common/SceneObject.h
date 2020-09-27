@@ -38,7 +38,14 @@ public:
 	bool addComponent(std::unique_ptr<Component>&& c);
 	std::unique_ptr<Component> removeComponent(const std::string& identifier);
 	Component* findComponent(const std::string& identifier) const;
-	
+	template<class T> T* getComponent(const std::string& identifier) const {
+		Component* comp = findComponent(identifier);
+		if (!comp)
+			return nullptr;
+
+		return static_cast<T*>(comp);
+	}
+
 	inline size_t componentCount() const {
 		return m_components.size();
 	}

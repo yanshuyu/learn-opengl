@@ -34,6 +34,13 @@ public:
 	};
 
 
+	enum CopyFiled {
+		Color = GL_COLOR_BUFFER_BIT,
+		Depth = GL_DEPTH_BUFFER_BIT,
+		Stencil = GL_STENCIL_BUFFER_BIT,
+	};
+
+
 public:
 	FrameBuffer();
 	~FrameBuffer();
@@ -53,8 +60,12 @@ public:
 	bool addTextureAttachment(unsigned int texHandler, AttachmentPoint ap, size_t index = 0) const;
 	bool addRenderBufferAttachment(unsigned int bufHandler, AttachmentPoint ap, size_t index = 0) const;
 	Status checkStatus() const;
-	void assignDrawBufferLocation(const std::vector<unsigned int>& locations);  // shader output location map to buffer attachment	
 	void release();
+
+	void setDrawBufferLocation(const std::vector<int>& locations);  // shader output location map to buffer attachment	
+	void setReadBufferLocation(int location);
+	void copyData(unsigned int dstHandler, CopyFiled filedMask, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, bool usingLinearFilter = true) const; //  copy a block of pixels from one framebuffer object to another
+	void getDimension(int* width, int* height) const;
 
 	inline unsigned int getHandler() const {
 		return m_handler;

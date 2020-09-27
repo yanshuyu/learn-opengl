@@ -3,7 +3,8 @@
 #include"Mesh.h"
 #include"Material.h"
 #include<glm/gtc/matrix_transform.hpp>
-
+#include<vector>
+#include<algorithm>
 
 Vertex_t::Vertex_t(): position(0.f)
 , normal(0.f)
@@ -37,28 +38,6 @@ Camera_t::Camera_t(): viewMatrix(1.f)
 
 }
 
-
-Camera_t Camera_t::createDefault(float vpWidth, float vpHeight) {
-	Camera_t defCam;
-
-	if (vpWidth <= 0 || vpHeight <= 0)
-		return defCam;
-
-	defCam.near = 0.1f;
-	defCam.far = 1000.f;
-	defCam.backgrounColor = glm::vec4(glm::vec3(0.f), 1.0f);
-	defCam.position = glm::vec3(0.f, 0.f, 0.f);
-	defCam.viewport.x = 0;
-	defCam.viewport.y = 0;
-	defCam.viewport.width = vpWidth;
-	defCam.viewport.height = vpHeight;
-	defCam.viewMatrix = glm::lookAt(defCam.position,
-											glm::vec3(0.f, 0.f, -1.f),
-											glm::vec3(0.f, 1.f, 0.f));
-	defCam.projMatrix = glm::perspective(glm::radians(60.f), vpWidth / vpHeight, defCam.near, defCam.far);
-	
-	return defCam;
-}
 
 
 Light_t::Light_t(): type(LightType::Unknown)
@@ -142,4 +121,97 @@ void RenderContext::clearMatrix() {
 
 glm::mat4 RenderContext::getMatrix() const {
 	return m_transformStack.top();
+}
+
+
+ViewFrustum_t::ViewFrustum_t() :ltn(0.f)
+, lbn(0.f)
+, rtn(0.f)
+, rbn(0.f)
+, ltf(0.f)
+, lbf(0.f)
+, rtf(0.f)
+, rbf(0.f) {
+
+}
+
+void ViewFrustum_t::applyTransform(const glm::mat4& t) {
+	ltn = t * glm::vec4(ltn, 1.f);
+	lbn = t * glm::vec4(lbn, 1.f);
+	rtn = t * glm::vec4(rtn, 1.f);
+	rbn = t * glm::vec4(rbn, 1.f);
+	
+	ltf = t * glm::vec4(ltf, 1.f);
+	lbf = t * glm::vec4(lbf, 1.f);
+	rtf = t * glm::vec4(rtf, 1.f);
+	rbf = t * glm::vec4(rbf, 1.f);
+}
+
+ViewFrustum_t ViewFrustum_t::transform(const glm::mat4& t) const {
+	ViewFrustum_t vf;
+	vf.ltn = t * glm::vec4(ltn, 1.f);
+	vf.lbn = t * glm::vec4(lbn, 1.f);
+	vf.rtn = t * glm::vec4(rtn, 1.f);
+	vf.rbn = t * glm::vec4(rbn, 1.f);
+
+	vf.ltf = t * glm::vec4(ltf, 1.f);
+	vf.lbf = t * glm::vec4(lbf, 1.f);
+	vf.rtf = t * glm::vec4(rtf, 1.f);
+	vf.rbf = t * glm::vec4(rbf, 1.f);
+
+	return vf;
+}
+
+AABB_t ViewFrustum_t::getAABB() const {
+	AABB_t aabb;
+	std::vector<glm::vec3> points = { ltn, lbn, rtn, rbn, ltf, lbf, rtf, rbf };
+
+	std::sort(points.begin(), points.end(), [](const glm::vec3& l, const glm::vec3& r) {
+		return l.x < r.x;
+	});
+	aabb.minimum.x = points.front().x;
+	aabb.maximum.x = points.back().x;
+
+	std::sort(points.begin(), points.end(), [](const glm::vec3& l, const glm::vec3& r) {
+		return l.y < r.y;
+		});
+	aabb.minimum.y = points.front().y;
+	aabb.maximum.y = points.back().y;
+
+	std::sort(points.begin(), points.end(), [](const glm::vec3& l, const glm::vec3& r) {
+		return l.z < r.z;
+		});
+	aabb.minimum.z = points.front().z;
+	aabb.maximum.z = points.back().z;
+
+	return aabb;
+}
+
+
+AABB_t::AABB_t() : minimum(0.f),
+maximum(0.f) {
+
+}
+
+
+ViewFrustum_t AABB_t::getFrustum() const {
+#ifdef _DEBUG
+	ASSERT(maximum.x >= minimum.x && maximum.y >= minimum.y && maximum.z >= minimum.z);
+#endif // _DEBUG
+
+	float w = maximum.x - minimum.x;
+	float h = maximum.y - minimum.y;
+
+	ViewFrustum_t vf;
+	vf.lbn = minimum;
+	vf.ltn = { minimum.x, minimum.y + h, minimum.z };
+	vf.rbn = { minimum.x + w, minimum.y, minimum.z };
+	vf.rtn = { minimum.x + w, minimum.y + h, minimum.z };
+
+	vf.rtf = maximum;
+	vf.rbf = { maximum.x, maximum.y - h, maximum.z };
+	vf.ltf = { maximum.x - w, maximum.y, maximum.z };
+	vf.lbf = { maximum.x - w, maximum.y - h, maximum.z };
+
+	return vf;
 }

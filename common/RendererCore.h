@@ -68,8 +68,6 @@ struct Camera_t {
 	float near;
 	float far;
 
-	static Camera_t createDefault(float vpWidth, float vpHeight);
-
 	Camera_t();
 };
 
@@ -148,6 +146,34 @@ private:
 	std::stack<glm::mat4> m_transformStack;
 };
 
+
+struct AABB_t;
+
+struct ViewFrustum_t {
+	glm::vec3 ltn;
+	glm::vec3 lbn;
+	glm::vec3 rtn;
+	glm::vec3 rbn;
+
+	glm::vec3 ltf;
+	glm::vec3 lbf;
+	glm::vec3 rtf;
+	glm::vec3 rbf;
+
+	ViewFrustum_t();
+	void applyTransform(const glm::mat4& t);
+	ViewFrustum_t transform(const glm::mat4& t) const;
+	AABB_t getAABB() const;
+};
+
+
+struct AABB_t {
+	glm::vec3 minimum;
+	glm::vec3 maximum;
+
+	AABB_t();
+	ViewFrustum_t getFrustum() const;
+};
 
 
 
