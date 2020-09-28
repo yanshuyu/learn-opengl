@@ -2,49 +2,12 @@
 #include"RendererCore.h"
 #include<string>
 
-//
-// uniform block structs
-//
-struct DirectionalLightBlock {
-	glm::vec4 color;
-	glm::vec3 inverseDiretion;
-};
-
-struct PointLightBlock {
-	glm::vec4 position;
-	glm::vec4 color;
-};
-
-struct SpotLightBlock {
-	glm::vec4 position;
-	glm::vec4 color;
-	glm::vec3 inverseDirection;
-	glm::vec2 angles;
-};
-
-struct ShadowBlock {
-	glm::mat4 lightVP;
-	float shadowStrength;
-	float depthBias;
-	int shadowType;
-};
-
-
+class Renderer;
+class ShaderProgram;
 
 class RenderTechnique {
 public:
-	enum class RenderPass {
-		None,
-		DepthPass,
-		GeometryPass,
-		UnlitPass,
-		ShadowPass,
-		LightPass,
-		TransparencyPass,
-	};
-
-public:
-	RenderTechnique();
+	RenderTechnique(Renderer* invoker);
 	virtual ~RenderTechnique() {}
 
 	virtual bool intialize() = 0;
@@ -56,7 +19,6 @@ public:
 	void setViewPort(const Viewport_t& vp);
 
 	virtual void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) = 0;
-	virtual bool shouldVisitScene() const = 0;
 
 	virtual void clearScrren(int flags) = 0;
 
@@ -88,7 +50,8 @@ public:
 	virtual void onShadowMapResolutionChange(float w, float h) = 0;
 
 	virtual void performTask(const RenderTask_t& task) = 0;
-
+	virtual void pullingRenderTask(ShaderProgram* shader = nullptr);
+	virtual bool shouldRunPass(RenderPass pass) = 0;
 
 	inline  glm::vec4 getClearColor() const {
 		return m_clearColor;
@@ -111,4 +74,5 @@ protected:
 	float m_clearDepth;
 	int m_clearStencil;
 	Viewport_t m_viewPort;
+	Renderer* m_invoker;
 };

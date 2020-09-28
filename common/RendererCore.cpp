@@ -6,6 +6,7 @@
 #include<vector>
 #include<algorithm>
 
+
 Vertex_t::Vertex_t(): position(0.f)
 , normal(0.f)
 , tangent(0.f)
@@ -185,6 +186,21 @@ AABB_t ViewFrustum_t::getAABB() const {
 	aabb.maximum.z = points.back().z;
 
 	return aabb;
+}
+
+
+float ViewFrustum_t::projectionLengthOnDirection(const glm::vec3& dir) const {
+	glm::vec3 dirNorm = glm::normalize(dir);
+	std::vector<glm::vec3> points = { ltn, lbn, rtn, rbn, ltf, lbf, rtf, rbf };
+	std::vector<float> distancesOnDir;
+	distancesOnDir.reserve(points.size());
+	
+	std::for_each(points.begin(), points.end(), [&](const glm::vec3& p) {
+		distancesOnDir.push_back(fabs(glm::dot(p, dirNorm)));
+	});
+	std::sort(distancesOnDir.begin(), distancesOnDir.end());
+	
+	return distancesOnDir.back() - distancesOnDir.front();
 }
 
 

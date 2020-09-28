@@ -123,6 +123,19 @@ struct SceneRenderInfo_t {
 };
 
 
+
+enum class RenderPass {
+	None,
+	DepthPass,
+	GeometryPass,
+	UnlitPass,
+	ShadowPass,
+	LightPass,
+	TransparencyPass,
+};
+
+
+
 class RenderContext {
 public:
 	RenderContext(Renderer* renderer = nullptr);
@@ -164,6 +177,7 @@ struct ViewFrustum_t {
 	void applyTransform(const glm::mat4& t);
 	ViewFrustum_t transform(const glm::mat4& t) const;
 	AABB_t getAABB() const;
+	float projectionLengthOnDirection(const glm::vec3& dir) const;
 };
 
 
@@ -175,5 +189,30 @@ struct AABB_t {
 	ViewFrustum_t getFrustum() const;
 };
 
+//
+// uniform block structs
+//
+struct DirectionalLightBlock {
+	glm::vec4 color;
+	glm::vec3 inverseDiretion;
+};
 
+struct PointLightBlock {
+	glm::vec4 position;
+	glm::vec4 color;
+};
+
+struct SpotLightBlock {
+	glm::vec4 position;
+	glm::vec4 color;
+	glm::vec3 inverseDirection;
+	glm::vec2 angles;
+};
+
+struct ShadowBlock {
+	glm::mat4 lightVP;
+	float shadowStrength;
+	float depthBias;
+	int shadowType;
+};
 

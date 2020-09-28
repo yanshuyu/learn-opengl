@@ -10,7 +10,7 @@ class Buffer;
 class FrameBuffer;
 class Texture;
 class ShaderProgram;
-
+class SpotLightShadowMapping;
 
 class DeferredRenderer : public RenderTechnique {
 	struct Vertex {
@@ -28,8 +28,10 @@ class DeferredRenderer : public RenderTechnique {
 	friend class UlitPassRenderTaskExecutror;
 	friend class ShadowPassRenderTaskExecutor;
 	
+	friend class SpotLightShadowMapping;
+
 public:
-	DeferredRenderer(const RenderingSettings_t& settings);
+	DeferredRenderer(Renderer* inkover, const RenderingSettings_t& settings);
 	~DeferredRenderer();
 
 	DeferredRenderer(const DeferredRenderer& other) = delete;
@@ -43,7 +45,6 @@ public:
 	static const std::string s_identifier;
 
 	void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) override;
-	bool shouldVisitScene() const override;
 
 	void clearScrren(int flags) override;
 
@@ -72,7 +73,8 @@ public:
 	void onShadowMapResolutionChange(float w, float h) override;
 
 	void performTask(const RenderTask_t& task)  override;
-
+	bool shouldRunPass(RenderPass pass) override;
+	void pullingRenderTask(ShaderProgram* shader = nullptr);
 
 	RenderPass currentRenderPass() const override {
 		return m_currentPass;
@@ -84,7 +86,7 @@ public:
 
 private:
 	bool setupGBuffers();
-	bool setupShadowMap();
+	//bool setupShadowMap();
 	void setupFullScreenQuad();
 	void drawFullScreenQuad();
 
@@ -116,10 +118,7 @@ private:
 	std::unique_ptr<Buffer> m_spotLightUBO;
 
 	// shadow mapping
-	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
-	std::unique_ptr<Texture> m_shadowMap;
-	std::unique_ptr<Buffer> m_shadowUBO;
-	glm::mat4 m_lightVPMat;
+	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
 };
 
 

@@ -12,7 +12,8 @@
 Renderer::Renderer(const RenderingSettings_t& settings, Mode mode) : m_renderingSettings(settings)
 , m_renderMode(Mode::None)
 , m_renderTechnique(nullptr)
-, m_renderContext() {
+, m_renderContext()
+, m_scene(nullptr) {
 	if (mode != Mode::None)
 		setRenderMode(mode);
 	m_renderContext.setRenderer(this);
@@ -44,7 +45,7 @@ bool Renderer::setRenderMode(Mode mode) {
 	clenUp();
 
 	if (mode == Mode::Forward) {
-		m_renderTechnique.reset(new ForwardRenderer(m_renderingSettings));
+		m_renderTechnique.reset(new ForwardRenderer(this, m_renderingSettings));
 		if (!m_renderTechnique->intialize()) {
 			m_renderTechnique.release();
 			m_renderMode = Mode::None;
@@ -55,7 +56,7 @@ bool Renderer::setRenderMode(Mode mode) {
 		return true;
 
 	} else if (mode == Mode::Deferred) {	
-		m_renderTechnique.reset(new DeferredRenderer(m_renderingSettings));
+		m_renderTechnique.reset(new DeferredRenderer(this, m_renderingSettings));
 		if (!m_renderTechnique->intialize()) {
 			m_renderTechnique.release();
 			m_renderMode = mode;
@@ -97,43 +98,46 @@ void Renderer::onWindowResize(float w, float h) {
 
 
 void Renderer::renderScene(Scene* s) {
+	m_scene = s;
 	auto sri = s->gatherSceneRenderInfo();
 	m_renderTechnique->prepareForSceneRenderInfo(sri);
 	m_renderTechnique->beginFrame();
 
 	// pre-z pass
-	m_renderContext.clearMatrix();
-	m_renderTechnique->beginDepthPass();
-	if(m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
-	m_renderTechnique->endDepthPass();
+	if (m_renderTechnique->shouldRunPass(RenderPass::DepthPass)) {
+		m_renderContext.clearMatrix();
+		m_renderTechnique->beginDepthPass();
+		m_renderTechnique->endDepthPass();
+	}
 
 	// G pass
-	m_renderContext.clearMatrix();
-	m_renderTechnique->beginGeometryPass();
-	if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
-	m_renderTechnique->endGeometryPass();
+	if (m_renderTechnique->shouldRunPass(RenderPass::GeometryPass)) {
+		m_renderContext.clearMatrix();
+		m_renderTechnique->beginGeometryPass();
+		m_renderTechnique->endGeometryPass();
+	}
 
 	// ulit pass
 	if (sri->lights.empty()) {
-		m_renderContext.clearMatrix();
-		m_renderTechnique->beginUnlitPass();
-		if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
-		m_renderTechnique->endUnlitPass();
-
+		if (m_renderTechnique->shouldRunPass(RenderPass::UnlitPass)) {
+			m_renderContext.clearMatrix();
+			m_renderTechnique->beginUnlitPass();
+			m_renderTechnique->endUnlitPass();
+		}
 	} else {
 		// light passes
-		for (const auto& l : sri->lights) {
-			if (l.isCastShadow()) {
-				m_renderContext.clearMatrix();
-				m_renderTechnique->beginShadowPass(l);
-				if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
-				m_renderTechnique->endShadowPass(l);
-			}
+		if (m_renderTechnique->shouldRunPass(RenderPass::LightPass)) {
+			for (const auto& l : sri->lights) {
+				if (l.isCastShadow() && m_renderTechnique->shouldRunPass(RenderPass::ShadowPass)) {
+					m_renderContext.clearMatrix();
+					m_renderTechnique->beginShadowPass(l);
+					m_renderTechnique->endShadowPass(l);
+				}
 
-			m_renderContext.clearMatrix();
-			m_renderTechnique->beginLightPass(l);
-			if (m_renderTechnique->shouldVisitScene()) s->render(&m_renderContext);
-			m_renderTechnique->endLightPass(l);
+				m_renderContext.clearMatrix();
+				m_renderTechnique->beginLightPass(l);
+				m_renderTechnique->endLightPass(l);
+			}
 		}
 	}
 
@@ -142,10 +146,16 @@ void Renderer::renderScene(Scene* s) {
 	m_renderTechnique->endFrame();
 }
 
-void Renderer::subsimtTask(const RenderTask_t& task) {
+void Renderer::renderTask(const RenderTask_t& task) {
 	m_renderTechnique->performTask(task);
 }
 
+void Renderer::pullingRenderTask() {
+	if (m_scene) {
+		m_renderContext.clearMatrix();
+		m_scene->render(&m_renderContext);
+	}
+}
 
 void Renderer::setViewPort(const Viewport_t& vp) {
 	m_renderTechnique->setViewPort(vp);

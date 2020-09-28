@@ -100,7 +100,7 @@ void MeshRenderComponent::render(RenderContext* context) {
 		task.primitive = mesh->getPrimitiveType();
 		task.material = material;
 		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform(); 
-		context->renderer()->subsimtTask(task);
+		context->renderer()->renderTask(task);
 	}
 }
 

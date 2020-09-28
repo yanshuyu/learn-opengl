@@ -23,7 +23,7 @@ public:
 	virtual ~RenderTaskExecutor();
 
 	virtual bool initialize() { return true; }
-	virtual void executeTask(const RenderTask_t& renderTask) = 0;
+	virtual void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) = 0;
 	virtual void release() {};
 
 
@@ -35,7 +35,7 @@ protected:
 class DepthPassRenderTaskExecutor: public RenderTaskExecutor {
 public:
 	DepthPassRenderTaskExecutor(RenderTechnique* rt);
-	void executeTask(const RenderTask_t& renderTask) override;
+	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
 };
 
 
@@ -43,7 +43,7 @@ public:
 class UlitPassRenderTaskExecutror : public RenderTaskExecutor {
 public:
 	UlitPassRenderTaskExecutror(RenderTechnique* rt);
-	void executeTask(const RenderTask_t& renderTask) override;
+	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
 };
 
 
@@ -51,7 +51,7 @@ class LightPassRenderTaskExecuter : public RenderTaskExecutor {
 public:
 	LightPassRenderTaskExecuter(RenderTechnique* rt);
 	bool initialize() override;
-	void executeTask(const RenderTask_t& renderTask) override;
+	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
 	void release() override;
 
 private:
@@ -64,7 +64,7 @@ public:
 	GeometryPassRenderTaskExecutor(RenderTechnique* rt);
 
 	bool initialize() override;
-	void executeTask(const RenderTask_t& renderTask) override;
+	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
 	void release() override;
 
 private:
@@ -76,5 +76,5 @@ class ShadowPassRenderTaskExecutor : public RenderTaskExecutor {
 public:
 	ShadowPassRenderTaskExecutor(RenderTechnique* rt);
 
-	void executeTask(const RenderTask_t& renderTask) override;
+	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
 };

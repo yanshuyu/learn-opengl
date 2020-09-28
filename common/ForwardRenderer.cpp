@@ -4,20 +4,23 @@
 #include"Buffer.h"
 #include"Scene.h"
 #include"FrameBuffer.h"  
+#include"Renderer.h"
+#include"SpotLightShadowMapping.h"
 #include<sstream>
 
 
 const std::string ForwardRenderer::s_identifier = "ForwardRenderer";
 
 
-ForwardRenderer::ForwardRenderer(const RenderingSettings_t& settings): RenderTechnique()
+ForwardRenderer::ForwardRenderer(Renderer* invoker, const RenderingSettings_t& settings): RenderTechnique(invoker)
 , m_renderingSettings(settings)
 , m_activeShader(nullptr)
 , m_currentPass(RenderPass::None)
 , m_sceneInfo(nullptr)
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
-, m_spotLightUBO(nullptr) {
+, m_spotLightUBO(nullptr)
+, m_spotLightShadow(nullptr) {
 
 }
 
@@ -32,13 +35,24 @@ void ForwardRenderer::clearScrren(int flags) {
 bool ForwardRenderer::intialize() {
 	GLCALL(glEnable(GL_DEPTH_TEST));
 	GLCALL(glDepthFunc(GL_LESS));
+	GLCALL(glDepthMask(GL_TRUE));
 
 	GLCALL(glEnable(GL_CULL_FACE));
 	GLCALL(glCullFace(GL_BACK));
 	GLCALL(glFrontFace(GL_CCW));
-
-	if (!setupShadowMap())
+	
+	bool ok = true;
+	// shadow mapping
+	m_spotLightShadow.reset(new SpotLightShadowMapping(this,
+		{ m_renderingSettings.shadowMapResolution.x, m_renderingSettings.shadowMapResolution.y }));
+	ok = m_spotLightShadow->initialize();
+	
+	if (!ok) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
 		return false;
+	}
 
 	m_directionalLightUBO.reset(new Buffer());
 	m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
@@ -60,7 +74,7 @@ bool ForwardRenderer::intialize() {
 	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(this));
 	m_taskExecutors[RenderPass::ShadowPass] = std::unique_ptr<RenderTaskExecutor>(new ShadowPassRenderTaskExecutor(this));
 
-	bool ok = true;
+
 	for (auto& executor : m_taskExecutors) {
 		if (!executor.second->initialize()) {
 			ok = false;
@@ -81,9 +95,7 @@ void ForwardRenderer::cleanUp() {
 	m_spotLightUBO.release();
 	m_taskExecutors.clear();
 
-	m_shadowMapFBO.release();
-	m_shadowMap.release();
-	m_shadowUBO.release();
+	m_spotLightShadow.release();
 }
 
 void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t* si) {
@@ -91,12 +103,19 @@ void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t* si) {
 }
 
 
-bool ForwardRenderer::shouldVisitScene() const {
-	if (m_currentPass == RenderPass::GeometryPass 
-		|| m_currentPass == RenderPass::None)
+bool ForwardRenderer::shouldRunPass(RenderPass pass) {
+	if (pass == RenderPass::GeometryPass)
 		return false;
 
 	return true;
+}
+
+
+void ForwardRenderer::pullingRenderTask(ShaderProgram* shader) {
+	if (shader)
+		m_activeShader = shader;
+
+	__super::pullingRenderTask();
 }
 
 void ForwardRenderer::beginFrame() {
@@ -107,11 +126,17 @@ void ForwardRenderer::beginFrame() {
 	if (camera.viewport != m_viewPort)
 		setViewPort(camera.viewport);
 
-	clearScrren(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	clearScrren(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 
 void ForwardRenderer::endFrame() {
+#ifdef _DEBUG
+	float renderWidth = m_renderingSettings.renderSize.x;
+	float renderHeight = m_renderingSettings.renderSize.y;
+	m_spotLightShadow->visualizeShadowMap({ renderWidth, renderHeight }, { 0.f, 0.f, renderWidth * 0.25f, renderHeight * 0.25f });
+#endif // _DEBUG
+
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
@@ -146,11 +171,19 @@ void ForwardRenderer::beginDepthPass() {
 
 	m_activeShader = preZShader.get();
 	m_currentPass = RenderPass::DepthPass;
+
+	// set view project matrix
+	if (m_activeShader->hasUniform("u_VPMat")) {
+		auto& camera = m_sceneInfo->camera;
+		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+		m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+	}
+
+	pullingRenderTask();
 }
 
 
 void ForwardRenderer::endDepthPass() {
-	GLCALL(glEnable(GL_DEPTH_TEST));
 	GLCALL(glDepthFunc(GL_LEQUAL));
 	GLCALL(glDepthMask(GL_FALSE));
 	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
@@ -162,11 +195,9 @@ void ForwardRenderer::endDepthPass() {
 
 
 void ForwardRenderer::beginGeometryPass() {
-	m_currentPass = RenderPass::GeometryPass;
 }
 
 void ForwardRenderer::endGeometryPass() {
-	m_currentPass = RenderPass::None;
 }
 
 void ForwardRenderer::beginUnlitPass() {
@@ -180,6 +211,15 @@ void ForwardRenderer::beginUnlitPass() {
 
 	m_activeShader = unlitShader.get();
 	m_currentPass = RenderPass::UnlitPass;
+
+	// set view project matrix
+	if (m_activeShader->hasUniform("u_VPMat")) {
+		auto& camera = m_sceneInfo->camera;
+		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+		m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+	}
+
+	pullingRenderTask();
 }
 
 void ForwardRenderer::endUnlitPass() {
@@ -190,51 +230,40 @@ void ForwardRenderer::endUnlitPass() {
 
 
 void ForwardRenderer::beginShadowPass(const Light_t& l) {
-	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
-	if (!preZShader)
-		preZShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DepthPass.shader");
-
-	ASSERT(preZShader);
-
-	preZShader->bind();
-	m_shadowMapFBO->bind();
-	m_activeShader = preZShader.get();
-	m_currentPass = RenderPass::ShadowPass;
-	m_lightVPMat = l.shadowCamera.projMatrix * l.shadowCamera.viewMatrix;
-
-	// depth pass disable depth writting, restore it
-	GLCALL(glEnable(GL_DEPTH_TEST));
+	//restore depth buffer writable
 	GLCALL(glDepthFunc(GL_LESS));
 	GLCALL(glDepthMask(GL_TRUE));
-	GLCALL(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
-	setViewPort(Viewport_t(0, 0, m_renderingSettings.shadowMapResolution.x, m_renderingSettings.shadowMapResolution.y));
 
-	//using cull back face mode to output back face depth
-	//GLCALL(glCullFace(GL_FRONT));
-	//GLCALL(glEnable(GL_POLYGON_OFFSET_FILL));
-	//GLCALL(glPolygonOffset(2.5f, 20.f));
-	clearScrren(GL_DEPTH_BUFFER_BIT);
+	m_currentPass = RenderPass::ShadowPass;
 
+	switch (l.type)
+	{
+	case LightType::SpotLight:
+		m_spotLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
+		break;
+	default:
+		break;
+	}
 }
 
 void ForwardRenderer::endShadowPass(const Light_t& l) {
-	m_shadowMapFBO->unbind();
-	FrameBuffer::bindDefault();
+	switch (l.type)
+	{
+	case LightType::SpotLight:
+		m_spotLightShadow->endShadowPhase(l, m_sceneInfo->camera);
+		break;
+	default:
+		break;
+	}
+
+	GLCALL(glDepthFunc(GL_LEQUAL));
+	GLCALL(glDepthMask(GL_FALSE));
 
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
 	}
 	m_currentPass = RenderPass::None;
-
-	GLCALL(glEnable(GL_DEPTH_TEST));
-	GLCALL(glDepthFunc(GL_LEQUAL));
-	GLCALL(glDepthMask(GL_FALSE));
-	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
-	//GLCALL(glCullFace(GL_BACK));
-	//GLCALL(glDisable(GL_POLYGON_OFFSET_FILL));
-	//GLCALL(glPolygonOffset(0.f, 0.f));
-	setViewPort(Viewport_t(0, 0, m_renderingSettings.renderSize.x, m_renderingSettings.renderSize.y));
 }
 
 void ForwardRenderer::beginLightPass(const Light_t& l) {
@@ -312,6 +341,8 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			spotLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 		}
 
+		m_spotLightShadow->beginLighttingPhase(l, m_activeShader);
+
 	}break;
 
 	default:
@@ -321,30 +352,20 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		break;
 	}
 
+	// set view project matrix
+	if (m_activeShader->hasUniform("u_VPMat")) {
+		auto& camera = m_sceneInfo->camera;
+		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
+		m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+	}
+
 	// set camera position
 	if (m_activeShader->hasUniform("u_cameraPosW")) {
 		glm::vec3 camPos = m_sceneInfo->camera.position;
 		m_activeShader->setUniform3v("u_cameraPosW", &camPos[0]);
 	}
 
-	// set shadow map
-	if (m_activeShader->hasUniform("u_shadowMap")) {
-		m_activeShader->setUniform1("u_hasShadowMap", int(l.isCastShadow()));
-		if (l.isCastShadow()) {
-			m_shadowMap->bind(Texture::Unit::ShadowMap);
-			m_activeShader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
-
-			static ShadowBlock shadowBlock;
-			shadowBlock.lightVP = m_lightVPMat;
-			shadowBlock.depthBias = l.shadowBias;
-			shadowBlock.shadowStrength = l.shadowStrength;
-			shadowBlock.shadowType = int(l.shadowType);
-			m_shadowUBO->bind(Buffer::Target::UniformBuffer);
-			m_shadowUBO->loadSubData(&shadowBlock, 0, sizeof(shadowBlock));
-			m_shadowUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::ShadowBlock));
-			m_activeShader->bindUniformBlock("ShadowBlock", ShaderProgram::UniformBlockBindingPoint::ShadowBlock);
-		}
-	}
+	pullingRenderTask();
 }
 
 void ForwardRenderer::endLightPass(const Light_t& l) {
@@ -359,6 +380,7 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	
 	case LightType::SpotLight:
 		m_spotLightUBO->unbind();
+		m_spotLightShadow->endLighttingPhase(l, m_activeShader);
 		break;
 
 	default:
@@ -372,11 +394,6 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	m_activeShader->unbind();
 	m_activeShader = nullptr;
 	m_currentPass = RenderPass::None;
-
-	if (l.isCastShadow()) {
-		m_shadowMap->unbind();
-		m_shadowUBO->unbind();
-	}
 
 	GLCALL(glDisable(GL_BLEND));
 	GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -407,7 +424,7 @@ void ForwardRenderer::performTask(const RenderTask_t& task) {
 		return;
 	}
 
-	taskExecutor->second->executeTask(task);
+	taskExecutor->second->executeTask(task, m_activeShader);
 }
 
 
@@ -417,42 +434,5 @@ void ForwardRenderer::onWindowResize(float w, float h) {
 
 void ForwardRenderer::onShadowMapResolutionChange(float w, float h) {
 	m_renderingSettings.shadowMapResolution = { w, h };
-	setupShadowMap();
-}
-
-
-bool ForwardRenderer::setupShadowMap() {
-	m_shadowUBO.reset(new Buffer());
-	m_shadowUBO->bind(Buffer::Target::UniformBuffer);
-	m_shadowUBO->loadData(nullptr, sizeof(ShadowBlock), Buffer::Usage::StaticDraw);
-	m_shadowUBO->unbind();
-
-	m_shadowMapFBO.reset(new FrameBuffer());
-	m_shadowMap.reset(new Texture());
-
-	bool success = true;
-	m_shadowMap->bind();
-	success = m_shadowMap->loadImage2DFromMemory(Texture::Format::Depth32, 
-													Texture::Format::Depth,
-													Texture::FormatDataType::Float, 
-													m_renderingSettings.shadowMapResolution.x, 
-													m_renderingSettings.shadowMapResolution.y,
-													nullptr);
-	m_shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-	m_shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-	m_shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
-	m_shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
-	m_shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
-	m_shadowMap->unbind();
-
-
-	if (!success)
-		return false;
-
-	m_shadowMapFBO->bind();
-	m_shadowMapFBO->addTextureAttachment(m_shadowMap->getHandler(), FrameBuffer::AttachmentPoint::Depth);
-	FrameBuffer::Status result = m_shadowMapFBO->checkStatus();
-	m_shadowMapFBO->unbind();
-
-	return result == FrameBuffer::Status::Ok;
+	m_spotLightShadow->onShadowMapResolutionChange(w, h);
 }

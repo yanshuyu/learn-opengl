@@ -1,12 +1,14 @@
 #include"RenderTechnique.h"
+#include"Renderer.h"
 #include"Util.h"
 #include<glad/glad.h>
 
 
-RenderTechnique::RenderTechnique() : m_clearColor{0.f, 0.f, 0.f, 1.f}
+RenderTechnique::RenderTechnique(Renderer* invoker): m_invoker(invoker)
+, m_clearColor{0.f, 0.f, 0.f, 1.f}
 , m_clearDepth(1.0f)
 , m_clearStencil(0)
-, m_viewPort() {
+, m_viewPort(){
 	setClearColor(m_clearColor);
 	setClearDepth(m_clearDepth);
 	setClearStencil(m_clearStencil);
@@ -34,4 +36,9 @@ void RenderTechnique::setClearDepth(float d) {
 void RenderTechnique::setClearStencil(int m) {
 	m_clearStencil = m;
 	GLCALL(glClearStencil(m_clearStencil));
+}
+
+
+void RenderTechnique::pullingRenderTask(ShaderProgram* shader) {
+	m_invoker->pullingRenderTask();
 }

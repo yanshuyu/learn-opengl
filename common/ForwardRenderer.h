@@ -7,16 +7,18 @@
 class Buffer;
 class FrameBuffer;
 class Texture;
+class SpotLightShadowMapping;
 
 class ForwardRenderer : public RenderTechnique {
-
 	friend class DepthPassRenderTaskExecutor;
 	friend class UlitPassRenderTaskExecutror;
 	friend class LightPassRenderTaskExecuter;
 	friend class ShadowPassRenderTaskExecutor;
 
+	friend class SpotLightShadowMapping;
+
 public:
-	ForwardRenderer(const RenderingSettings_t& settings);
+	ForwardRenderer(Renderer* renderer, const RenderingSettings_t& settings);
 	~ForwardRenderer();
 
 	ForwardRenderer(const ForwardRenderer& other) = delete;
@@ -32,7 +34,6 @@ public:
 	void cleanUp() override;
 
 	void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) override;
-	bool shouldVisitScene() const override;
 
 	void beginFrame() override;
 	void endFrame() override;
@@ -57,6 +58,8 @@ public:
 	void endTransparencyPass() override;
 
 	void performTask(const RenderTask_t& task) override;
+	bool shouldRunPass(RenderPass pass) override;
+	void pullingRenderTask(ShaderProgram* shader = nullptr) override;
 
 	void onWindowResize(float w, float h) override;
 	void onShadowMapResolutionChange(float w, float h);
@@ -68,18 +71,6 @@ public:
 	std::string identifier() const override {
 		return s_identifier;
 	}
-
-private:
-	void beginDirectionalLightPass(const Light_t& l);
-	void endDirectionalLightPass();
-
-	void beginPointLightPass(const Light_t& l);
-	void endPointLightPass();
-
-	void beginSpotLightPass(const Light_t& l);
-	void endSpotLightPass();
-
-	bool setupShadowMap();
 
 private:
 	RenderingSettings_t m_renderingSettings;
@@ -95,8 +86,5 @@ private:
 	std::unique_ptr<Buffer> m_spotLightUBO;
 	
 	// shadow mapping
-	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
-	std::unique_ptr<Texture> m_shadowMap;
-	std::unique_ptr<Buffer> m_shadowUBO;
-	glm::mat4 m_lightVPMat;
+	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
 };

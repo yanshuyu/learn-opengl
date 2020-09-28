@@ -7,6 +7,7 @@
 class Scene;
 class Texture;
 
+
 class Renderer {
 
 #ifdef _DEBUG
@@ -47,8 +48,8 @@ public:
 	void clearScrren(int flags);
 
 	void renderScene(Scene* s);
-	void subsimtTask(const RenderTask_t& task);
-
+	void renderTask(const RenderTask_t& task);
+	void pullingRenderTask();
 
 	inline  glm::vec4 getClearColor() const {
 		return m_renderTechnique->getClearColor();
@@ -70,5 +71,6 @@ private:
 	RenderingSettings_t m_renderingSettings;
 	Mode m_renderMode;
 	RenderContext m_renderContext;
+	Scene* m_scene;
 	std::unique_ptr<RenderTechnique> m_renderTechnique;
 };
