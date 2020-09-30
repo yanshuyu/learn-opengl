@@ -11,6 +11,8 @@ class FrameBuffer;
 class Texture;
 class ShaderProgram;
 class SpotLightShadowMapping;
+class DirectionalLightShadowMapping;
+
 
 class DeferredRenderer : public RenderTechnique {
 	struct Vertex {
@@ -119,6 +121,7 @@ private:
 
 	// shadow mapping
 	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
+	std::unique_ptr<DirectionalLightShadowMapping> m_dirLightShadow;
 };
 
 

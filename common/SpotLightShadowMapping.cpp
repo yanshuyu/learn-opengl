@@ -121,8 +121,8 @@ void SpotLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPro
 	if (shader->hasUniform("u_shadowMap")) {
 		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
 		if (light.isCastShadow()) {
-			m_shadowMap->bind(Texture::Unit::ShadowMap);
-			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
+			m_shadowMap->bind(Texture::Unit::ShadowMap0);
+			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap0));
 
 			static ShadowBlock shadowBlock;
 			shadowBlock.lightVP = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;

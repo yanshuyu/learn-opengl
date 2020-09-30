@@ -16,10 +16,8 @@ public:
 		Orthogonal,
 	};
 
-protected:
-	CameraComponent(float wndWidth, float wndHeight);
-
 public:
+	CameraComponent(float ar = 1.f);
 	~CameraComponent();
 
 	CameraComponent(const CameraComponent& other) = delete;
@@ -31,7 +29,6 @@ public:
 
 	std::string identifier() const override;
 	Component* copy() const override;
-	void onWindowSizeChange(float w, float h);
 
 	glm::mat4 viewMatrix() const;
 	glm::mat4 projectionMatrix() const;
@@ -39,12 +36,15 @@ public:
 
 	glm::vec3 getPosition() const;
 	glm::vec3 getLookDirection() const;
-	Viewport_t getViewPort() const; // screen space view port
-	ViewFrustum_t getViewFrustum() const; // world space view frumstum
+	Viewport_t getViewPort(float renderWidth, float renderHeight) const; // screen space view port
+	ViewFrustum_t getViewFrustum() const; // view space view frumstum
+
+	Camera_t makeCamera(float wndWidth, float wndHeight) const;
 
 public:	
 	// persp
 	float m_fov;
+	float m_aspectRatio;
 	float m_near;
 	float m_far;
 
@@ -62,8 +62,4 @@ public:
 	
 	glm::vec4 m_backGroundColor;
 	ProjectionMode m_projMode;
-
-private: 
-	float m_windowWidth;
-	float m_windowHeight;
 };

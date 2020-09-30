@@ -44,7 +44,7 @@ bool ShaderProgram::compileAndLink() {
 		vs = std::make_unique<Shader>(vsrc, Shader::Type::VertexShader);
 		if (!vs->compile()) {
 			std::stringstream msg;
-			msg << "[Shader Load error] Compile error: " << vs->getInfoLog() << std::endl;
+			msg << "[Shader Load error] VS Compile error: " << vs->getInfoLog() << std::endl;
 			CONSOLELOG(msg.str());
 			return false;
 		}
@@ -54,7 +54,7 @@ bool ShaderProgram::compileAndLink() {
 		fs = std::make_unique<Shader>(fsrc, Shader::Type::FragmentShader);
 		if (!fs->compile()) {
 			std::stringstream msg;
-			msg << "[Shader Load error] Fragment error: " << fs->getInfoLog() << std::endl;
+			msg << "[Shader Load error] FS Compile error: " << fs->getInfoLog() << std::endl;
 			CONSOLELOG(msg.str());
 			return false;
 		}
@@ -78,6 +78,14 @@ bool ShaderProgram::compileAndLink() {
 	GLCALL(glGetProgramiv(m_handler, GL_LINK_STATUS, &linked));
 
 	if (!linked) {
+		std::stringstream msg;
+		msg << "[Shader Link error] info log: " << getInfoLog() << std::endl;
+		CONSOLELOG(msg.str());
+
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+		
 		release();
 		return false;
 	}

@@ -6,6 +6,7 @@
 #include"FrameBuffer.h"  
 #include"Renderer.h"
 #include"SpotLightShadowMapping.h"
+#include"DirectionalLightShadowMapping.h"
 #include<sstream>
 
 
@@ -20,7 +21,8 @@ ForwardRenderer::ForwardRenderer(Renderer* invoker, const RenderingSettings_t& s
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
-, m_spotLightShadow(nullptr) {
+, m_spotLightShadow(nullptr)
+, m_dirLightShadow(nullptr) {
 
 }
 
@@ -46,7 +48,15 @@ bool ForwardRenderer::intialize() {
 	m_spotLightShadow.reset(new SpotLightShadowMapping(this,
 		{ m_renderingSettings.shadowMapResolution.x, m_renderingSettings.shadowMapResolution.y }));
 	ok = m_spotLightShadow->initialize();
-	
+	if (!ok) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+		return false;
+	}
+
+	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution));
+	ok = m_dirLightShadow->initialize();
 	if (!ok) {
 #ifdef _DEBUG
 		ASSERT(false);
@@ -96,6 +106,7 @@ void ForwardRenderer::cleanUp() {
 	m_taskExecutors.clear();
 
 	m_spotLightShadow.release();
+	m_dirLightShadow.release();
 }
 
 void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t* si) {
@@ -134,7 +145,8 @@ void ForwardRenderer::endFrame() {
 #ifdef _DEBUG
 	float renderWidth = m_renderingSettings.renderSize.x;
 	float renderHeight = m_renderingSettings.renderSize.y;
-	m_spotLightShadow->visualizeShadowMap({ renderWidth, renderHeight }, { 0.f, 0.f, renderWidth * 0.25f, renderHeight * 0.25f });
+	//m_spotLightShadow->visualizeShadowMap({ renderWidth, renderHeight }, { 0.f, 0.f, renderWidth * 0.25f, renderHeight * 0.25f });
+	m_dirLightShadow->visualizeShadowMaps(m_renderingSettings.renderSize);
 #endif // _DEBUG
 
 	if (m_activeShader) {
@@ -241,6 +253,11 @@ void ForwardRenderer::beginShadowPass(const Light_t& l) {
 	case LightType::SpotLight:
 		m_spotLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
 		break;
+
+	case LightType::DirectioanalLight:
+		m_dirLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
+		break;
+
 	default:
 		break;
 	}
@@ -252,6 +269,11 @@ void ForwardRenderer::endShadowPass(const Light_t& l) {
 	case LightType::SpotLight:
 		m_spotLightShadow->endShadowPhase(l, m_sceneInfo->camera);
 		break;
+
+	case LightType::DirectioanalLight:
+		m_dirLightShadow->endShadowPhase(l, m_sceneInfo->camera);
+		break;
+
 	default:
 		break;
 	}
@@ -294,6 +316,9 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
 			directionalLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 		}
+
+		m_dirLightShadow->beginLighttingPhase(l, m_activeShader);
+
 	}break;
 
 	case LightType::PointLight: {
@@ -372,6 +397,7 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	switch (l.type) {
 	case LightType::DirectioanalLight:
 		m_directionalLightUBO->unbind();
+		m_dirLightShadow->endLighttingPhase(l, m_activeShader);
 		break;
 
 	case LightType::PointLight:
@@ -435,4 +461,5 @@ void ForwardRenderer::onWindowResize(float w, float h) {
 void ForwardRenderer::onShadowMapResolutionChange(float w, float h) {
 	m_renderingSettings.shadowMapResolution = { w, h };
 	m_spotLightShadow->onShadowMapResolutionChange(w, h);
+	m_dirLightShadow->onShadowMapResolutionChange(w, h);
 }

@@ -37,7 +37,7 @@ public:
 	SceneObject* addCube(std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f), const glm::vec3& bgColor = glm::vec3(0.f));
 
-	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f);
+	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f, ShadowType shadowType = ShadowType::HardShadow);
 	SceneObject* addPointLight(const glm::vec3& color, float range = 50, float intensity = 1.f);
 	SceneObject* addSpotLight(const glm::vec3& color, 
 								float innerAngle = 30.f, 
@@ -95,12 +95,6 @@ public:
 	inline void onWindowReSize(float w, float h) {
 		m_windowSize = glm::vec2(w, h);
 	}
-
-private:
-	Camera_t makeCamera(const CameraComponent* camera) const;
-	Camera_t makeLightCamera(const LightComponent* light, const CameraComponent* camera) const;
-	Light_t makeLight(const LightComponent* light,  const CameraComponent* camera) const;
-	
 
 private:
 	ID m_id;

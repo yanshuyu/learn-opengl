@@ -8,6 +8,7 @@
 #include"Util.h"
 #include"Renderer.h"
 #include"SpotLightShadowMapping.h"
+#include"DirectionalLightShadowMapping.h"
 #include<sstream>
 
 
@@ -33,7 +34,8 @@ DeferredRenderer::DeferredRenderer(Renderer* invoker, const RenderingSettings_t&
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
-, m_spotLightShadow(nullptr) {
+, m_spotLightShadow(nullptr)
+, m_dirLightShadow(nullptr){
 
 }
 
@@ -62,6 +64,15 @@ bool DeferredRenderer::intialize() {
 #endif // _DEBUG
 	if (!ok)
 		return false;
+
+	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution));
+	ok = m_dirLightShadow->initialize();
+	if (!ok) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+		return false;
+	}
 
 	setupFullScreenQuad();
 
@@ -123,6 +134,7 @@ void DeferredRenderer::cleanUp() {
 	m_spotLightUBO.release();
 
 	m_spotLightShadow.release();
+	m_dirLightShadow.release();
 }
 
 
@@ -166,9 +178,11 @@ void DeferredRenderer::beginFrame() {
 
 void DeferredRenderer::endFrame() {
 #ifdef _DEBUG
+	/*
 	float renderWidth = m_renderingSettings.renderSize.x;
 	float renderHeight = m_renderingSettings.renderSize.y;
 	m_spotLightShadow->visualizeShadowMap({ renderWidth, renderHeight }, { 0.f, 0.f, renderWidth * 0.25f, renderHeight * 0.25f });
+	*/
 #endif // _DEBUG
 
 	if (m_activeShader) {
@@ -295,6 +309,11 @@ void DeferredRenderer::beginShadowPass(const Light_t& l) {
 	case LightType::SpotLight:
 		m_spotLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
 		break;
+
+	case LightType::DirectioanalLight:
+		m_dirLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
+		break;
+
 	default:
 		break;
 	}
@@ -306,6 +325,11 @@ void DeferredRenderer::endShadowPass(const Light_t& l) {
 	case LightType::SpotLight:
 		m_spotLightShadow->endShadowPhase(l, m_sceneInfo->camera);
 		break;
+
+	case LightType::DirectioanalLight:
+		m_dirLightShadow->endShadowPhase(l, m_sceneInfo->camera);
+		break;
+
 	default:
 		break;
 	}
@@ -343,6 +367,13 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 				m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
 				m_activeShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 			}
+
+			if (m_activeShader->hasUniform("u_VPMat")) {
+				glm::mat4 vp = m_sceneInfo->camera.projMatrix * m_sceneInfo->camera.viewMatrix;
+				m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+			}
+
+			m_dirLightShadow->beginLighttingPhase(l, m_activeShader);
 
 		} break;
 
@@ -454,8 +485,11 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 void DeferredRenderer::endLightPass(const Light_t& l) {
 	if (l.type == LightType::DirectioanalLight) {
 		m_directionalLightUBO->unbind();
+		m_dirLightShadow->endLighttingPhase(l, m_activeShader);
+
 	} else if (l.type == LightType::PointLight) {
 		m_pointLightUBO->unbind();
+
 	} else if (l.type == LightType::SpotLight) {
 		m_spotLightUBO->unbind();
 		m_spotLightShadow->endLighttingPhase(l, m_activeShader);
@@ -516,6 +550,7 @@ void DeferredRenderer::onWindowResize(float w, float h) {
 void DeferredRenderer::onShadowMapResolutionChange(float w, float h) {
 	m_renderingSettings.shadowMapResolution = { w, h };
 	m_spotLightShadow->onShadowMapResolutionChange(w, h);
+	m_dirLightShadow->onShadowMapResolutionChange(w, h);
 }
 
 

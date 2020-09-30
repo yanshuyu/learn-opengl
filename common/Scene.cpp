@@ -12,7 +12,7 @@ Scene::Scene(const glm::vec2& wndSz, const std::string& name): m_name(name)
 , m_isInitialize(false)
 , m_id(0)
 , m_windowSize(wndSz)
-, m_defaultCamera(wndSz.x, wndSz.y){
+, m_defaultCamera(wndSz.x/wndSz.y){
 	m_id = reinterpret_cast<unsigned long>(this);
 	m_rootObject = std::make_unique<SceneObject>("root");
 }
@@ -48,7 +48,7 @@ void Scene::update(double dt) {
 SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
 	static SceneRenderInfo_t sri;
 	const CameraComponent* activeCamera = nullptr;
-	std::vector<LightComponent*> activeLights;
+	sri.lights.clear();
 
 	depthFirstVisit([&](SceneObject* obj, bool& stop) -> bool {
 		for (size_t i = 0; i < obj->componentCount(); i++) {
@@ -57,24 +57,20 @@ SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
 			if (!comp->m_isEnable)
 				continue;
 
-			if (comp->identifier() == CameraComponent::s_identifier && !activeCamera)
+			if (comp->identifier() == CameraComponent::s_identifier && !activeCamera) {
 				activeCamera = static_cast<CameraComponent*>(comp);
+				sri.camera = activeCamera->makeCamera(m_windowSize.x, m_windowSize.y);
+			}
 
 			if (comp->identifier() == LightComponent::s_identifier)
-				activeLights.push_back(static_cast<LightComponent*>(comp));
+				sri.lights.push_back(static_cast<LightComponent*>(comp)->makeLight());
 		}
 		
 		return true;
 	});
 
 	if (!activeCamera)
-		activeCamera = &m_defaultCamera;
-
-	sri.lights.clear();
-	sri.camera = makeCamera(activeCamera);
-	std::for_each(activeLights.begin(), activeLights.end(), [&](const LightComponent* light) {
-		sri.lights.push_back(makeLight(light, activeCamera));
-	});
+		sri.camera = m_defaultCamera.makeCamera(m_windowSize.x, m_windowSize.y);
 
 	return &sri;
 }
@@ -100,7 +96,7 @@ void Scene::addObject(std::unique_ptr<SceneObject>&& object) {
 
 SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm::vec3& bgColor) {
 	SceneObject* camera = addObject("Camera");
-	CameraComponent* cameraComp = new CameraComponent(m_windowSize.x, m_windowSize.y);
+	CameraComponent* cameraComp = new CameraComponent(m_windowSize.x / m_windowSize.y);
 	camera->addComponent(cameraComp);
 	camera->m_transform.setPosition(p);
 	camera->m_transform.setRotation(r);
@@ -151,12 +147,13 @@ SceneObject* Scene::addCube(std::shared_ptr<Material> mat) {
 }
 
 
-SceneObject* Scene::addDirectionalLight(const glm::vec3& color, float intensity) {
+SceneObject* Scene::addDirectionalLight(const glm::vec3& color, float intensity, ShadowType shadowType) {
 	auto light = addObject("DirectionalLight");
 	auto lightComp = LightComponent::create();
 	lightComp->setType(LightType::DirectioanalLight);
 	lightComp->setColor(color);
 	lightComp->setIntensity(intensity);
+	lightComp->setShadowType(shadowType);
 	light->addComponent(lightComp);
 
 	return light;
@@ -244,62 +241,4 @@ void Scene::depthFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 
 void Scene::breathFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 	m_rootObject->breadthFirstTraverse(op);
-}
-
-
-
-Camera_t Scene::makeCamera(const CameraComponent* camera) const {
-	Camera_t c;
-	c.viewMatrix = camera->viewMatrix();
-	c.projMatrix = camera->projectionMatrix();
-	c.viewport = camera->getViewPort();
-	c.backgrounColor = camera->m_backGroundColor;
-	c.position = camera->getPosition();
-	c.near = camera->m_near;
-	c.far = camera->m_far;
-	
-	return c;
-}
-
-
-Light_t Scene::makeLight(const LightComponent* light, const CameraComponent* camera) const {
-	Light_t l;
-	l.type = light->m_type;
-	l.position = light->getPosition();
-	l.direction = light->getDirection();
-	l.color = light->m_color;
-	l.range = light->m_range;
-	l.innerCone = glm::radians(light->m_innerAngle);
-	l.outterCone = glm::radians(light->m_outterAngle);
-	l.intensity = light->m_intensity;
-
-	l.shadowCamera = makeLightCamera(light, camera);
-	l.shadowType = light->m_shadowType;
-	l.shadowBias = light->m_shadowBias * LightComponent::s_maxShadowBias;
-	l.shadowStrength = light->m_shadowStrength;
-
-	return l;
-}
-
-
-Camera_t Scene::makeLightCamera(const LightComponent* light, const CameraComponent* camera) const {
-	if (light->m_shadowType == ShadowType::NoShadow)
-		return Camera_t();
-
-	if (light->m_type == LightType::SpotLight) {
-		glm::vec3 pos(0.f, 10.f, 0.f);
-		glm::vec3 look(0.f, 0.f, 0.f);
-		light->m_owner->m_transform.getCartesianAxesWorld(&pos, nullptr, nullptr, &look);
-
-		Camera_t lightCam;
-		lightCam.near = light->m_shadowNear;
-		lightCam.far = light->m_range;
-		lightCam.position = pos;
-		lightCam.viewMatrix = glm::lookAt(pos, pos + look, glm::vec3(0.f, 1.f, 0.f));
-		lightCam.projMatrix = glm::perspective(glm::radians(light->m_outterAngle * 1.8f), 1.f, light->m_shadowNear, light->m_range);
-
-		return lightCam;
-	}
-
-	return Camera_t();
 }

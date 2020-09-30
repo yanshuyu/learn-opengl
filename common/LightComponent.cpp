@@ -16,9 +16,8 @@ LightComponent::LightComponent(LightType type): Component()
 , m_innerAngle(0.f)
 , m_outterAngle(0.f)
 , m_shadowType(ShadowType::NoShadow)
-, m_shadowBias(0.f)
-, m_shadowStrength(0.8f)
-, m_shadowNear(1.f) {
+, m_shadowBias(0.1f)
+, m_shadowStrength(0.8f) {
 	if (m_type == LightType::DirectioanalLight)
 		m_range = 1000.f;
 	if (m_type == LightType::SpotLight) {
@@ -90,4 +89,23 @@ glm::vec3 LightComponent::getDirection() const {
 
 bool LightComponent::isCastShadow() const {
 	return m_shadowType != ShadowType::NoShadow;
+}
+
+
+Light_t LightComponent::makeLight() const {
+	Light_t l;
+	l.type = m_type;
+	l.position = getPosition();
+	l.direction =	getDirection();
+	l.color = m_color;
+	l.range = m_range;
+	l.innerCone = glm::radians(m_innerAngle);
+	l.outterCone = glm::radians(m_outterAngle);
+	l.intensity = m_intensity;
+
+	l.shadowType = m_shadowType;
+	l.shadowBias = m_shadowBias * LightComponent::s_maxShadowBias;
+	l.shadowStrength = m_shadowStrength;
+
+	return l;
 }

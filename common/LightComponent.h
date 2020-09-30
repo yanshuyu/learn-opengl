@@ -28,6 +28,7 @@ public:
 	glm::vec3 getDirection() const;
 	
 	bool isCastShadow() const;
+	Light_t makeLight() const;
 
 	inline glm::vec3 getColor() const {
 		return m_color;
@@ -101,14 +102,6 @@ public:
 		return m_shadowStrength;
 	}
 
-	inline void setShadowNear(float near) {
-		m_shadowNear = near;
-	}
-
-	inline float getShadowNear() const {
-		return m_shadowNear;
-	}
-
 private:
 	LightType m_type;
 	glm::vec3 m_color;
@@ -120,5 +113,4 @@ private:
 	ShadowType m_shadowType;
 	float m_shadowBias;
 	float m_shadowStrength;
-	float m_shadowNear;
 };

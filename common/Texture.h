@@ -12,8 +12,10 @@ public:
 		NormalMap,
 		SpecularMap,
 		EmissiveMap,
-		ShadowMap,
 		CubeMap,
+		ShadowMap0,
+		ShadowMap1,
+		ShadowMap2,
 		Position,
 		MaxUnit,
 	};

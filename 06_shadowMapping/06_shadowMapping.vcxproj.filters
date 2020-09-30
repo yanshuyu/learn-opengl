@@ -135,6 +135,12 @@
     <ClCompile Include="ShadowMappingApp.cpp">
       <Filter>main</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\SpotLightShadowMapping.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\DirectionalLightShadowMapping.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -254,6 +260,15 @@
     <ClInclude Include="ShadowMappingApp.h">
       <Filter>main</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\ShadowMapping.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\SpotLightShadowMapping.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\DirectionalLightShadowMapping.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\DirectionalLight.shader">
@@ -293,6 +308,9 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\DepthPass.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\TestGeometry.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

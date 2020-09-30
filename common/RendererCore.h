@@ -2,6 +2,7 @@
 #include<glm/glm.hpp>
 #include<stack>
 #include<vector>
+#include<array>
 
 
 class VertexArray;
@@ -59,14 +60,55 @@ bool operator == (const Viewport_t& lhs, const Viewport_t& rhs);
 bool operator != (const Viewport_t& lhs, const Viewport_t& rhs);
 
 
+struct AABB_t;
+
+struct ViewFrustum_t {
+	enum PointIndex {
+		LBN,
+		LTN,
+		RTN,
+		RBN,
+
+		LBF,
+		LTF,
+		RTF,
+		RBF,
+		
+		END,
+	};
+	
+	std::array<glm::vec3, PointIndex::END> points;
+
+	ViewFrustum_t();
+	void applyTransform(const glm::mat4& t);
+	ViewFrustum_t transform(const glm::mat4& t) const;
+	std::vector<ViewFrustum_t> split(std::vector<float> percentages) const; // split view frustum for cascade shadow map
+	AABB_t getAABB() const;
+	glm::vec3 getCenter() const;
+};
+
+std::ostream& operator << (std::ostream& o, const ViewFrustum_t& vf);
+
+struct AABB_t {
+	glm::vec3 minimum;
+	glm::vec3 maximum;
+
+	AABB_t();
+};
+
+
 struct Camera_t {
 	glm::mat4 viewMatrix;
 	glm::mat4 projMatrix;
 	glm::vec4 backgrounColor;
 	glm::vec3 position;
-	Viewport_t viewport;
+	glm::vec3 lookDirection;
 	float near;
 	float far;
+	float fov;
+	float aspectRatio;
+	Viewport_t viewport;
+	ViewFrustum_t viewFrustum;
 
 	Camera_t();
 };
@@ -82,7 +124,6 @@ struct Light_t {
 	float outterCone;
 	float intensity;
 
-	Camera_t shadowCamera;
 	ShadowType shadowType;
 	float shadowBias;
 	float shadowStrength;
@@ -160,35 +201,6 @@ private:
 };
 
 
-struct AABB_t;
-
-struct ViewFrustum_t {
-	glm::vec3 ltn;
-	glm::vec3 lbn;
-	glm::vec3 rtn;
-	glm::vec3 rbn;
-
-	glm::vec3 ltf;
-	glm::vec3 lbf;
-	glm::vec3 rtf;
-	glm::vec3 rbf;
-
-	ViewFrustum_t();
-	void applyTransform(const glm::mat4& t);
-	ViewFrustum_t transform(const glm::mat4& t) const;
-	AABB_t getAABB() const;
-	float projectionLengthOnDirection(const glm::vec3& dir) const;
-};
-
-
-struct AABB_t {
-	glm::vec3 minimum;
-	glm::vec3 maximum;
-
-	AABB_t();
-	ViewFrustum_t getFrustum() const;
-};
-
 //
 // uniform block structs
 //
@@ -213,6 +225,16 @@ struct ShadowBlock {
 	glm::mat4 lightVP;
 	float shadowStrength;
 	float depthBias;
+	int shadowType;
+};
+
+
+template<size_t N>
+struct CascadeShadowBlock {
+	glm::mat4 lightVP[N];
+	float cascadesFarZ[N];
+	float shadowStrength;
+	float shadowBias;
 	int shadowType;
 };
 

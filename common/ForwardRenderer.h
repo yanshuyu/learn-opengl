@@ -8,6 +8,9 @@ class Buffer;
 class FrameBuffer;
 class Texture;
 class SpotLightShadowMapping;
+class DirectionalLightShadowMapping;
+
+
 
 class ForwardRenderer : public RenderTechnique {
 	friend class DepthPassRenderTaskExecutor;
@@ -87,4 +90,5 @@ private:
 	
 	// shadow mapping
 	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
+	std::unique_ptr<DirectionalLightShadowMapping> m_dirLightShadow;
 };

@@ -154,6 +154,7 @@
     <ClCompile Include="..\common\CameraComponent.cpp" />
     <ClCompile Include="..\common\Component.cpp" />
     <ClCompile Include="..\common\DeferredRenderer.cpp" />
+    <ClCompile Include="..\common\DirectionalLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Exceptions.cpp" />
     <ClCompile Include="..\common\FirstPersonCameraController.cpp" />
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="..\common\Shader.cpp" />
     <ClCompile Include="..\common\ShaderProgamMgr.cpp" />
     <ClCompile Include="..\common\ShaderProgram.cpp" />
+    <ClCompile Include="..\common\SpotLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Texture.cpp" />
     <ClCompile Include="..\common\TextureMgr.cpp" />
     <ClCompile Include="..\common\TransformComponent.cpp" />
@@ -195,6 +197,7 @@
     <ClInclude Include="..\common\CameraComponent.h" />
     <ClInclude Include="..\common\Component.h" />
     <ClInclude Include="..\common\DeferredRenderer.h" />
+    <ClInclude Include="..\common\DirectionalLightShadowMapping.h" />
     <ClInclude Include="..\common\Exceptions.h" />
     <ClInclude Include="..\common\FirstPersonCameraController.h" />
     <ClInclude Include="..\common\ForwardRenderer.h" />
@@ -221,7 +224,9 @@
     <ClInclude Include="..\common\Shader.h" />
     <ClInclude Include="..\common\ShaderProgamMgr.h" />
     <ClInclude Include="..\common\ShaderProgram.h" />
+    <ClInclude Include="..\common\ShadowMapping.h" />
     <ClInclude Include="..\common\Singleton.h" />
+    <ClInclude Include="..\common\SpotLightShadowMapping.h" />
     <ClInclude Include="..\common\Texture.h" />
     <ClInclude Include="..\common\TextureMgr.h" />
     <ClInclude Include="..\common\TransformComponent.h" />
@@ -241,6 +246,7 @@
     <None Include="..\res\shader\SolidColor.shader" />
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />
+    <None Include="..\res\shader\TestGeometry.shader" />
     <None Include="..\res\shader\TextureDebugViewer.shader" />
     <None Include="..\res\shader\Unlit.shader" />
     <None Include="..\res\shader\UnlitDeferred.shader" />
