@@ -2,6 +2,9 @@
 #include<cassert>
 #include<iostream>
 #include<string>
+#include"Shader.h"
+#include"RendererCore.h"
+
 
 
 #define ASSERT(exp) assert(exp);
@@ -23,3 +26,6 @@ void ConsoleLog(const char* file, const char* func, int line, const std::string&
 
 std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = true);
 
+
+std::string toStr(PrimitiveType pt);
+std::string toStr(Shader::Type shaderType);

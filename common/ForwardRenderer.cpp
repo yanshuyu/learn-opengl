@@ -55,7 +55,7 @@ bool ForwardRenderer::intialize() {
 		return false;
 	}
 
-	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution));
+	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution, {0.2f, 0.4f, 0.6f}));
 	ok = m_dirLightShadow->initialize();
 	if (!ok) {
 #ifdef _DEBUG

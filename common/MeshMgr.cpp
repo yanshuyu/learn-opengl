@@ -37,8 +37,8 @@ std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLo
 
 #ifdef _DEBUG
 	std::stringstream msg;
-	msg << "Loaded mesh group " << "\"" << meshGroup->m_name << "\": " << *meshGroup.get() << std::endl;
-	msg << "Parsed mesh bones hiearcy: " << std::endl;
+	msg << "[MeshMgr]Loaded mesh " << "\"" << meshGroup->m_name << "\": " << *meshGroup.get() << std::endl;
+	msg << "bones hiearcy: " << std::endl;
 	CONSOLELOG(msg.str());
 	dumpBoneHiearcy(rootBone);
 #endif // _DEBUG

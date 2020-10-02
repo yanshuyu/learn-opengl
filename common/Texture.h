@@ -13,9 +13,7 @@ public:
 		SpecularMap,
 		EmissiveMap,
 		CubeMap,
-		ShadowMap0,
-		ShadowMap1,
-		ShadowMap2,
+		ShadowMap,
 		Position,
 		MaxUnit,
 	};
@@ -163,13 +161,9 @@ public:
 	static int maximumAvaliableTextureUnit();
 
 	bool loadImage2DFromFile(const std::string& file, bool genMipMap = true);
-	bool loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data);
-	bool loadCubeMapFromFiles(const std::string& left,
-								const std::string& right,
-								const std::string& top,
-								const std::string& bottom,
-								const std::string& front,
-								const std::string& back);	
+	bool loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data, bool genMipMap = false);
+	bool loadCubeMapFromFiles(const std::string& left, const std::string& right, const std::string& top, const std::string& bottom, const std::string& front, const std::string& back);	
+	bool loadImage2DArrayFromMemory(Format gpuFmt, Format cpuFmt, FormatDataType cpuFmtDataType, size_t width, size_t height, size_t numLayer, const void* data, bool genMipMap = false);
 
 	bool bind(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;
 	void unbind() const;

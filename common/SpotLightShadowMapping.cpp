@@ -8,6 +8,7 @@
 #include"ShaderProgamMgr.h"
 #include"Renderer.h"
 #include<glm/gtx/transform.hpp>
+#include"Util.h"
 
 
 SpotLightShadowMapping::SpotLightShadowMapping(RenderTechnique* renderer, const glm::vec2& shadowMapResolution)
@@ -121,8 +122,8 @@ void SpotLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPro
 	if (shader->hasUniform("u_shadowMap")) {
 		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
 		if (light.isCastShadow()) {
-			m_shadowMap->bind(Texture::Unit::ShadowMap0);
-			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap0));
+			m_shadowMap->bind(Texture::Unit::ShadowMap);
+			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
 
 			static ShadowBlock shadowBlock;
 			shadowBlock.lightVP = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;

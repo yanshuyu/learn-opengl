@@ -35,10 +35,7 @@ bool Texture::loadImage2DFromFile(const std::string& file, bool genMipMap) {
 
 	if (data) {
 		auto fmt = getGenericFormat(channelCnt);
-		loadImage2DFromMemory(fmt, fmt, FormatDataType::UByte, m_width, m_height, data);
-
-		if (genMipMap)
-			GLCALL(glGenerateTextureMipmap(m_handler));
+		loadImage2DFromMemory(fmt, fmt, FormatDataType::UByte, m_width, m_height, data, genMipMap);
 
 		stbi_image_free(data);
 		m_file = file;
@@ -61,15 +58,12 @@ bool Texture::loadImage2DFromFile(const std::string& file, bool genMipMap) {
 }
 
 
-bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data) {
-	if (m_bindedTarget == Target::Unknown) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
+bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data, bool genMipMap) {
+	if (m_bindedTarget != Target::Texture_2D) {
 		return false;
 	}
 
-	GLCALL(glTexImage2D(int(m_bindedTarget),
+	GLCALL(glTexImage2D(GL_TEXTURE_2D,
 		0,
 		GLint(internalFmt),
 		width,
@@ -83,6 +77,9 @@ bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDat
 	setFilterMode(FilterType::Minification, FilterMode::Liner);
 	setWrapMode(WrapType::S, WrapMode::Clamp_To_Edge);
 	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
+
+	if (genMipMap)
+		GLCALL(glGenerateTextureMipmap(m_handler));
 
 	m_format = internalFmt;
 	m_width = width;
@@ -134,6 +131,44 @@ bool Texture::loadCubeMapFromFiles(const std::string& left,
 
 	return true;
 }
+
+bool Texture::loadImage2DArrayFromMemory(Format gpuFmt,
+										Format cpuFmt,
+										FormatDataType cpuFmtDataType,
+										size_t width,
+										size_t height,
+										size_t numLayer,
+										const void* data,
+										bool genMipMap) {
+	if (m_bindedTarget != Target::Texture_2D_Array)
+		return false;
+
+	GLCALL(glTexImage3D(GL_TEXTURE_2D_ARRAY,
+		0,
+		int(gpuFmt),
+		width,
+		height,
+		numLayer,
+		0,
+		int(cpuFmt),
+		int(cpuFmtDataType),
+		data));
+	
+	if (genMipMap)
+		GLCALL(glGenerateTextureMipmap(m_handler));
+
+	setFilterMode(FilterType::Minification, FilterMode::Liner);
+	setFilterMode(FilterType::Magnification, FilterMode::Liner);
+	setWrapMode(WrapType::S, WrapMode::Clamp_To_Edge);
+	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
+
+	m_format = gpuFmt;
+	m_width = width;
+	m_height = height;
+	
+	return true;
+}
+
 
 bool Texture::bind(Unit unit, Target target)  const {
 	if (int(unit) >= maximumAvaliableTextureUnit()) {

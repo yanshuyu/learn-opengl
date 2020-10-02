@@ -104,6 +104,6 @@ void Mesh::release() {
 
 std::ostream& operator << (std::ostream& o, const Mesh& mesh) {
 	o << "{name: " << mesh.getName() << "(" << mesh.id() << ")" << ", vertexCount: " << mesh.verticesCount()
-		<< ", indexCount: " << mesh.indicesCount() << ", primitive: " << int(mesh.getPrimitiveType()) << "}";
+		<< ", indexCount: " << mesh.indicesCount() << ", primitive: " << toStr(mesh.getPrimitiveType()) << "}";
 	return o;
 }

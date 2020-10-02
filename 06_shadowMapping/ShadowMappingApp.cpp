@@ -25,10 +25,8 @@ bool ShadowMappingApp::initailize() {
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
 
-
 	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "DirectionalLight.shader");
-	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "PointLight.shader");
-	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "Spotlight.shader");
+
 	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx", MeshLoadOption::LoadMaterial);
 	auto matManModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Mesh_MAT.FBX", MeshLoadOption::LoadMaterial);
 	auto backPackModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "backpack.obj", MeshLoadOption::LoadMaterial);
@@ -55,7 +53,7 @@ bool ShadowMappingApp::initailize() {
 		ASSERT(false);
 	}
 	obj->m_transform.setScale({ 0.01f, 0.01f, 0.01f });
-	obj->m_transform.setPosition({ -15.f, 0.f, 0.f });
+	obj->m_transform.setPosition({ -20.f, 0.f, 0.f });
 	//obj->m_isVisible = false;
 
 	obj = m_scene->addObject("backPack");
@@ -65,7 +63,7 @@ bool ShadowMappingApp::initailize() {
 		MeshRenderComponent::destory(meshRender);
 		ASSERT(false);
 	}
-	obj->m_transform.setPosition({ 0.f, 5.f, 10.f });
+	obj->m_transform.setPosition({ 0.f, 5.f, 20.f });
 	obj->m_transform.setScale({ 2.f, 2.f, 2.f });
 
 
@@ -76,7 +74,7 @@ bool ShadowMappingApp::initailize() {
 		MeshRenderComponent::destory(meshRender);
 		ASSERT(false);
 	}
-	obj->m_transform.setPosition({ 15.f, 0.f, 0.f });
+	obj->m_transform.setPosition({ 20.f, 0.f, 0.f });
 	meshRender->addMaterial(nullptr);
 	meshRender->addMaterial(nullptr);
 	meshRender->addMaterial(nullptr);
@@ -96,7 +94,7 @@ bool ShadowMappingApp::initailize() {
 	cameraComp->m_fov = 45.f;
 
 	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 1.0f, ShadowType::SoftShadow);
-	dirLight->m_transform.setRotation({ -30.f , 48.f, 0.f });
+	dirLight->m_transform.setRotation({ -30.f , -48.f, 0.f });
 
 
 	//auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 1.f }, 80, 0.8f);

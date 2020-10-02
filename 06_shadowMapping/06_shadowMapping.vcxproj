@@ -243,10 +243,11 @@
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />
     <None Include="..\res\shader\DepthPass.shader" />
+    <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
     <None Include="..\res\shader\SolidColor.shader" />
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />
-    <None Include="..\res\shader\TestGeometry.shader" />
+    <None Include="..\res\shader\test.shader" />
     <None Include="..\res\shader\TextureDebugViewer.shader" />
     <None Include="..\res\shader\Unlit.shader" />
     <None Include="..\res\shader\UnlitDeferred.shader" />

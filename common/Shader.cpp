@@ -20,8 +20,11 @@ bool Shader::compile() {
 	if (m_compiled)
 		return true;
 
-	GLenum shaderType = m_type == Type::VertexShader ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER;
-	GLCALL(m_handler = glCreateShader(shaderType));
+	if (m_type == Type::Unknown)
+		return false;
+
+	//GLenum shaderType = m_type == Type::VertexShader ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER;
+	GLCALL(m_handler = glCreateShader(int(m_type)));
 
 	if (!m_handler) 
 		return false;
@@ -76,4 +79,3 @@ void Shader::release() {
 		m_compiled = false;
 	}
 }
-

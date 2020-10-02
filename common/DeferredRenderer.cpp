@@ -65,7 +65,7 @@ bool DeferredRenderer::intialize() {
 	if (!ok)
 		return false;
 
-	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution));
+	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution, {0.3f, 0.5f}));
 	ok = m_dirLightShadow->initialize();
 	if (!ok) {
 #ifdef _DEBUG

@@ -18,7 +18,7 @@ void main() {
 #shader fragment
 #version 450 core
 
-#define NUM_CASCADES 3
+#define MAXNUMCASCADE 4
 #define HARD_SHADOW 1
 #define SOFT_SHADOW	2
 #define PCFCornelSize 3
@@ -36,9 +36,11 @@ layout(location = 5) uniform float u_maxShininess;
 layout(location = 6) uniform vec3 u_cameraPosW;
 
 layout(location = 7) uniform bool u_hasShadowMap;
-layout(location = 8) uniform sampler2D u_shadowMap[NUM_CASCADES];
-layout(location = 11) uniform mat4 u_lightVP[NUM_CASCADES];
-layout(location = 14) uniform float u_cascadesFarZ[NUM_CASCADES];
+layout(location = 8) uniform sampler2DArray u_shadowMapArray;
+
+layout(location = 9) uniform mat4 u_lightVP[MAXNUMCASCADE];
+layout(location = 13) uniform float u_cascadesFarZ[MAXNUMCASCADE];
+layout(location = 17) uniform int u_numCascade;
 
 layout(location = 18) uniform mat4 u_VPMat; // to projection space
 layout(location = 19) uniform float u_shadowStrength;
@@ -57,7 +59,7 @@ out vec4 frag_color;
 
 int calcCascadeIndex(in float projDepth) {
 	int idx = 0;
-	for (int i = 0; i < NUM_CASCADES; i++) {
+	for (int i = 0; i < u_numCascade; i++) {
 		if (projDepth <= u_cascadesFarZ[i]) {
 			idx = i;
 			break;
@@ -83,19 +85,19 @@ float calcShadowAtten(in vec3 posW, in vec3 normalW) {
 		float bias = mix(1.f, 2.f, 1.f - clamp(dot(u_toLight, normalW), 0.f, 1.f)) * u_shadowBias;
 
 		if (u_shadowType == HARD_SHADOW) {
-			float depthL = texture(u_shadowMap[cascadeIdx], posNDC.xy).r;
+			float depthL = texture(u_shadowMapArray, vec3(posNDC.xy, cascadeIdx)).r;
 			bool inShaow = posNDC.z + bias > depthL;
 			atten = inShaow ? 1.f - u_shadowStrength : 1.f;
 
 		}
 		else if (u_shadowType == SOFT_SHADOW) {
-			vec2 texelSize = 1.f / textureSize(u_shadowMap[cascadeIdx], 0);
+			vec2 texelSize = vec2(1.f / textureSize(u_shadowMapArray, 0));
 			int halfCornelSize = int(PCFCornelSize / 2);
 			int shadowArea = 0;
 
 			for (int x = -halfCornelSize; x <= halfCornelSize; x++) {
 				for (int y = -halfCornelSize; y <= halfCornelSize; y++) {
-					float depthL = texture(u_shadowMap[cascadeIdx], posNDC.xy + vec2(x, y) * texelSize).r;
+					float depthL = texture(u_shadowMapArray, vec3(posNDC.xy + vec2(x, y) * texelSize, cascadeIdx)).r;
 					shadowArea += posNDC.z + bias > depthL ? 1 : 0;
 				}
 			}

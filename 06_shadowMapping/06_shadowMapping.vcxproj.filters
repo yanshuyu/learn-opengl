@@ -310,7 +310,10 @@
     <None Include="..\res\shader\DepthPass.shader">
       <Filter>shader</Filter>
     </None>
-    <None Include="..\res\shader\TestGeometry.shader">
+    <None Include="..\res\shader\test.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\DirectionalLightShadowPass.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

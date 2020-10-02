@@ -1,5 +1,5 @@
 #include"ShaderProgram.h"
-#include"Shader.h"
+#include"Util.h"
 #include<fstream>
 #include<sstream>
 #include<algorithm>
@@ -26,22 +26,32 @@ bool ShaderProgram::compileAndLink() {
 		return false;
 
 	std::string vsrc;
+	std::string gsrc;
 	std::string fsrc;
-	if (!parseShaderSource(vsrc, fsrc))
+	if (!parseShaderSource(vsrc, gsrc, fsrc))
 		return false;
-	
-#if _DEBUG
-	std::stringstream msg;
-	msg << "\"" << m_name << "\"" << " parsed vs: \n" << vsrc << std::endl;
-	msg << "\"" << m_name << "\"" << " parsed fs: \n" << fsrc << std::endl;
-	CONSOLELOG(msg.str());
-#endif
+
+//#if _DEBUG
+//	std::stringstream msg;
+//	if (!vsrc.empty())
+//		msg << "\"" << m_name << "\"" << " parsed vs: \n" << vsrc << std::endl;
+//	
+//	if (!gsrc.empty())
+//		msg << "\"" << m_name << "\"" << " parsed gs: \n" << gsrc << std::endl;
+//
+//	if (!fsrc.empty())
+//		msg << "\"" << m_name << "\"" << " parsed fs: \n" << fsrc << std::endl;
+//	
+//	if (!msg.str().empty())
+//		CONSOLELOG(msg.str());
+//#endif
 
 	std::unique_ptr<Shader> vs = nullptr;
+	std::unique_ptr<Shader> gs = nullptr;
 	std::unique_ptr<Shader> fs = nullptr;
 
 	if (!vsrc.empty()) {
-		vs = std::make_unique<Shader>(vsrc, Shader::Type::VertexShader);
+		vs.reset(new Shader(vsrc, Shader::Type::VertexShader));
 		if (!vs->compile()) {
 			std::stringstream msg;
 			msg << "[Shader Load error] VS Compile error: " << vs->getInfoLog() << std::endl;
@@ -50,8 +60,18 @@ bool ShaderProgram::compileAndLink() {
 		}
 	}
 
+	if (!gsrc.empty()) {
+		gs.reset(new Shader(gsrc, Shader::Type::GeometryShader));
+		if (!gs->compile()) {
+			std::stringstream msg;
+			msg << "[Shader Load error] GS Compile error: " << gs->getInfoLog() << std::endl;
+			CONSOLELOG(msg.str());
+			return false;
+		}
+	}
+
 	if (!fsrc.empty()) {
-		fs = std::make_unique<Shader>(fsrc, Shader::Type::FragmentShader);
+		fs.reset(new Shader(fsrc, Shader::Type::FragmentShader));
 		if (!fs->compile()) {
 			std::stringstream msg;
 			msg << "[Shader Load error] FS Compile error: " << fs->getInfoLog() << std::endl;
@@ -67,6 +87,9 @@ bool ShaderProgram::compileAndLink() {
 
 	if (vs) {
 		GLCALL(glAttachShader(m_handler, vs->getHandler()));
+	}
+	if (gs) {
+		glAttachShader(m_handler, gs->getHandler());
 	}
 	if (fs) {
 		GLCALL(glAttachShader(m_handler, fs->getHandler()));
@@ -95,7 +118,8 @@ bool ShaderProgram::compileAndLink() {
 	queryProgramInfo();
 
 #if _DEBUG 
-	dumpProgramInfo();
+	//dumpProgramInfo();
+	std::cout << *this << std::endl;
 #endif
 
 	return true;
@@ -143,22 +167,6 @@ std::string ShaderProgram::getInfoLog() const {
 	return log;
 }
 
-
-std::vector<ShaderProgram::Attribute> ShaderProgram::getAttributes() const {
-	return m_attributes;
-}
-
-
-std::vector<ShaderProgram::Uniform> ShaderProgram::getUniforms() const {
-	return m_uniforms;
-}
-
-
-std::vector<ShaderProgram::UniformBlock> ShaderProgram::getUniformBlocks() const {
-	return m_uniformBlocks;
-}
-
-
 bool ShaderProgram::hasAttribute(const std::string& name) const {
 	auto pos = std::find_if(m_attributes.begin(), m_attributes.end(), [&](const ShaderProgram::Attribute& attr) {
 		return attr.name == name;
@@ -177,12 +185,23 @@ bool ShaderProgram::hasUniformBlock(const std::string& name) const {
 	return getUniformBlockIndex(name) != -1;
 }
 
+bool ShaderProgram::hasSubroutineUniform(Shader::Type shaderStage, const std::string& name) const {
+	return getSubroutineUniform(shaderStage, name) != nullptr;
+}
+
+
 void ShaderProgram::bind() const {
 	GLCALL(glUseProgram(m_handler));
 }
 
 void ShaderProgram::unbind() const {
 	GLCALL(glUseProgram(0));
+}
+
+bool ShaderProgram::isBinded() const {
+	int currendId = 0;
+	GLCALL(glGetIntegerv(GL_CURRENT_PROGRAM, &currendId));
+	return currendId == m_handler;
 }
 
 bool ShaderProgram::bindUniformBlock(const std::string& name, UniformBlockBindingPoint bp) {
@@ -200,27 +219,95 @@ void ShaderProgram::unbindUniformBlock(const std::string& name) {
 		GLCALL(glUniformBlockBinding(m_handler, blockIdx, 0));
 }
 
-bool ShaderProgram::parseShaderSource(std::string& vs, std::string& fs) {
+bool ShaderProgram::setSubroutineUniforms(Shader::Type shaderStage, const std::unordered_map<std::string, std::string>& mapping) {
+	if (!isBinded())
+		return false;
+
+	std::vector<std::pair<int, int>> locationIndexMapping;
+	for (auto& nameMapping : mapping) {
+		SubroutineUniform* su = getSubroutineUniform(shaderStage, nameMapping.first);
+		Subroutine*  st = getSubroutine(shaderStage, nameMapping.second);
+		if (!su || !st)
+			return false;
+
+		if (!checkSubroutineCompatible(su, st))
+			return false;
+
+		locationIndexMapping.push_back({ su->location, st->index });
+	}
+
+	std::sort(locationIndexMapping.begin(), 
+		locationIndexMapping.end(),
+		[](decltype(locationIndexMapping)::const_reference l, decltype(locationIndexMapping)::const_reference r) {
+			return l.first < r.first;
+		});
+
+	std::vector<int> indices;
+	indices.reserve(locationIndexMapping.size());
+
+	std::transform(locationIndexMapping.begin(),
+		locationIndexMapping.end(),
+		std::back_inserter<decltype(indices)>(indices), [](decltype(locationIndexMapping)::const_reference locIdx) {
+			return locIdx.second;
+		});
+
+	GLCALL(glUniformSubroutinesuiv(int(shaderStage), indices.size(), reinterpret_cast<unsigned*>(indices.data())));
+
+	return true;
+}
+
+const std::vector<ShaderProgram::Subroutine>& ShaderProgram::getSubroutines(Shader::Type shaderStage) const {
+	auto info = m_stageSubroutinesInfo.find(shaderStage);
+	if (info == m_stageSubroutinesInfo.end()) {
+		m_stageSubroutinesInfo[shaderStage] = StageSubroutineInfo();
+		return m_stageSubroutinesInfo[shaderStage].subroutines;
+	}
+
+	return info->second.subroutines;
+}
+
+const std::vector<ShaderProgram::SubroutineUniform>& ShaderProgram::getSubroutineUniforms(Shader::Type shaderStage) const {
+	auto info = m_stageSubroutinesInfo.find(shaderStage);
+	if (info == m_stageSubroutinesInfo.end()) {
+		m_stageSubroutinesInfo[shaderStage] = StageSubroutineInfo();
+		return m_stageSubroutinesInfo[shaderStage].subroutineUniforms;
+	}
+
+	return info->second.subroutineUniforms;
+}
+
+bool ShaderProgram::parseShaderSource(std::string& vs, std::string& gs, std::string& fs) {
 	std::ifstream ifs(m_file);
 	if (!ifs.is_open())
 		return false;
-	
+
 	std::string line;
-	std::stringstream srcs[2];
+	std::stringstream srcs[3];
 	int idx = -1;
 	while (std::getline(ifs, line)) {
 		if (line.find("#shader") != std::string::npos || line.find("#Shader") != std::string::npos) {
 			if (line.find("vertex") != std::string::npos
 				|| line.find("Vertex") != std::string::npos
 				|| line.find("VERTEX") != std::string::npos
-				|| line.find("vs") != std::string::npos) { // vertex shader session
+				|| line.find("vs") != std::string::npos
+				|| line.find("VS") != std::string::npos) { // vertex shader session
 				idx = 0;
 				continue;
-			} else if (line.find("fragment") != std::string::npos
+			}
+			else if (line.find("geometry") != std::string::npos // geometry shader session
+				|| line.find("Geometry") != std::string::npos
+				|| line.find("GEOMETRY") != std::string::npos
+				|| line.find("gs") != std::string::npos
+				|| line.find("GS") != std::string::npos) {
+				idx = 1;
+				continue;
+			}
+			else if (line.find("fragment") != std::string::npos
 				|| line.find("Fragment") != std::string::npos
 				|| line.find("FRAGMENT") != std::string::npos
-				|| line.find("fs") != std::string::npos) {
-				idx = 1;
+				|| line.find("fs") != std::string::npos
+				|| line.find("FS") != std::string::npos) {
+				idx = 2;
 				continue;
 			}
 		}
@@ -231,9 +318,12 @@ bool ShaderProgram::parseShaderSource(std::string& vs, std::string& fs) {
 
 	ifs.close();
 	vs.assign(srcs[0].str());
-	fs.assign(srcs[1].str());
+	gs.assign(srcs[1].str());
+	fs.assign(srcs[2].str());
 
-	return !vs.empty() || !fs.empty();
+	return !vs.empty()
+		|| !gs.empty()
+		|| !fs.empty();
 }
 
 
@@ -333,6 +423,71 @@ void ShaderProgram::queryProgramInfo() {
 		delete[] nameBuffer;
 	}
 	
+
+	// subroutines and subroutineuniforms
+	Shader::Type shaderStages[] = { Shader::Type::VertexShader, Shader::Type::GeometryShader, Shader::Type::FragmentShader };
+	for (auto stage : shaderStages) {
+		StageSubroutineInfo stInfo;
+		stInfo.stage = stage;
+
+		int activeStCount = 0;
+		int maxStNameLen = 0;
+		GLCALL(glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINES, &activeStCount));
+		glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINE_MAX_LENGTH, &maxStNameLen);
+
+		if (activeStCount > 0) {
+			std::string name;
+			int len = 0;
+			
+			for (size_t i = 0; i < activeStCount; i++) {
+				name.clear();
+				name.resize(maxStNameLen);
+				len = 0;
+				Subroutine st;
+
+				st.shaderStage = stage;
+				GLCALL(glGetActiveSubroutineName(m_handler, int(stage), i, maxStNameLen, &len, const_cast<char*>(name.data())));
+				st.name = name.substr(0, len);
+				GLCALL(st.index = glGetSubroutineIndex(m_handler, int(stage), st.name.data()));
+				
+				stInfo.subroutines.push_back(st);
+			}
+		}
+
+		int activeSuCount = 0;
+		int maxSuNameLen = 0;
+		GLCALL(glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINE_UNIFORMS, &activeSuCount));
+		GLCALL(glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINE_UNIFORM_MAX_LENGTH, &maxSuNameLen));
+
+		if (activeSuCount > 0) {
+			std::string name;
+			int len = 0;
+			
+			for (size_t j = 0; j < activeSuCount; j++) {
+				name.clear();
+				name.resize(maxSuNameLen);
+				len = 0;
+				SubroutineUniform su;
+
+				su.shaderStage = stage;
+				GLCALL(glGetActiveSubroutineUniformName(m_handler, int(stage), j, maxSuNameLen, &len, const_cast<char*>(name.data())));
+				su.name = name.substr(0, len);
+				GLCALL(su.location = glGetSubroutineUniformLocation(m_handler, int(stage), su.name.data()));
+				int val = 0;
+				GLCALL(glGetActiveSubroutineUniformiv(m_handler, int(stage), j, GL_UNIFORM_SIZE, &val));
+				su.size = val;
+				GLCALL(glGetActiveSubroutineUniformiv(m_handler, int(stage), j, GL_NUM_COMPATIBLE_SUBROUTINES, &val));
+				su.compatibleSubroutineIndices.resize(val, -1);
+				GLCALL(glGetActiveSubroutineUniformiv(m_handler, int(stage), j, GL_COMPATIBLE_SUBROUTINES, su.compatibleSubroutineIndices.data()));
+
+				stInfo.subroutineUniforms.push_back(su);
+			}
+		}
+
+		if (activeStCount > 0 || activeSuCount > 0)
+			m_stageSubroutinesInfo[Shader::Type(stage)] = stInfo;
+	}
+
 }
 
 
@@ -359,19 +514,42 @@ int ShaderProgram::getUniformBlockIndex(const std::string& name) const {
 	return pos->index;
 }
 
-void ShaderProgram::dumpProgramInfo() const {
-	std::cout << "Shader program \"" << m_name <<"(" << m_handler << ")" << "\" info:\n" << "\tattributes: [ ";
-	std::ostream_iterator<Attribute> aitr(std::cout, "\n");
-	std::copy(m_attributes.begin(), m_attributes.end(), aitr);
-	
-	std::cout << " ]\n" << "\tuniforms: [ ";
-	std::ostream_iterator<Uniform> uitr(std::cout, "\n");
-	std::copy(m_uniforms.begin(), m_uniforms.end(), uitr);
 
-	std::cout << " ]\n" << "\tuniformBlocks: [";
-	std::ostream_iterator<UniformBlock> ubitr(std::cout, "\n");
-	std::copy(m_uniformBlocks.begin(), m_uniformBlocks.end(), ubitr);
-	std::cout << " ]\n" << std::endl;
+ShaderProgram::SubroutineUniform* ShaderProgram::getSubroutineUniform(Shader::Type shaderStage, const std::string& name) const {
+	auto info = m_stageSubroutinesInfo.find(shaderStage);
+	if (info == m_stageSubroutinesInfo.end())
+		return nullptr;
+	
+	auto& suVec = info->second.subroutineUniforms;
+	auto su = std::find_if(suVec.begin(), suVec.end(), [&](const SubroutineUniform& _su) {
+		return _su.name == name;
+	});
+
+	if (su == suVec.end())
+		return nullptr;
+
+	return &(*su);
+}
+
+ShaderProgram::Subroutine* ShaderProgram::getSubroutine(Shader::Type shaderStage, const std::string& name) const {
+	auto info = m_stageSubroutinesInfo.find(shaderStage);
+	if (info == m_stageSubroutinesInfo.end())
+		return nullptr;
+
+	auto& stVec = info->second.subroutines;
+	auto st = std::find_if(stVec.begin(), stVec.end(), [&](const Subroutine& _st) {
+		return _st.name == name;
+	});
+
+	if (st == stVec.end())
+		return nullptr;
+
+	return &(*st);
+}
+
+bool ShaderProgram::checkSubroutineCompatible(SubroutineUniform* su, Subroutine* st) const {
+	auto founded = std::find(su->compatibleSubroutineIndices.begin(), su->compatibleSubroutineIndices.end(), st->index);
+	return founded != su->compatibleSubroutineIndices.end();
 }
 
 
@@ -660,6 +838,49 @@ std::ostream& operator << (std::ostream& o, const ShaderProgram::UniformBlock& u
 	std::ostream_iterator<int> oitr(o, ", ");
 	std::copy(ub.uniformIndices.begin(), ub.uniformIndices.end(), oitr);
 	o << " ] }";
+	return o;
+}
+
+
+std::ostream& operator << (std::ostream& o, const ShaderProgram::Subroutine& st) {
+	o << "{ name: " << st.name << ", index: " << st.index << ", stage: " << toStr(st.shaderStage) << " }";
+	return o;
+}
+
+std::ostream& operator << (std::ostream& o, const ShaderProgram::SubroutineUniform& su) {
+	o << "{ name: " << su.name << ", location: " << su.location << ", stage: " << toStr(su.shaderStage) << ", compatible suroutines: [";
+	std::ostream_iterator<int> ositr(o, ", ");
+	std::copy(su.compatibleSubroutineIndices.begin(), su.compatibleSubroutineIndices.end(), ositr);
+	o << " ]";
+	return o;
+}
+
+std::ostream& operator << (std::ostream& o, const ShaderProgram& program) {
+	o << "Shader program \"" << program.m_name << "(" << program.m_handler << ")" << "\" info:{\n" << "\tattributes: [ ";
+	std::ostream_iterator<ShaderProgram::Attribute> aitr(o, "\n");
+	std::copy(program.m_attributes.begin(), program.m_attributes.end(), aitr);
+
+	o << " ]\n" << "\tuniforms: [ ";
+	std::ostream_iterator<ShaderProgram::Uniform> uitr(o, "\n");
+	std::copy(program.m_uniforms.begin(), program.m_uniforms.end(), uitr);
+
+	std::cout << " ]\n" << "\tuniformBlocks: [";
+	std::ostream_iterator<ShaderProgram::UniformBlock> ubitr(o, "\n");
+	std::copy(program.m_uniformBlocks.begin(), program.m_uniformBlocks.end(), ubitr);
+	
+	o << " ]\n" << "\t stageInfo: [\n";
+	for (auto& stInfo : program.m_stageSubroutinesInfo) {
+		o << "subroutines: \n";
+		std::ostream_iterator<ShaderProgram::Subroutine> stitr(o, "\n");
+		std::copy(stInfo.second.subroutines.begin(), stInfo.second.subroutines.end(), stitr);
+
+		o << "subroutine uniforms: \n";
+		std::ostream_iterator<ShaderProgram::SubroutineUniform> suitr(o, "\n");
+		std::copy(stInfo.second.subroutineUniforms.begin(), stInfo.second.subroutineUniforms.end(), suitr);
+	}
+	o << " ]\n";
+	o << "}";
+
 	return o;
 }
 

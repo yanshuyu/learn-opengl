@@ -6,12 +6,14 @@
 class Shader {
 public:
 	enum class Type {
-		VertexShader,
-		FragmentShader,
+		Unknown,
+		VertexShader = GL_VERTEX_SHADER,
+		GeometryShader = GL_GEOMETRY_SHADER,
+		FragmentShader = GL_FRAGMENT_SHADER,
 	};
 
 public:
-	Shader(const std::string& src, Type type = Type::VertexShader);
+	Shader(const std::string& src, Type type = Type::Unknown);
 	~Shader();
 
 	Shader(const Shader& other) = delete;

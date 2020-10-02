@@ -13,7 +13,10 @@ class Buffer;
 
 class DirectionalLightShadowMapping : ShadowMapping {
 public:
-	DirectionalLightShadowMapping(RenderTechnique* renderer, const glm::vec2& shadowMapResolution, const std::array<float, 2>& cascadeSplitPercentage = {0.2f, 0.5f});;
+	DirectionalLightShadowMapping(RenderTechnique* renderer, const glm::vec2& shadowMapResolution, const std::vector<float>& cascadeSplitPercentage = {0.2f, 0.5f});;
+	
+	static const int s_maxNumCascades;
+	
 	bool initialize() override;
 	void cleanUp() override;
 	void beginShadowPhase(const Light_t& light, const Camera_t& camera) override;
@@ -33,11 +36,10 @@ private:
 private:
 	RenderTechnique* m_renderer;
 	std::unique_ptr<FrameBuffer> m_FBO;
-	std::vector<std::unique_ptr<Texture>> m_shadowMaps;
+	std::unique_ptr<Texture> m_shadowMapArray;
 	glm::vec2 m_shadowMapResolution;
 	Viewport_t m_rendererViewPort;
 
-	std::vector<ViewFrustum_t> m_cascades;
 	std::vector<float> m_cascadeSplitPercents;
 	std::vector<float> m_cascadeFarProjZ;
 	std::vector<Camera_t> m_cascadeCameras;

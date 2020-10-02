@@ -4,6 +4,7 @@
 #include<iostream>
 
 
+
 void GLClearError() {
 	while (glGetError());
 }
@@ -37,4 +38,42 @@ std::string ExtractFileNameFromPath(const std::string& path, bool includeExt) {
 void ConsoleLog(const char* file, const char* func, int line, const std::string& msg){
 	printf("%s @Function: %s @Line: %i: log: %s\n", file, func, line, msg.c_str());
 	fflush(stdout);
+}
+
+
+std::string toStr(PrimitiveType pt) {
+	switch (pt)
+	{
+	case PrimitiveType::Point:
+		return "Point";
+
+	case PrimitiveType::Line:
+		return "Line";
+
+	case PrimitiveType::Triangle:
+		return "Triangle";
+
+	case PrimitiveType::Polygon:
+		return "Polygon";
+
+	default:
+		return "Unknown";
+	}
+}
+
+std::string toStr(Shader::Type shaderType) {
+	switch (shaderType)
+	{
+	case Shader::Type::VertexShader:
+		return "VertexShader";
+		
+	case Shader::Type::GeometryShader:
+		return "GeometryShader";
+
+	case Shader::Type::FragmentShader:
+		return "FragmentShader";
+
+	default:
+		return "Unknown";
+	}
 }
