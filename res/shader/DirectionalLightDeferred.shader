@@ -19,8 +19,6 @@ void main() {
 #version 450 core
 
 #define MAXNUMCASCADE 4
-#define HARD_SHADOW 1
-#define SOFT_SHADOW	2
 #define PCFCornelSize 3
 
 in vec2 f_uv;
@@ -35,7 +33,6 @@ layout(location = 4) uniform sampler2D u_emissive;
 layout(location = 5) uniform float u_maxShininess;
 layout(location = 6) uniform vec3 u_cameraPosW;
 
-layout(location = 7) uniform bool u_hasShadowMap;
 layout(location = 8) uniform sampler2DArray u_shadowMapArray;
 
 layout(location = 9) uniform mat4 u_lightVP[MAXNUMCASCADE];
@@ -45,7 +42,6 @@ layout(location = 17) uniform int u_numCascade;
 layout(location = 18) uniform mat4 u_VPMat; // to projection space
 layout(location = 19) uniform float u_shadowStrength;
 layout(location = 20) uniform float u_shadowBias;
-layout(location = 21) uniform int u_shadowType;
 
 
 layout(std140) uniform LightBlock{
@@ -54,7 +50,8 @@ layout(std140) uniform LightBlock{
 };
 
 
-out vec4 frag_color;
+subroutine float ShadowAttenType(vec3 posW, vec3 normalW);
+subroutine uniform ShadowAttenType u_shadowAtten;
 
 
 int calcCascadeIndex(in float projDepth) {
@@ -68,46 +65,54 @@ int calcCascadeIndex(in float projDepth) {
 	return idx;
 }
 
+subroutine(ShadowAttenType)
+float noShadow(vec3 posW, vec3 normalW) {
+	return 1.f;
+}
 
-float calcShadowAtten(in vec3 posW, in vec3 normalW) {
-	float atten = 1.f;
+subroutine(ShadowAttenType)
+float hardShadow(vec3 posW, vec3 normalW) {
+	vec3 posProj = vec3(u_VPMat * vec4(posW, 1.f));
+	int cascadeIdx = calcCascadeIndex(posProj.z);
+	vec4 posL = u_lightVP[cascadeIdx] * vec4(posW, 1.f); // convert to light space
+	vec3 posNDC = posL.xyz / posL.w;
+	posNDC = posNDC * 0.5f + 0.5f; // convert to DNC
 
-	if (u_hasShadowMap) {
-		vec3 posProj = vec3(u_VPMat * vec4(posW, 1.f));
-		int cascadeIdx = calcCascadeIndex(posProj.z);
-		vec4 posL = u_lightVP[cascadeIdx] * vec4(posW, 1.f); // convert to light space
-		vec3 posNDC = posL.xyz / posL.w;
-		posNDC = posNDC * 0.5f + 0.5f; // convert to DNC
+	if (posNDC.z > 1.f) // fragment is outside of far plane of view frustum
+		return 1.f;
 
-		if (posNDC.z > 1.f) // fragment is outside of far plane of view frustum
-			return 1.f;
+	float bias = mix(1.f, 2.f, 1.f - clamp(dot(u_toLight, normalW), 0.f, 1.f)) * u_shadowBias;
+	float depthL = texture(u_shadowMapArray, vec3(posNDC.xy, cascadeIdx)).r;
+	bool inShaow = posNDC.z + bias > depthL;
+	return inShaow ? 1.f - u_shadowStrength : 1.f;
+}
 
-		float bias = mix(1.f, 2.f, 1.f - clamp(dot(u_toLight, normalW), 0.f, 1.f)) * u_shadowBias;
+subroutine(ShadowAttenType)
+float softShadow(vec3 posW, vec3 normalW) {
+	vec3 posProj = vec3(u_VPMat * vec4(posW, 1.f));
+	int cascadeIdx = calcCascadeIndex(posProj.z);
+	vec4 posL = u_lightVP[cascadeIdx] * vec4(posW, 1.f); // convert to light space
+	vec3 posNDC = posL.xyz / posL.w;
+	posNDC = posNDC * 0.5f + 0.5f; // convert to DNC
 
-		if (u_shadowType == HARD_SHADOW) {
-			float depthL = texture(u_shadowMapArray, vec3(posNDC.xy, cascadeIdx)).r;
-			bool inShaow = posNDC.z + bias > depthL;
-			atten = inShaow ? 1.f - u_shadowStrength : 1.f;
+	if (posNDC.z > 1.f) // fragment is outside of far plane of view frustum
+		return 1.f;
 
-		}
-		else if (u_shadowType == SOFT_SHADOW) {
-			vec2 texelSize = vec2(1.f / textureSize(u_shadowMapArray, 0));
-			int halfCornelSize = int(PCFCornelSize / 2);
-			int shadowArea = 0;
-
-			for (int x = -halfCornelSize; x <= halfCornelSize; x++) {
-				for (int y = -halfCornelSize; y <= halfCornelSize; y++) {
-					float depthL = texture(u_shadowMapArray, vec3(posNDC.xy + vec2(x, y) * texelSize, cascadeIdx)).r;
-					shadowArea += posNDC.z + bias > depthL ? 1 : 0;
-				}
-			}
-
-			atten = mix(1.f - u_shadowStrength, 1.f, 1.f - shadowArea / float(PCFCornelSize * PCFCornelSize));
+	float bias = mix(1.f, 2.f, 1.f - clamp(dot(u_toLight, normalW), 0.f, 1.f)) * u_shadowBias;
+	vec2 texelSize = vec2(1.f / textureSize(u_shadowMapArray, 0));
+	int halfCornelSize = int(PCFCornelSize / 2);
+	int shadowArea = 0;
+	for (int x = -halfCornelSize; x <= halfCornelSize; x++) {
+		for (int y = -halfCornelSize; y <= halfCornelSize; y++) {
+			float depthL = texture(u_shadowMapArray, vec3(posNDC.xy + vec2(x, y) * texelSize, cascadeIdx)).r;
+			shadowArea += posNDC.z + bias > depthL ? 1 : 0;
 		}
 	}
 
+	float atten = mix(1.f - u_shadowStrength, 1.f, 1.f - shadowArea / float(PCFCornelSize * PCFCornelSize));
 	return atten;
 }
+
 
 vec4 calcDirectionalLight(in vec3 diffuse, 
 						in vec3 specular, 
@@ -123,11 +128,13 @@ vec4 calcDirectionalLight(in vec3 diffuse,
 	float dotV = clamp(dot(normalize(normalize(u_cameraPosW - posW) + normalize(u_toLight)), normalW), 0.f, 1.f);
 	vec3 s = u_lightColor.rgb * specular  * u_lightColor.a * pow(dotV, shininess);
 
-	float shaodwAttn = calcShadowAtten(posW, normalW);
+	float shaodwAttn = u_shadowAtten(posW, normalW);
 
 	return vec4((d + s) * shaodwAttn + emissive, 1.f);
 }
 
+
+out vec4 frag_color;
 
 void main() {
 	vec3 posW = texture(u_posW, f_uv).xyz;
