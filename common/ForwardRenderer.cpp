@@ -7,17 +7,16 @@
 #include"Renderer.h"
 #include"SpotLightShadowMapping.h"
 #include"DirectionalLightShadowMapping.h"
+#include<glm/gtc/type_ptr.hpp>
 #include<sstream>
+
 
 
 const std::string ForwardRenderer::s_identifier = "ForwardRenderer";
 
 
 ForwardRenderer::ForwardRenderer(Renderer* invoker, const RenderingSettings_t& settings): RenderTechnique(invoker)
-, m_renderingSettings(settings)
-, m_activeShader(nullptr)
 , m_currentPass(RenderPass::None)
-, m_sceneInfo(nullptr)
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
@@ -30,23 +29,21 @@ ForwardRenderer::~ForwardRenderer() {
 	cleanUp();
 }
 
-void ForwardRenderer::clearScrren(int flags) {
+void ForwardRenderer::clearScreen(int flags) {
 	GLCALL(glClear(flags));
 }
 
 bool ForwardRenderer::intialize() {
-	GLCALL(glEnable(GL_DEPTH_TEST));
-	GLCALL(glDepthFunc(GL_LESS));
-	GLCALL(glDepthMask(GL_TRUE));
-
-	GLCALL(glEnable(GL_CULL_FACE));
-	GLCALL(glCullFace(GL_BACK));
-	GLCALL(glFrontFace(GL_CCW));
+	m_invoker->setDepthTestMode(DepthTestMode::Enable);
+	m_invoker->setDepthTestFunc(DepthFunc::Less);
+	m_invoker->setCullFaceMode(CullFaceMode::Back);
+	m_invoker->setFaceWindingOrder(FaceWindingOrder::CCW);
 	
+	const RenderingSettings_t* renderSetting = m_invoker->getRenderingSettings();
 	bool ok = true;
 	// shadow mapping
-	m_spotLightShadow.reset(new SpotLightShadowMapping(this,
-		{ m_renderingSettings.shadowMapResolution.x, m_renderingSettings.shadowMapResolution.y }));
+	m_spotLightShadow.reset(new SpotLightShadowMapping(m_invoker,
+		{ renderSetting->shadowMapResolution.x, renderSetting->shadowMapResolution.y }));
 	ok = m_spotLightShadow->initialize();
 	if (!ok) {
 #ifdef _DEBUG
@@ -55,7 +52,7 @@ bool ForwardRenderer::intialize() {
 		return false;
 	}
 
-	m_dirLightShadow.reset(new DirectionalLightShadowMapping(this, m_renderingSettings.shadowMapResolution, {0.2f, 0.4f, 0.6f}));
+	m_dirLightShadow.reset(new DirectionalLightShadowMapping(m_invoker, renderSetting->shadowMapResolution, {0.2f, 0.4f, 0.6f}));
 	ok = m_dirLightShadow->initialize();
 	if (!ok) {
 #ifdef _DEBUG
@@ -109,10 +106,6 @@ void ForwardRenderer::cleanUp() {
 	m_dirLightShadow.release();
 }
 
-void ForwardRenderer::prepareForSceneRenderInfo(const SceneRenderInfo_t* si) {
-	m_sceneInfo = si;
-}
-
 
 bool ForwardRenderer::shouldRunPass(RenderPass pass) {
 	if (pass == RenderPass::GeometryPass)
@@ -122,33 +115,12 @@ bool ForwardRenderer::shouldRunPass(RenderPass pass) {
 }
 
 
-void ForwardRenderer::pullingRenderTask(ShaderProgram* shader) {
-	if (shader)
-		m_activeShader = shader;
-
-	__super::pullingRenderTask();
-}
-
 void ForwardRenderer::beginFrame() {
-	auto& camera = m_sceneInfo->camera;
-	if (camera.backgrounColor != m_clearColor)
-		setClearColor(camera.backgrounColor);
-
-	if (camera.viewport != m_viewPort)
-		setViewPort(camera.viewport);
-
-	clearScrren(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	clearScreen(ClearFlags::Color | ClearFlags::Depth);
 }
 
 
 void ForwardRenderer::endFrame() {
-#ifdef _DEBUG
-	float renderWidth = m_renderingSettings.renderSize.x;
-	float renderHeight = m_renderingSettings.renderSize.y;
-	//m_spotLightShadow->visualizeShadowMap({ renderWidth, renderHeight }, { 0.f, 0.f, renderWidth * 0.25f, renderHeight * 0.25f });
-	m_dirLightShadow->visualizeShadowMaps(m_renderingSettings.renderSize);
-#endif // _DEBUG
-
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
@@ -161,16 +133,15 @@ void ForwardRenderer::endFrame() {
 		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
 	}
 
-	GLCALL(glDepthMask(GL_TRUE));
-	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+	m_invoker->setDepthTestMode(DepthTestMode::Enable);
+	m_invoker->setColorMask(true);
 }
 
 
 void ForwardRenderer::beginDepthPass() {
-	GLCALL(glEnable(GL_DEPTH_TEST));
-	GLCALL(glDepthFunc(GL_LESS));
-	GLCALL(glDepthMask(GL_TRUE));
-	GLCALL(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
+	m_invoker->setDepthTestMode(DepthTestMode::Enable);
+	m_invoker->setDepthTestFunc(DepthFunc::Less);
+	m_invoker->setColorMask(false);
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto preZShader = shaderMgr->getProgram("DepthPass");
@@ -186,19 +157,19 @@ void ForwardRenderer::beginDepthPass() {
 
 	// set view project matrix
 	if (m_activeShader->hasUniform("u_VPMat")) {
-		auto& camera = m_sceneInfo->camera;
+		auto& camera = m_invoker->getSceneRenderInfo()->camera;
 		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
 		m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 
-	pullingRenderTask();
+	m_invoker->pullingRenderTask();
 }
 
 
 void ForwardRenderer::endDepthPass() {
-	GLCALL(glDepthFunc(GL_LEQUAL));
-	GLCALL(glDepthMask(GL_FALSE));
-	GLCALL(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+	m_invoker->setDepthTestMode(DepthTestMode::ReadOnly);
+	m_invoker->setDepthTestFunc(DepthFunc::LEqual);
+	m_invoker->setColorMask(true);
 
 	m_activeShader->unbind();
 	m_activeShader = nullptr;
@@ -226,12 +197,12 @@ void ForwardRenderer::beginUnlitPass() {
 
 	// set view project matrix
 	if (m_activeShader->hasUniform("u_VPMat")) {
-		auto& camera = m_sceneInfo->camera;
+		auto& camera = m_invoker->getSceneRenderInfo()->camera;
 		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
 		m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 
-	pullingRenderTask();
+	m_invoker->pullingRenderTask();
 }
 
 void ForwardRenderer::endUnlitPass() {
@@ -242,20 +213,20 @@ void ForwardRenderer::endUnlitPass() {
 
 
 void ForwardRenderer::beginShadowPass(const Light_t& l) {
-	//restore depth buffer writable
-	GLCALL(glDepthFunc(GL_LESS));
-	GLCALL(glDepthMask(GL_TRUE));
+	m_invoker->setDepthTestMode(DepthTestMode::Enable);
+	m_invoker->setDepthTestFunc(DepthFunc::Less);
 
 	m_currentPass = RenderPass::ShadowPass;
+	auto& camera = m_invoker->getSceneRenderInfo()->camera;
 
 	switch (l.type)
 	{
 	case LightType::SpotLight:
-		m_spotLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
+		m_spotLightShadow->beginShadowPhase(l, camera);
 		break;
 
 	case LightType::DirectioanalLight:
-		m_dirLightShadow->beginShadowPhase(l, m_sceneInfo->camera);
+		m_dirLightShadow->beginShadowPhase(l, camera);
 		break;
 
 	default:
@@ -264,22 +235,23 @@ void ForwardRenderer::beginShadowPass(const Light_t& l) {
 }
 
 void ForwardRenderer::endShadowPass(const Light_t& l) {
+	auto& camera = m_invoker->getSceneRenderInfo()->camera;
 	switch (l.type)
 	{
 	case LightType::SpotLight:
-		m_spotLightShadow->endShadowPhase(l, m_sceneInfo->camera);
+		m_spotLightShadow->endShadowPhase(l, camera);
 		break;
 
 	case LightType::DirectioanalLight:
-		m_dirLightShadow->endShadowPhase(l, m_sceneInfo->camera);
+		m_dirLightShadow->endShadowPhase(l, camera);
 		break;
 
 	default:
 		break;
 	}
 
-	GLCALL(glDepthFunc(GL_LEQUAL));
-	GLCALL(glDepthMask(GL_FALSE));
+	m_invoker->setDepthTestMode(DepthTestMode::ReadOnly);
+	m_invoker->setDepthTestFunc(DepthFunc::LEqual);
 
 	if (m_activeShader) {
 		m_activeShader->unbind();
@@ -289,9 +261,9 @@ void ForwardRenderer::endShadowPass(const Light_t& l) {
 }
 
 void ForwardRenderer::beginLightPass(const Light_t& l) {
-	GLCALL(glEnable(GL_BLEND));
-	GLCALL(glBlendFunc(GL_ONE, GL_ONE));
-	GLCALL(glBlendEquation(GL_FUNC_ADD));
+	m_invoker->setBlendMode(BlendMode::Enable);
+	m_invoker->setBlendFactor(BlendFactor::One, BlendFactor::One);
+	m_invoker->setBlendFunc(BlendFunc::Add);
 
 	m_currentPass = RenderPass::LightPass;
 
@@ -377,20 +349,19 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		break;
 	}
 
+	auto& camera = m_invoker->getSceneRenderInfo()->camera;
 	// set view project matrix
 	if (m_activeShader->hasUniform("u_VPMat")) {
-		auto& camera = m_sceneInfo->camera;
 		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
 		m_activeShader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 
 	// set camera position
 	if (m_activeShader->hasUniform("u_cameraPosW")) {
-		glm::vec3 camPos = m_sceneInfo->camera.position;
-		m_activeShader->setUniform3v("u_cameraPosW", &camPos[0]);
+		m_activeShader->setUniform3v("u_cameraPosW", const_cast<float*>(glm::value_ptr(camera.position)));
 	}
 
-	pullingRenderTask();
+	m_invoker->pullingRenderTask();
 }
 
 void ForwardRenderer::endLightPass(const Light_t& l) {
@@ -420,9 +391,7 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	m_activeShader->unbind();
 	m_activeShader = nullptr;
 	m_currentPass = RenderPass::None;
-
-	GLCALL(glDisable(GL_BLEND));
-	GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+	m_invoker->setBlendMode(BlendMode::Disable);
 }
 
 void ForwardRenderer::beginTransparencyPass() {
@@ -455,11 +424,10 @@ void ForwardRenderer::performTask(const RenderTask_t& task) {
 
 
 void ForwardRenderer::onWindowResize(float w, float h) {
-	m_renderingSettings.renderSize = { w, h };
+	
 }
 
 void ForwardRenderer::onShadowMapResolutionChange(float w, float h) {
-	m_renderingSettings.shadowMapResolution = { w, h };
 	m_spotLightShadow->onShadowMapResolutionChange(w, h);
 	m_dirLightShadow->onShadowMapResolutionChange(w, h);
 }

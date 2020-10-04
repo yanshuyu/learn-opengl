@@ -4,6 +4,7 @@
 #include<unordered_map>
 #include<memory>
 
+
 class Buffer;
 class FrameBuffer;
 class Texture;
@@ -31,12 +32,10 @@ public:
 
 	static const std::string s_identifier;
 
-	void clearScrren(int flags) override;
+	void clearScreen(int flags) override;
 
 	bool intialize() override;
 	void cleanUp() override;
-
-	void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) override;
 
 	void beginFrame() override;
 	void endFrame() override;
@@ -62,7 +61,6 @@ public:
 
 	void performTask(const RenderTask_t& task) override;
 	bool shouldRunPass(RenderPass pass) override;
-	void pullingRenderTask(ShaderProgram* shader = nullptr) override;
 
 	void onWindowResize(float w, float h) override;
 	void onShadowMapResolutionChange(float w, float h);
@@ -76,11 +74,7 @@ public:
 	}
 
 private:
-	RenderingSettings_t m_renderingSettings;
-
-	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
-	const SceneRenderInfo_t* m_sceneInfo;
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 
 	// light uniform blocks

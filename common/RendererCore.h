@@ -1,5 +1,6 @@
 #pragma once
 #include<glm/glm.hpp>
+#include<glad/glad.h>
 #include<stack>
 #include<vector>
 #include<array>
@@ -200,6 +201,77 @@ private:
 	std::stack<glm::mat4> m_transformStack;
 };
 
+
+enum ClearFlags {
+	Color = GL_COLOR_BUFFER_BIT,
+	Depth = GL_DEPTH_BUFFER_BIT,
+	Stencil = GL_STENCIL_BUFFER_BIT,
+};
+
+enum class CullFaceMode {
+	None,
+	Front = GL_FRONT,
+	Back = GL_BACK,
+	Both = GL_FRONT_AND_BACK,
+};
+
+enum class FaceWindingOrder {
+	CW = GL_CW,
+	CCW = GL_CCW,
+};
+
+enum class DepthTestMode {
+	Enable,
+	Disable,
+	ReadOnly,
+};
+
+enum class  DepthFunc {
+	Never = GL_NEVER,
+	Less = GL_LESS,
+	Equal = GL_EQUAL,
+	LEqual = GL_LEQUAL,
+	Greater = GL_GREATER,
+	NotEqual = GL_NOTEQUAL,
+	GEqual = GL_GEQUAL,
+	Always = GL_ALWAYS,
+};
+
+
+enum class BlendMode {
+	Enable,
+	Disable,
+};
+
+enum class BlendFactor {
+	Zero = GL_ZERO,
+	One = GL_ONE,
+	SrcColor = GL_SRC_COLOR,
+	One_Minus_Src_Color = GL_ONE_MINUS_SRC_COLOR,
+	dstColor = GL_DST_COLOR,
+	One_Minus_Dst_Color = GL_ONE_MINUS_DST_COLOR,
+	SrcAlpha = GL_SRC_ALPHA,
+	One_Minus_Src_Alpha = GL_ONE_MINUS_SRC_ALPHA,
+	DstAlpha = GL_DST_ALPHA,
+	One_Minus_Dst_Alpha = GL_ONE_MINUS_DST_ALPHA,
+	ConstColor = GL_CONSTANT_COLOR,
+	One_Minus_Const_Color = GL_ONE_MINUS_CONSTANT_COLOR,
+	ConstAlpha =  GL_CONSTANT_ALPHA,
+	One_Minus_Const_Alpha = GL_ONE_MINUS_CONSTANT_ALPHA,
+	SrcAlphaSaturate = GL_SRC_ALPHA_SATURATE,
+	Src1Color = GL_SRC1_COLOR,
+	One_Minus_Src1_Color = GL_ONE_MINUS_SRC1_COLOR,
+	Src1Alpha = GL_SRC1_ALPHA,
+	One_Minus_Src1_Alpha = GL_ONE_MINUS_SRC1_ALPHA,
+};
+
+enum class BlendFunc {
+	Add = GL_FUNC_ADD,
+	Subtract = GL_FUNC_SUBTRACT,
+	ReverseSubtract = GL_FUNC_REVERSE_SUBTRACT,
+	Min = GL_MIN,
+	Max = GL_MAX,
+};
 
 //
 // uniform block structs

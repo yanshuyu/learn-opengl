@@ -14,7 +14,7 @@
 const int DirectionalLightShadowMapping::s_maxNumCascades = 4;
 
 
-DirectionalLightShadowMapping::DirectionalLightShadowMapping(RenderTechnique* renderer,
+DirectionalLightShadowMapping::DirectionalLightShadowMapping(Renderer* renderer,
 	const glm::vec2& shadowMapResolution,
 	const std::vector<float>& cascadeSplitPercentage) : m_renderer(renderer)
 	, m_cascadeSplitPercents(cascadeSplitPercentage)
@@ -94,12 +94,12 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 	shader->bind();
 	m_FBO->bind();
 
-	m_renderer->clearScrren(GL_DEPTH_BUFFER_BIT);
+	m_renderer->clearScreen(ClearFlags::Depth);
 	m_rendererViewPort = m_renderer->getViewport();
 	m_renderer->setViewPort(Viewport_t(0, 0, m_shadowMapResolution.x, m_shadowMapResolution.y));
 
 	//using cull back face mode to output back face depth
-	GLCALL(glCullFace(GL_FRONT));
+	m_renderer->setCullFaceMode(CullFaceMode::Front);
 	
 	if (shader->hasUniform("u_numCascade"))
 		shader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
@@ -120,13 +120,29 @@ void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light, const C
 	m_FBO->unbind();
 	FrameBuffer::bindDefault();
 	m_renderer->setViewPort(m_rendererViewPort);
-
-	GLCALL(glCullFace(GL_BACK));
+	m_renderer->setCullFaceMode(CullFaceMode::Back);
 }
 
 void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {
 	if (shader->hasUniform("u_shadowMapArray")) {
-		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
+		//shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
+		if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
+			switch (light.shadowType)
+			{
+			case ShadowType::NoShadow: 
+				shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
+				break;
+			case ShadowType::HardShadow:
+				shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "hardShadow"} });
+				break;
+			case ShadowType::SoftShadow:
+				shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "softShadow"} });
+				break;
+			default:
+				break;
+			}	
+		}
+
 		if (light.isCastShadow()) {
 			m_shadowMapArray->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
 			shader->setUniform1("u_shadowMapArray", int(Texture::Unit::ShadowMap));

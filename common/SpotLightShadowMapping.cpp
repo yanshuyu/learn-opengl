@@ -1,7 +1,6 @@
 #include"SpotLightShadowMapping.h"
 #include"RenderTechnique.h"
-#include"ForwardRenderer.h"
-#include"DeferredRenderer.h"
+#include"Renderer.h"
 #include"Buffer.h"
 #include"FrameBuffer.h"
 #include"Texture.h"
@@ -11,7 +10,7 @@
 #include"Util.h"
 
 
-SpotLightShadowMapping::SpotLightShadowMapping(RenderTechnique* renderer, const glm::vec2& shadowMapResolution)
+SpotLightShadowMapping::SpotLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution)
 : m_renderer(renderer)
 , m_shadowMapFBO(nullptr) 
 , m_shadowMap(nullptr) 
@@ -95,9 +94,8 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 	m_renderer->setViewPort(Viewport_t(0, 0, m_shadowMapResolution.x, m_shadowMapResolution.y));
 
 	//using cull back face mode to output back face depth
-	GLCALL(glCullFace(GL_FRONT));
-
-	m_renderer->clearScrren(GL_DEPTH_BUFFER_BIT);
+	m_renderer->setCullFaceMode(CullFaceMode::Front);
+	m_renderer->clearScreen(ClearFlags::Depth);
 
 	// set view project matrix
 	if (preZShader->hasUniform("u_VPMat")) {
@@ -113,8 +111,7 @@ void SpotLightShadowMapping::endShadowPhase(const Light_t& light, const Camera_t
 	m_shadowMapFBO->unbind();
 	FrameBuffer::bindDefault();
 	m_renderer->setViewPort(m_rendererViewPort);
-
-	GLCALL(glCullFace(GL_BACK));
+	m_renderer->setCullFaceMode(CullFaceMode::Back);
 }
 
 

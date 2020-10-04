@@ -3,14 +3,14 @@
 #include<memory>
 
 
-class RenderTechnique;
+class Renderer;
 class FrameBuffer;
 class Texture;
 class Buffer;
 
 class SpotLightShadowMapping : public ShadowMapping {
 public:
-	SpotLightShadowMapping(RenderTechnique* renderer, const glm::vec2& shadowMapResolution);
+	SpotLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution);
 	~SpotLightShadowMapping();
 
 	bool initialize() override;
@@ -30,7 +30,7 @@ private:
 	Camera_t makeLightCamera(const Light_t& light);
 
 private:
-	RenderTechnique* m_renderer;
+	Renderer* m_renderer;
 	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
 	std::unique_ptr<Texture> m_shadowMap;
 	std::unique_ptr<Buffer> m_shadowUBO;

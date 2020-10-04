@@ -46,9 +46,7 @@ public:
 
 	static const std::string s_identifier;
 
-	void prepareForSceneRenderInfo(const SceneRenderInfo_t* si) override;
-
-	void clearScrren(int flags) override;
+	void clearScreen(int flags) override;
 
 	void beginFrame() override;
 	void endFrame() override;
@@ -76,7 +74,6 @@ public:
 
 	void performTask(const RenderTask_t& task)  override;
 	bool shouldRunPass(RenderPass pass) override;
-	void pullingRenderTask(ShaderProgram* shader = nullptr);
 
 	RenderPass currentRenderPass() const override {
 		return m_currentPass;
@@ -93,10 +90,6 @@ private:
 	void drawFullScreenQuad();
 
 private:
-	RenderingSettings_t m_renderingSettings;
-
-	const SceneRenderInfo_t*  m_sceneInfo;
-	ShaderProgram* m_activeShader;
 	RenderPass m_currentPass;
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 

@@ -57,9 +57,6 @@ UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(RenderTechnique* rt) :R
 
 void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
-		auto renderer = static_cast<ForwardRenderer*>(m_renderer);
-		auto& camera = renderer->m_sceneInfo->camera;
-
 		if (shader->hasUniform("u_ModelMat")) {
 			glm::mat4 m = renderTask.modelMatrix;
 			shader->setUniformMat4v("u_ModelMat", &m[0][0]);
