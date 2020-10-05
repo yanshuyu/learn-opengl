@@ -29,3 +29,17 @@ std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = t
 
 std::string toStr(PrimitiveType pt);
 std::string toStr(Shader::Type shaderType);
+
+
+//
+// Math
+//
+#define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
+
+template<typename T> T clamp(T x, T min, T max) {
+	x = MAX(x, min);
+	x = MIN(x, max);
+	
+	return x;
+}

@@ -54,6 +54,7 @@ public:
 	//void applyRotation();
 	void applyTransform();
 	void resetTransform();
+	void lookAt(const glm::vec3& dir, const glm::vec3& up);
 
 	//
 	// cartesian coordinator system

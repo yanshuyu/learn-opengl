@@ -1,5 +1,6 @@
 #include"TransformComponent.h"
 #include<glm/ext/matrix_transform.hpp>
+#include<glm/gtc/quaternion.hpp>
 #include"SceneObject.h"
 
 
@@ -68,19 +69,13 @@ void TransformComponent::scaleBy(const glm::vec3& s) {
 	calcTransform();
 }
 
-void TransformComponent::calcTransform() {
-	normalizeRotation();
 
-	glm::mat4 m(1);
-	m = glm::translate(m, m_position);
-	m = glm::rotate(m, glm::radians(m_rotation.z), World_Z_Axis);
-	m = glm::rotate(m, glm::radians(m_rotation.y), World_Y_Axis);
-	m = glm::rotate(m, glm::radians(m_rotation.x), World_X_Axis);
-	m = glm::scale(m, m_scale);
-	m_transform = m;
-
-	updateLocalAxes();
+void TransformComponent::lookAt(const glm::vec3& dir, const glm::vec3& up) {
+	glm::quat rotateQuat = glm::quatLookAt(glm::normalize(dir), up);
+	glm::vec3 angles = glm::eulerAngles(rotateQuat);
+	setRotation({ glm::degrees(angles.x), glm::degrees(angles.y), glm::degrees(angles.z) });
 }
+
 
 void TransformComponent::applyTransform() {
 	m_applyedTransform *= m_transform;
@@ -189,6 +184,20 @@ glm::mat4 TransformComponent::getParentMatrixRecursive() const {
 	}
 	
 	return m;
+}
+
+void TransformComponent::calcTransform() {
+	normalizeRotation();
+
+	glm::mat4 m(1);
+	m = glm::translate(m, m_position);
+	m = glm::rotate(m, glm::radians(m_rotation.z), World_Z_Axis);
+	m = glm::rotate(m, glm::radians(m_rotation.y), World_Y_Axis);
+	m = glm::rotate(m, glm::radians(m_rotation.x), World_X_Axis);
+	m = glm::scale(m, m_scale);
+	m_transform = m;
+
+	updateLocalAxes();
 }
 
 void TransformComponent::updateLocalAxes() {

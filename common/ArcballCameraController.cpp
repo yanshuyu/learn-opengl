@@ -1,12 +1,22 @@
 #include"ArcballCameraController.h"
 #include<common/SceneObject.h>
 #include<common/InputMgr.h>
+#include<common/NotificationCenter.h>
 #include<glm/glm.hpp>
-
+#include<functional>
 
 
 const std::string ArcballCameraController::s_identifier = "ArcballCameraController";
 
+ArcballCameraController::ArcballCameraController() {
+	NotificationCenter::getInstance()->addObserver(this, 
+		MouseScrollNotification::s_name, 
+		std::bind(&ArcballCameraController::onMouseScrolling, this, std::placeholders::_1));
+}
+
+ArcballCameraController::~ArcballCameraController() {
+	NotificationCenter::getInstance()->removeObserver(this);
+}
 
 ArcballCameraController* ArcballCameraController::create() {
 	return new ArcballCameraController();
@@ -25,33 +35,47 @@ void ArcballCameraController::update(double dt) {
 	float xRot = 0.f;
 	float yRot = 0.f;
 
-	if (input->isMouseButtonDown(MouseButtonCode::Left)) {
+	if (input->isKeyDown(KeyCode::LAlt)) {
 		auto cursorPos = input->getCursorPosition();
 		m_lastMouseXPos = cursorPos.first;
 		m_lastMouseYPos = cursorPos.second;
 	}
 
-	if (input->isMouseButtonPressed(MouseButtonCode::Left)) {
+	if (input->isKeyPressed(KeyCode::LAlt)) {
 		auto cursorPos = input->getCursorPosition();
-		m_phi += (m_lastMouseXPos - cursorPos.first) * m_moveSpeed * dt;
-		m_theta += (m_lastMouseYPos - cursorPos.second) * m_moveSpeed * dt;
+		m_theta += (cursorPos.first - m_lastMouseXPos) * m_moveSpeed * float(dt);
+		m_phi += (cursorPos.second - m_lastMouseYPos) * m_moveSpeed * float(dt);
+		m_phi = MIN(80.f, m_phi);
+		m_phi = MAX(0.f, m_phi);
 
-		m_owner->m_transform.setPosition(sphericalToCartesian(glm::vec3(m_radius, m_phi, m_theta)));
-		//m_owner->m_transform.lookAt(glm::vec3(0, 0, 0));
+		glm::vec3 pos = sphericalToCartesian(m_radius, glm::radians(m_theta), glm::radians(m_phi));
+		m_owner->m_transform.setPosition(m_target + pos);
+		m_owner->m_transform.lookAt(m_target - pos, { 0.f, 1.f, 0.f });
 
 		m_lastMouseXPos = cursorPos.first;
 		m_lastMouseYPos = cursorPos.second;
 	}
 
-	if (input->isMouseButtonUp(MouseButtonCode::Left)) {
+	if (input->isKeyUp(KeyCode::LAlt)) {
 		m_lastMouseXPos = 0.f;
 		m_lastMouseYPos = 0.f;
 	}
+}
 
 
-	if (input->isKeyPressed(KeyCode::ESC)) {
-		m_owner->m_transform.resetTransform();
-	}
+void ArcballCameraController::setPosition(const glm::vec3& pos) {
+	auto coord = cartesianToSpherical(pos);
+	m_radius = coord.x;
+	m_theta = coord.y;
+	m_phi = coord.z;
+}
+
+
+void ArcballCameraController::onMouseScrolling(const Notification* nc) {
+	auto mouseScrollNC = static_cast<const MouseScrollNotification*>(nc);
+	m_radius += mouseScrollNC->m_yOffset;
+	glm::vec3 pos = sphericalToCartesian(m_radius, glm::radians(m_theta), glm::radians(m_phi));
+	m_owner->m_transform.setPosition(m_target + pos);
 }
 
 std::string ArcballCameraController::identifier() const {
@@ -63,21 +87,21 @@ Component* ArcballCameraController::copy() const {
 }
 
 
-glm::vec3 ArcballCameraController::cartesianToSpherical(const glm::vec3& p) {
-	glm::vec3 pow2  = p * p;
-	float r = glm::sqrt(pow2.x + pow2.y + pow2.z);
-	float phi = glm::atan(p.z / p.x);
-	float theta = glm::acos(p.y / 2);
+glm::vec3 ArcballCameraController::sphericalToCartesian(float radius, float theta, float phi) {
+	float x = radius * cosf(phi) * cosf(theta);
+	float y = radius * sinf(phi);
+	float z = radius * cosf(phi) * sinf(theta);
 
-	return glm::vec3(r, phi, theta);
+	return glm::vec3(x, y, z);
 }
 
 
+glm::vec3 ArcballCameraController::cartesianToSpherical(const glm::vec3& pos) {
+	float radius, theta, phi;
+	glm::vec3 t2v = pos - m_target;
+	radius = glm::length(t2v);
+	theta = glm::degrees(atanf(t2v.z / t2v.x));
+	phi = glm::degrees(asinf(t2v.y / radius));
 
-glm::vec3 ArcballCameraController::sphericalToCartesian(const glm::vec3& p) {
-	float x = p.x * glm::cos(p.z) * glm::cos(p.y);
-	float y = p.x * glm::sin(p.z);
-	float z = p.x * glm::cos(p.z) * glm::sin(p.y);
-
-	return glm::vec3(x, y, z);
+	return glm::vec3(radius, theta, phi);
 }
