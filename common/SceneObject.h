@@ -38,8 +38,8 @@ public:
 	bool addComponent(std::unique_ptr<Component>&& c);
 	std::unique_ptr<Component> removeComponent(const std::string& identifier);
 	Component* findComponent(const std::string& identifier) const;
-	template<class T> T* getComponent(const std::string& identifier) const {
-		Component* comp = findComponent(identifier);
+	template<class T> T* getComponent() const {
+		Component* comp = findComponent(T::s_identifier);
 		if (!comp)
 			return nullptr;
 

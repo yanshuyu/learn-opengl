@@ -1,5 +1,6 @@
 #pragma once
 #include"Component.h"
+#include"Util.h"
 #include<glm/glm.hpp>
 
 
@@ -29,7 +30,7 @@ public:
 	TransformComponent& operator = (TransformComponent&& rv) = delete;
 	TransformComponent& operator = (const TransformComponent& other);
 
-	static const std::string s_identifier;
+	COMPONENT_IDENTIFIER_DEC;
 
 	//
 	// inherit override

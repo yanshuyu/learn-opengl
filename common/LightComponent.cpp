@@ -4,7 +4,7 @@
 #include<glm/gtx/transform.hpp>
 
 
-const std::string LightComponent::s_identifier = "LightComponent";
+COMPONENT_IDENTIFIER_IMP(LightComponent, "LightComponent");
 const float LightComponent::s_maxShadowBias = 0.01f;
 
 

@@ -6,7 +6,9 @@
 #include"RendererCore.h"
 
 
-
+//
+// Debug
+//
 #define ASSERT(exp) assert(exp);
 
 #define GLCALL(exp) GLClearError();  \
@@ -19,13 +21,18 @@ void GLClearError();
 
 bool GLCheckError();
 
-
-typedef unsigned long ID;
-
 void ConsoleLog(const char* file, const char* func, int line, const std::string& msg);
 
-std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = true);
 
+//
+// Helper
+//
+typedef unsigned long ID;
+
+#define COMPONENT_IDENTIFIER_DEC static const std::string s_identifier
+#define COMPONENT_IDENTIFIER_IMP(type, str) const std::string type::s_identifier = str
+
+std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = true);
 
 std::string toStr(PrimitiveType pt);
 std::string toStr(Shader::Type shaderType);

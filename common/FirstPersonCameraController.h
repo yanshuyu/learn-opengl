@@ -1,10 +1,11 @@
 #pragma once
 #include<common/CameraComponent.h>
+#include"Util.h"
 
 
 class FirstPersonCameraController : public Component {
 public:
-	static const std::string s_identifier;
+	COMPONENT_IDENTIFIER_DEC;
 
 	static FirstPersonCameraController* create();
 	static void destory(FirstPersonCameraController* c);

@@ -1,5 +1,6 @@
 #pragma once
 #include"Component.h"
+#include"Util.h"
 #include<glm/glm.hpp>
 
 class Notification;
@@ -9,7 +10,7 @@ public:
 	ArcballCameraController();
 	~ArcballCameraController();
 
-	static const std::string s_identifier;
+	COMPONENT_IDENTIFIER_DEC;
 
 	static ArcballCameraController* create();
 	static void destory(ArcballCameraController* c);

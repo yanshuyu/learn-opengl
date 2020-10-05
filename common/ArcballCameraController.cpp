@@ -6,7 +6,7 @@
 #include<functional>
 
 
-const std::string ArcballCameraController::s_identifier = "ArcballCameraController";
+COMPONENT_IDENTIFIER_IMP(ArcballCameraController, "ArcballCameraController");
 
 ArcballCameraController::ArcballCameraController() {
 	NotificationCenter::getInstance()->addObserver(this, 
@@ -45,8 +45,7 @@ void ArcballCameraController::update(double dt) {
 		auto cursorPos = input->getCursorPosition();
 		m_theta += (cursorPos.first - m_lastMouseXPos) * m_moveSpeed * float(dt);
 		m_phi += (cursorPos.second - m_lastMouseYPos) * m_moveSpeed * float(dt);
-		m_phi = MIN(80.f, m_phi);
-		m_phi = MAX(0.f, m_phi);
+		m_phi = clamp(m_phi, 0.f, 80.f);
 
 		glm::vec3 pos = sphericalToCartesian(m_radius, glm::radians(m_theta), glm::radians(m_phi));
 		m_owner->m_transform.setPosition(m_target + pos);

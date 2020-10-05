@@ -1,6 +1,7 @@
 #pragma once
 #include"Component.h"
 #include"RendererCore.h"
+#include"Util.h"
 #include<glm/glm.hpp>
 
 class Scene;
@@ -15,7 +16,7 @@ public:
 	LightComponent& operator = (const LightComponent& other) = delete;
 	LightComponent& operator = (LightComponent&& rv) = delete;
 
-	static const std::string s_identifier;
+	COMPONENT_IDENTIFIER_DEC;
 	static const float s_maxShadowBias;
 
 	static LightComponent* create();

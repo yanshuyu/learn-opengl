@@ -1,7 +1,9 @@
 #pragma once
 #include"Component.h"
 #include"RendererCore.h"
+#include"Util.h"
 #include<glm/glm.hpp>
+
 
 
 class Scene;
@@ -25,7 +27,7 @@ public:
 	CameraComponent& operator = (const CameraComponent& other) = delete;
 	CameraComponent& operator = (CameraComponent&& rv) = delete;
 
-	static const std::string s_identifier;
+	COMPONENT_IDENTIFIER_DEC;
 
 	std::string identifier() const override;
 	Component* copy() const override;
@@ -38,7 +40,8 @@ public:
 	glm::vec3 getLookDirection() const;
 	Viewport_t getViewPort(float renderWidth, float renderHeight) const; // screen space view port
 	ViewFrustum_t getViewFrustum() const; // view space view frumstum
-
+	
+protected:
 	Camera_t makeCamera(float wndWidth, float wndHeight) const;
 
 public:	

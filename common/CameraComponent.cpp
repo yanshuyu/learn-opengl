@@ -3,7 +3,7 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glad/glad.h>
 
-const std::string CameraComponent::s_identifier = "CameraComponent";
+COMPONENT_IDENTIFIER_IMP(CameraComponent, "CameraComponent");
 
 CameraComponent::CameraComponent(float ar) : Component()
 , m_aspectRatio(ar)

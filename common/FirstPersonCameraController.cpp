@@ -4,9 +4,7 @@
 #include<glm/glm.hpp>
 
 
-
-const std::string FirstPersonCameraController::s_identifier = "FirstPersonCameraController";
-
+COMPONENT_IDENTIFIER_IMP(FirstPersonCameraController, "FirstPersonCameraController");
 
 FirstPersonCameraController* FirstPersonCameraController::create() {
 	return new FirstPersonCameraController();

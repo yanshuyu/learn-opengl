@@ -13,7 +13,7 @@ public:
 	MeshRenderComponent& operator = (const MeshRenderComponent& other) = delete;
 	MeshRenderComponent(const MeshRenderComponent& other) = delete;
 
-	static const std::string s_identifier;
+	COMPONENT_IDENTIFIER_DEC;
 
 	inline std::string identifier() const override {
 		return s_identifier;

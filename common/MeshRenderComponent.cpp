@@ -4,7 +4,7 @@
 #include"Renderer.h"
 
 
-const std::string MeshRenderComponent::s_identifier = "MeshRender";
+COMPONENT_IDENTIFIER_IMP(MeshRenderComponent, "MeshRenderComponent");
 
 MeshRenderComponent::MeshRenderComponent(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterial):m_meshes(meshes)
 , m_materials() {
