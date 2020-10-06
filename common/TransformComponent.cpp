@@ -1,6 +1,7 @@
 #include"TransformComponent.h"
 #include<glm/ext/matrix_transform.hpp>
 #include<glm/gtc/quaternion.hpp>
+#include<glm/gtx/euler_angles.hpp>
 #include"SceneObject.h"
 
 
@@ -12,8 +13,7 @@ TransformComponent::TransformComponent(SceneObject* owner) :m_position(glm::vec3
 , m_rightAxis(Local_Right_Axis)
 , m_upAxis(Local_Up_Axis)
 , m_forwardAxis(Local_Forward_Axis)
-, m_transform(glm::mat4(1.f))
-, m_applyedTransform(glm::mat4(1.f)) {
+, m_transform(glm::mat4(1.f)) {
 	m_owner = owner;
 }
 
@@ -33,7 +33,6 @@ TransformComponent& TransformComponent::operator = (const TransformComponent& ot
 	m_upAxis = other.m_upAxis;
 	m_forwardAxis = other.m_forwardAxis;
 	m_transform = other.m_transform;
-	m_applyedTransform = other.m_applyedTransform;
 	
 	return *this;
 }
@@ -77,13 +76,13 @@ void TransformComponent::lookAt(const glm::vec3& dir, const glm::vec3& up) {
 }
 
 
-void TransformComponent::applyTransform() {
-	m_applyedTransform *= m_transform;
-	m_transform = glm::mat4(1.f);
-	m_position = glm::vec3(0.f);
-	m_rotation = glm::vec3(0.f);
-	m_scale = glm::vec3(1.f);
-}
+//void TransformComponent::applyTransform() {
+//	m_applyedTransform = m_transform * m_applyedTransform;
+//	m_transform = glm::mat4(1.f);
+//	m_position = glm::vec3(0.f);
+//	m_rotation = glm::vec3(0.f);
+//	m_scale = glm::vec3(1.f);
+//}
 
 
 void TransformComponent::resetTransform() {
@@ -94,7 +93,6 @@ void TransformComponent::resetTransform() {
 	m_upAxis = Local_Up_Axis;
 	m_forwardAxis = Local_Forward_Axis;
 	m_transform = glm::mat4(1.f);
-	m_applyedTransform = glm::mat4(1.f);
 }
 
 
@@ -128,7 +126,7 @@ void TransformComponent::getCartesianAxesLocal(glm::vec3* origin, glm::vec3* xAx
 }
 
 void TransformComponent::getCartesianAxesWorld(glm::vec3* origin, glm::vec3* xAxis, glm::vec3* yAxis, glm::vec3* zAxis) const {
-	glm::mat4 transform = getParentMatrixRecursive() * m_applyedTransform;
+	glm::mat4 transform = getParentMatrixRecursive();
 	if (origin)
 		*origin = transform * glm::vec4(m_position, 1.f);
 
@@ -152,7 +150,7 @@ void TransformComponent::getCartesianAxesWorld(glm::vec3* origin, glm::vec3* xAx
 
 
 glm::mat4 TransformComponent::getMatrix() const {
-	return  m_applyedTransform * m_transform;
+	return   m_transform;
 }
 
 glm::mat4 TransformComponent::getMatrixWorld() const {
@@ -194,6 +192,7 @@ void TransformComponent::calcTransform() {
 	m = glm::rotate(m, glm::radians(m_rotation.z), World_Z_Axis);
 	m = glm::rotate(m, glm::radians(m_rotation.y), World_Y_Axis);
 	m = glm::rotate(m, glm::radians(m_rotation.x), World_X_Axis);
+	//m = glm::yawPitchRoll(glm::radians(m_rotation.y), glm::radians(m_rotation.x), glm::radians(m_rotation.z)) * m;
 	m = glm::scale(m, m_scale);
 	m_transform = m;
 

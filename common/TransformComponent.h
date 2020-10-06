@@ -53,7 +53,7 @@ public:
 	void scaleBy(const glm::vec3& s);
 
 	//void applyRotation();
-	void applyTransform();
+	//void applyTransform();
 	void resetTransform();
 	void lookAt(const glm::vec3& dir, const glm::vec3& up);
 
@@ -105,5 +105,5 @@ private:
 	glm::vec3 m_forwardAxis;
 	
 	glm::mat4 m_transform;
-	glm::mat4 m_applyedTransform;
+	//glm::mat4 m_applyedTransform;
 };
