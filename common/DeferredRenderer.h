@@ -12,6 +12,7 @@ class Texture;
 class ShaderProgram;
 class SpotLightShadowMapping;
 class DirectionalLightShadowMapping;
+class PointLightShadowMapping;
 
 
 class DeferredRenderer : public RenderTechnique {
@@ -115,6 +116,7 @@ private:
 	// shadow mapping
 	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
 	std::unique_ptr<DirectionalLightShadowMapping> m_dirLightShadow;
+	std::unique_ptr<PointLightShadowMapping> m_pointLightShadow;
 };
 
 

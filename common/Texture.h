@@ -162,7 +162,8 @@ public:
 
 	bool loadImage2DFromFile(const std::string& file, bool genMipMap = true);
 	bool loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data, bool genMipMap = false);
-	bool loadCubeMapFromFiles(const std::string& left, const std::string& right, const std::string& top, const std::string& bottom, const std::string& front, const std::string& back);	
+	bool loadCubeMapFromFiles(const std::string& left, const std::string& right, const std::string& top, const std::string& bottom, const std::string& front, const std::string& back, bool genMipMap = false);	
+	bool loadCubeMapFromMemory(Format gpuFmt, Format cpuFmt, FormatDataType cpuFmtDataType, float w, float h, const void* left = nullptr, const void* right = nullptr, const void* top = nullptr, const void* bottom = nullptr, const void* front = nullptr, const void* back = nullptr, bool genMipMap = false);
 	bool loadImage2DArrayFromMemory(Format gpuFmt, Format cpuFmt, FormatDataType cpuFmtDataType, size_t width, size_t height, size_t numLayer, const void* data, bool genMipMap = false);
 
 	bool bind(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;

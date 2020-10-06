@@ -20,7 +20,7 @@ public:
 	bool initialize() override;
 	void cleanUp() override;
 	void beginShadowPhase(const Light_t& light, const Camera_t& camera) override;
-	void endShadowPhase(const Light_t& light, const Camera_t& camera) override;
+	void endShadowPhase(const Light_t& light) override;
 	void beginLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
 	void endLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
 	void onShadowMapResolutionChange(float w, float h) override;

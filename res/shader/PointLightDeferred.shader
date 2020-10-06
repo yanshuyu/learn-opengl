@@ -18,7 +18,20 @@ void main() {
 #shader fragment
 #version 450 core
 
+const float diskRadius = 0.05f;
+
+const vec3 sampleOffsetDirections[20] = {
+	vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+	vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+	vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+	vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
+	vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1)
+};
+
+
+
 in vec2 f_uv;
+
 
 
 layout(location = 0) uniform sampler2D u_posW;
@@ -30,14 +43,51 @@ layout(location = 4) uniform sampler2D u_emissive;
 layout(location = 5) uniform float u_maxShininess;
 layout(location = 6) uniform vec3 u_cameraPosW;
 
+layout(location = 7) uniform samplerCube u_shadowMap;
+layout(location = 8) uniform float u_shadowStrength;
+layout(location = 9) uniform float u_shadowBias;
+
+subroutine float ShadowAttenType(vec3 posW);
+subroutine uniform ShadowAttenType u_shadowAtten;
+
 
 layout(std140) uniform LightBlock{
 	vec4 u_lightPos; // (w for range)
 	vec4 u_lightColor; //(a for intensity)
 };
 
-out vec4 frag_color;
 
+subroutine(ShadowAttenType)
+float noShadow(vec3 posW) {
+	return 1.f;
+}
+
+subroutine(ShadowAttenType)
+float hardShadow(vec3 posW) {
+	vec3 l2v = posW - u_lightPos.xyz;
+	float depth = length(l2v) / u_lightPos.w;
+	if (depth > 1.f)
+		return 1.f;
+
+	float closestDepth = texture(u_shadowMap, l2v).r;
+	return depth - u_shadowBias > closestDepth ? (1.f - u_shadowStrength) : 1.f;
+}
+
+subroutine(ShadowAttenType)
+float softShadow(vec3 posW) {
+	vec3 l2v = posW - u_lightPos.xyz;
+	float depth = length(l2v) / u_lightPos.w;
+	if (depth > 1.f)
+		return 1.f;
+
+	float shadow = 0.f;
+	for (int i = 0; i < 20; i++) {
+		float closestDepth = texture(u_shadowMap, l2v + sampleOffsetDirections[i] * diskRadius).r;
+		shadow += depth - u_shadowBias > closestDepth ? 1.f : 0.f;
+	}
+
+	return mix(1.f - u_shadowStrength, 1.f, 1.f - shadow / 20.f);
+}
 
 vec4 calcPointLight(in vec3 diffuse,
 					in vec3 specular,
@@ -57,9 +107,13 @@ vec4 calcPointLight(in vec3 diffuse,
 	float dotV = clamp(dot(normalize(toLight + toView), normalW), 0.f, 1.f);
 	vec3 s = u_lightColor.rgb * specular * u_lightColor.a * pow(dotV, shininess) * rangeAtten;
 
-	return vec4(d + s + emissive, 1.f);
+	float shadowAtten = u_shadowAtten(posW);
+
+	return vec4((d + s) * shadowAtten + emissive, 1.f);
 }
 
+
+out vec4 frag_color;
 
 void main() {
 	vec3 posW = texture(u_posW, f_uv).xyz;

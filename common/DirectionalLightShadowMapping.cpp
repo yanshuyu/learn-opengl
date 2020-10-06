@@ -116,7 +116,7 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 }
 
 
-void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light, const Camera_t& camera) {
+void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light) {
 	m_FBO->unbind();
 	FrameBuffer::bindDefault();
 	m_renderer->setViewPort(m_rendererViewPort);
@@ -124,53 +124,49 @@ void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light, const C
 }
 
 void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {
-	if (shader->hasUniform("u_shadowMapArray")) {
-		//shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
-		if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
-			switch (light.shadowType)
-			{
-			case ShadowType::NoShadow: 
-				shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
-				break;
-			case ShadowType::HardShadow:
-				shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "hardShadow"} });
-				break;
-			case ShadowType::SoftShadow:
-				shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "softShadow"} });
-				break;
-			default:
-				break;
-			}	
-		}
-
-		if (light.isCastShadow()) {
-			m_shadowMapArray->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
-			shader->setUniform1("u_shadowMapArray", int(Texture::Unit::ShadowMap));
-
-			if (shader->hasUniform("u_lightVP[0]")) {
-				std::vector<glm::mat4> lightsVP;
-				std::for_each(m_cascadeCameras.begin(), m_cascadeCameras.end(), [&](const Camera_t& c) {
-					lightsVP.push_back(c.projMatrix * c.viewMatrix);
-				});
-				shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
-			}
-
-			if (shader->hasUniform("u_cascadesFarZ[0]"))
-				shader->setUniform1v("u_cascadesFarZ[0]", m_cascadeFarProjZ.data(), m_cascadeFarProjZ.size());
-
-			if (shader->hasUniform("u_numCascade"))
-				shader->setUniform1("u_numCascade", int(m_cascadeCameras.size()));
-
-			if (shader->hasUniform("u_shadowStrength"))
-				shader->setUniform1("u_shadowStrength", light.shadowStrength);
-
-			if (shader->hasUniform("u_shadowBias"))
-				shader->setUniform1("u_shadowBias", light.shadowBias);
-
-			if (shader->hasUniform("u_shadowType"))
-				shader->setUniform1("u_shadowType", int(light.shadowType));
-		}
+	
+	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
+		switch (light.shadowType)
+		{
+		case ShadowType::NoShadow: 
+			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
+			break;
+		case ShadowType::HardShadow:
+			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "hardShadow"} });
+			break;
+		case ShadowType::SoftShadow:
+			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "softShadow"} });
+			break;
+		default:
+			break;
+		}	
 	}
+
+	if (shader->hasUniform("u_shadowMapArray") && light.isCastShadow()) {
+		m_shadowMapArray->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
+		shader->setUniform1("u_shadowMapArray", int(Texture::Unit::ShadowMap));
+
+		if (shader->hasUniform("u_lightVP[0]")) {
+			std::vector<glm::mat4> lightsVP;
+			std::for_each(m_cascadeCameras.begin(), m_cascadeCameras.end(), [&](const Camera_t& c) {
+				lightsVP.push_back(c.projMatrix * c.viewMatrix);
+			});
+			shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
+		}
+
+		if (shader->hasUniform("u_cascadesFarZ[0]"))
+			shader->setUniform1v("u_cascadesFarZ[0]", m_cascadeFarProjZ.data(), m_cascadeFarProjZ.size());
+
+		if (shader->hasUniform("u_numCascade"))
+			shader->setUniform1("u_numCascade", int(m_cascadeCameras.size()));
+
+		if (shader->hasUniform("u_shadowStrength"))
+			shader->setUniform1("u_shadowStrength", light.shadowStrength);
+
+		if (shader->hasUniform("u_shadowBias"))
+			shader->setUniform1("u_shadowBias", light.shadowBias);
+	}
+	
 }
 
 void DirectionalLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {

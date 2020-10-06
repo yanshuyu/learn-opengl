@@ -1,17 +1,15 @@
 #pragma once
-#include"ShadowMapping.h"
+#include"SpotLightShadowMapping.h"
 #include<memory>
-
 
 class Renderer;
 class FrameBuffer;
 class Texture;
-class Buffer;
 
-class SpotLightShadowMapping : public ShadowMapping {
+class PointLightShadowMapping : public ShadowMapping {
 public:
-	SpotLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution);
-	~SpotLightShadowMapping();
+	PointLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution);
+	~PointLightShadowMapping();
 
 	bool initialize() override;
 	void cleanUp() override;
@@ -21,20 +19,14 @@ public:
 	void endLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
 	void onShadowMapResolutionChange(float w, float h) override;
 
-#ifdef _DEBUG
-	void visualizeShadowMap(const glm::vec2& wndSz, const glm::vec4& rect);
-#endif // _DEBUG
-
-
 private:
-	Camera_t makeLightCamera(const Light_t& light);
+	std::vector<glm::mat4> calclightLightCameraMatrixs(const Light_t& l);
 
 private:
 	Renderer* m_renderer;
-	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
-	std::unique_ptr<Texture> m_shadowMap;
-	std::unique_ptr<Buffer> m_shadowUBO;
-	Camera_t m_lightCamera;
 	Viewport_t m_rendererViewPort;
 	glm::vec2 m_shadowMapResolution;
+
+	std::unique_ptr<FrameBuffer> m_FBO;
+	std::unique_ptr<Texture> m_cubeShadowMap;
 };

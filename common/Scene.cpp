@@ -47,7 +47,7 @@ void Scene::update(double dt) {
 
 SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
 	static SceneRenderInfo_t sri;
-	const CameraComponent* activeCamera = nullptr;
+	CameraComponent* activeCamera = nullptr;
 	sri.lights.clear();
 
 	depthFirstVisit([&](SceneObject* obj, bool& stop) -> bool {
@@ -69,8 +69,12 @@ SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
 		return true;
 	});
 
+	if (activeCamera)
+		activeCamera->m_aspectRatio = m_windowSize.x / m_windowSize.y;
+	
 	if (!activeCamera)
 		sri.camera = m_defaultCamera.makeCamera(m_windowSize.x, m_windowSize.y);
+	
 
 	return &sri;
 }
@@ -159,13 +163,14 @@ SceneObject* Scene::addDirectionalLight(const glm::vec3& color, float intensity,
 	return light;
 }
 
-SceneObject* Scene::addPointLight(const glm::vec3& color, float range, float intensity) {
+SceneObject* Scene::addPointLight(const glm::vec3& color, float range, float intensity, ShadowType shadowType) {
 	auto light = addObject("PointLight");
 	auto lightComp = LightComponent::create();
 	lightComp->setType(LightType::PointLight);
 	lightComp->setColor(color);
 	lightComp->setRange(range);
 	lightComp->setIntensity(intensity);
+	lightComp->setShadowType(shadowType);
 	light->addComponent(lightComp);
 
 	return light;

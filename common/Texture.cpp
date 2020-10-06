@@ -58,12 +58,17 @@ bool Texture::loadImage2DFromFile(const std::string& file, bool genMipMap) {
 }
 
 
-bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data, bool genMipMap) {
-	if (m_bindedTarget != Target::Texture_2D) {
+bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt, 
+									FormatDataType srcFmtDataType, 
+									size_t width, 
+									size_t height,
+									const void* data,
+									bool genMipMap) {
+	if (m_bindedTarget == Target::Unknown) {
 		return false;
 	}
 
-	GLCALL(glTexImage2D(GL_TEXTURE_2D,
+	GLCALL(glTexImage2D(int(m_bindedTarget),
 		0,
 		GLint(internalFmt),
 		width,
@@ -94,43 +99,83 @@ bool Texture::loadCubeMapFromFiles(const std::string& left,
 									const std::string& top,
 									const std::string& bottom,
 									const std::string& front,
-									const std::string& back) {
-	std::string faces[] = { right, left, top, bottom, front, back };
-	bind(Unit::Defualt, Target::Texture_CubeMap);
-	
+									const std::string& back,
+									bool genMipMap) {
+	if (m_bindedTarget != Target::Texture_CubeMap)
+		return false;
+
+	std::string faces[] = { left, right, top, bottom, front, back };
+	std::vector<void*> datas;
+	int channelCnt = 0;
+	bool ok = true;
 	for (size_t i = 0; i < 6; i++) {
-		int channelCnt = 0;
 		stbi_set_flip_vertically_on_load(true);
 		auto data = stbi_load(faces[i].c_str(), &m_width, &m_height, &channelCnt, 0);
-		
-		if (data) {
-			m_format = getGenericFormat(channelCnt); 
-			GLCALL(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				0,
-				int(m_format),
-				m_width,
-				m_height,
-				0,
-				int(m_format),
-				GL_UNSIGNED_BYTE,
-				data));
-		} else {
-			unbind();
-			return false;
+		if (!data) {
+			ok = false;
+			break;
 		}
 
-		stbi_image_free(data);
+		datas.push_back(data);
 	}
+
+	if (!ok) {
+		for (auto data : datas) {
+			stbi_image_free(data);
+		}
+		return false;
+	}
+
+	Format fmt = getGenericFormat(channelCnt);
+	if (!loadCubeMapFromMemory(fmt, fmt, FormatDataType::UByte, m_width, m_height, datas[0], datas[1], datas[2], datas[3], datas[4], datas[5], genMipMap))
+		return false;
+
+	return true;
+}
+
+bool Texture::loadCubeMapFromMemory(Format gpuFmt,
+									Format cpuFmt,
+									FormatDataType cpuFmtDataType,
+									float w,
+									float h,
+									const void* left,
+									const void* right,
+									const void* top,
+									const void* bottom,
+									const void* front,
+									const void* back,
+									bool genMipMap) {
+	if (m_bindedTarget != Target::Texture_CubeMap)
+		return false;
+
+	const void* datas[] = {right, left, top, bottom, front, back };
+	for (size_t i = 0; i < 6; i++) {
+		GLCALL(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			0,
+			int(gpuFmt),
+			w,
+			h,
+			0,
+			int(cpuFmt),
+			int(cpuFmtDataType),
+			datas[i]));
+	}
+	
+	if (genMipMap)
+		GLCALL(glGenerateTextureMipmap(m_handler));
+
+	m_format = gpuFmt;
+	m_width = w;
+	m_height = h;
 
 	setFilterMode(FilterType::Magnification, FilterMode::Liner);
 	setFilterMode(FilterType::Minification, FilterMode::Liner);
 	setWrapMode(WrapType::S, WrapMode::Clamp_To_Edge);
 	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
 
-	unbind();
-
 	return true;
 }
+
 
 bool Texture::loadImage2DArrayFromMemory(Format gpuFmt,
 										Format cpuFmt,

@@ -141,6 +141,9 @@
     <ClCompile Include="..\common\DirectionalLightShadowMapping.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\PointLightShadowMapping.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -269,6 +272,9 @@
     <ClInclude Include="..\common\DirectionalLightShadowMapping.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\PointLightShadowMapping.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\DirectionalLight.shader">
@@ -314,6 +320,9 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\DirectionalLightShadowPass.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\PointLightShadowPass.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

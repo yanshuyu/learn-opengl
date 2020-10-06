@@ -23,3 +23,4 @@
 #include"CameraComponent.h"
 #include"LightComponent.h"
 #include"FirstPersonCameraController.h"
+#include"ArcballCameraController.h"

@@ -170,6 +170,7 @@
     <ClCompile Include="..\common\MeshRenderComponent.cpp" />
     <ClCompile Include="..\common\NoticificationCenter.cpp" />
     <ClCompile Include="..\common\Notification.cpp" />
+    <ClCompile Include="..\common\PointLightShadowMapping.cpp" />
     <ClCompile Include="..\common\RenderBuffer.cpp" />
     <ClCompile Include="..\common\Renderer.cpp" />
     <ClCompile Include="..\common\RendererCore.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="..\common\Notification.h" />
     <ClInclude Include="..\common\NotificationCenter.h" />
     <ClInclude Include="..\common\pch.h" />
+    <ClInclude Include="..\common\PointLightShadowMapping.h" />
     <ClInclude Include="..\common\RenderBuffer.h" />
     <ClInclude Include="..\common\Renderer.h" />
     <ClInclude Include="..\common\RendererCore.h" />
@@ -244,6 +246,7 @@
     <None Include="..\res\shader\PointLightDeferred.shader" />
     <None Include="..\res\shader\DepthPass.shader" />
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
+    <None Include="..\res\shader\PointLightShadowPass.shader" />
     <None Include="..\res\shader\SolidColor.shader" />
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />

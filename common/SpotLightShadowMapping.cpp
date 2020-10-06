@@ -107,7 +107,7 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 }
 
 
-void SpotLightShadowMapping::endShadowPhase(const Light_t& light, const Camera_t& camera) {
+void SpotLightShadowMapping::endShadowPhase(const Light_t& light) {
 	m_shadowMapFBO->unbind();
 	FrameBuffer::bindDefault();
 	m_renderer->setViewPort(m_rendererViewPort);

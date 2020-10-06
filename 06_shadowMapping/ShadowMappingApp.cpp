@@ -25,7 +25,7 @@ bool ShadowMappingApp::initailize() {
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
 
-	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "DirectionalLight.shader");
+	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "PointLight.shader");
 
 	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx", MeshLoadOption::LoadMaterial);
 	auto matManModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Mesh_MAT.FBX", MeshLoadOption::LoadMaterial);
@@ -89,18 +89,22 @@ bool ShadowMappingApp::initailize() {
 	meshRender->setMaterialAt(2, bodyMat);
 
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
-	camera->addComponent(FirstPersonCameraController::create());
-	auto cameraComp = camera->getComponent<CameraComponent>(CameraComponent::s_identifier);
+	camera->addComponent(ArcballCameraController::create());
+	//camera->addComponent(FirstPersonCameraController::create());
+	auto cameraController = camera->getComponent<ArcballCameraController>();
+	cameraController->setPosition({ 0.f, 4.f, 16.f });
+
+	auto cameraComp = camera->getComponent<CameraComponent>();
 	cameraComp->m_fov = 45.f;
 
-	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 1.0f, ShadowType::SoftShadow);
-	dirLight->m_transform.setRotation({ -30.f , -48.f, 0.f });
+	//auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.3f, ShadowType::SoftShadow);
+	//dirLight->m_transform.setRotation({ -30.f , -48.f, 0.f });
 
 
-	//auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 1.f }, 80, 0.8f);
-	//pointLight->m_transform.setPosition({ 0.f, 35.f, 25.f });
+	auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 1.f }, 80, 1.f, ShadowType::SoftShadow);
+	pointLight->m_transform.setPosition({ 0.f, 30.f, 0.f });
 
-	//auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 1.f }, 60.f, 65.f, 100.f, 1.f, ShadowType::SoftShadow, 0.8f);
+	//auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 1.f }, 60.f, 65.f, 100.f, 1.f, ShadowType::SoftShadow);
 	//spotLight->m_transform.setPosition({ 0.f, 25.f, 8.f });
 	//spotLight->m_transform.setRotation({ -65.f, 0.f, 0.f });
 

@@ -4,8 +4,8 @@
 layout(location = 0) in vec3 a_pos;
 layout(location = 4) in vec2 a_uv;
 
-layout(location = 0) uniform mat4 u_VPMat;
-layout(location = 1) uniform mat4 u_ModelMat;
+uniform mat4 u_VPMat;
+uniform mat4 u_ModelMat;
 
 out vec2 f_uv;
 
@@ -27,9 +27,9 @@ void main() {
 
 in vec2 f_uv;
 
-layout(location = 1) uniform sampler2D u_diffuseMap;
-layout(location = 2) uniform bool u_hasDiffuseMap;
-layout(location = 3) uniform vec4 u_diffuseColor;
+uniform sampler2D u_diffuseMap;
+uniform bool u_hasDiffuseMap;
+uniform vec4 u_diffuseColor;
 
 layout(location = 0) out vec4 frag_color;
 
