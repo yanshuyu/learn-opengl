@@ -124,7 +124,7 @@ public:
 	const std::vector<SubroutineUniform>& getSubroutineUniforms(Shader::Type shaderStage) const;
 
 	template<typename T>
-	bool setUniform1(const std::string& name, T t1) const;;
+	bool setUniform1(const std::string& name, T t1) const;
 	
 	template<typename T>
 	bool setUniform2(const std::string& name, T t1, T t2) const;

@@ -10,7 +10,6 @@
 Vertex_t::Vertex_t(): position(0.f)
 , normal(0.f)
 , tangent(0.f)
-, biTangent(0.f)
 , uv(0.f) {
 
 }

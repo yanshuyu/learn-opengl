@@ -104,14 +104,14 @@ void MeshGroup::loadGeometry(const aiMesh* aMesh, std::vector<Vertex_t>& vertice
 
 		ASSERT(aMesh->HasTangentsAndBitangents());
 		const aiVector3D tangent = aMesh->mTangents[i];
-		const aiVector3D biTangent = aMesh->mBitangents[i];
+		//const aiVector3D biTangent = aMesh->mBitangents[i];
 
 		const aiVector3D uv = aMesh->HasTextureCoords(0) ? aMesh->mTextureCoords[0][i] : aiVector3D();
 
 		v.position = glm::vec3(pos.x, pos.y, pos.z);
 		v.normal = glm::vec3(normal.x, normal.y, normal.z);
 		v.tangent = glm::vec3(tangent.x, tangent.y, tangent.z);
-		v.biTangent = glm::vec3(biTangent.x, biTangent.y, biTangent.z);
+		//v.biTangent = glm::vec3(biTangent.x, biTangent.y, biTangent.z);
 		v.uv = glm::vec2(uv.x, uv.y);
 		vertices.push_back(v);
 	}

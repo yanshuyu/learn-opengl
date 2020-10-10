@@ -25,8 +25,6 @@ bool ShadowMappingApp::initailize() {
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
 
-	shaderMgr->addProgram(shaderMgr->getResourceAbsolutePath() + "PointLight.shader");
-
 	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx", MeshLoadOption::LoadMaterial);
 	auto matManModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Mesh_MAT.FBX", MeshLoadOption::LoadMaterial);
 	auto backPackModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "backpack.obj", MeshLoadOption::LoadMaterial);
@@ -63,6 +61,7 @@ bool ShadowMappingApp::initailize() {
 		MeshRenderComponent::destory(meshRender);
 		ASSERT(false);
 	}
+	meshRender->materialAt(0)->m_normalMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "normal.png");
 	obj->m_transform.setPosition({ 0.f, 5.f, 20.f });
 	obj->m_transform.setScale({ 2.f, 2.f, 2.f });
 
@@ -75,18 +74,20 @@ bool ShadowMappingApp::initailize() {
 		ASSERT(false);
 	}
 	obj->m_transform.setPosition({ 20.f, 0.f, 0.f });
-	meshRender->addMaterial(nullptr);
-	meshRender->addMaterial(nullptr);
-	meshRender->addMaterial(nullptr);
-	auto baseMat = matMgr->addMaterial(obj->getName() + "_Base_Material");
-	auto headMat = matMgr->addMaterial(obj->getName() + "_Head_Material");
-	auto bodyMat = matMgr->addMaterial(obj->getName() + "Body_Material");
+	auto baseMat = meshRender->materialAt(0);
+	auto headMat = meshRender->materialAt(1);
+	auto bodyMat = meshRender->materialAt(2);
 	baseMat->m_diffuseMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "03_Base_albedo.jpg");
+	baseMat->m_normalMap = texMgr->addTexture(texMgr->getResourceAbsolutePath(), + "03_Base_normal.jpg");
+	
 	headMat->m_diffuseMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "01_Head_albedo.jpg");
+	headMat->m_normalMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "01_Head_normal.jpg");
+	headMat->m_emissiveMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "01_Head_emissive.jpg");
+	headMat->m_emissiveColor = { 1.f, 1.f, 1.f };
+
 	bodyMat->m_diffuseMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "02_Body_albedo.jpg");
-	meshRender->setMaterialAt(0, baseMat);
-	meshRender->setMaterialAt(1, headMat);
-	meshRender->setMaterialAt(2, bodyMat);
+	bodyMat->m_normalMap = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "02_Body_normal.jpg");
+
 
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent(ArcballCameraController::create());
@@ -97,12 +98,12 @@ bool ShadowMappingApp::initailize() {
 	auto cameraComp = camera->getComponent<CameraComponent>();
 	cameraComp->m_fov = 45.f;
 
-	//auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.3f, ShadowType::SoftShadow);
-	//dirLight->m_transform.setRotation({ -30.f , -48.f, 0.f });
+	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
+	dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
 
 
-	auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 1.f }, 80, 1.f, ShadowType::SoftShadow);
-	pointLight->m_transform.setPosition({ 0.f, 30.f, 0.f });
+	//auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 1.f }, 80, 1.f, ShadowType::SoftShadow);
+	//pointLight->m_transform.setPosition({ 10.f, 30.f, 0.f });
 
 	//auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 1.f }, 60.f, 65.f, 100.f, 1.f, ShadowType::SoftShadow);
 	//spotLight->m_transform.setPosition({ 0.f, 25.f, 8.f });

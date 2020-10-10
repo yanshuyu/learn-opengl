@@ -16,7 +16,6 @@ struct Vertex_t {
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec3 tangent;
-	glm::vec3 biTangent;
 	glm::vec2 uv;
 
 	Vertex_t();

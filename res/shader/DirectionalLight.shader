@@ -4,14 +4,17 @@
 
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec3 a_normal;
-layout(location = 4) in vec2 a_uv;
+layout(location = 2) in vec3 a_tangent;
+layout(location = 3) in vec2 a_uv;
 
 
-out vec3 pos_W;
-out vec3 normal_W;
-out vec2 f_uv;
-out float z_Proj; // project space depth
-
+out VS_OUT{
+	vec3 pos_W;
+	vec3 normal_W;
+	vec3 tangent_W;
+	vec2 uv;
+	float z_Proj; // project clip space depth
+} vs_out;
 
 
 layout(location = 0) uniform mat4 u_VPMat;
@@ -21,10 +24,14 @@ invariant gl_Position;
 
 void main() {
 	gl_Position = u_VPMat * u_ModelMat * vec4(a_pos, 1.f);
-	pos_W = (u_ModelMat * vec4(a_pos, 1.f)).xyz;
-	normal_W = (u_ModelMat * vec4(a_normal, 0.f)).xyz;
-	f_uv = a_uv;
-	z_Proj = gl_Position.z;
+	vs_out.pos_W = (u_ModelMat * vec4(a_pos, 1.f)).xyz;
+	
+	mat3 invTranModel = transpose(inverse(mat3(u_ModelMat)));
+	vs_out.normal_W = normalize(invTranModel * a_normal);
+	vs_out.tangent_W = normalize(invTranModel * a_tangent);
+	
+	vs_out.uv = a_uv;
+	vs_out.z_Proj = gl_Position.z;
 }
 
 
@@ -37,10 +44,13 @@ void main() {
 #define MAXNUMCASCADE 4
 #define PCFCornelSize 3
 
-in vec3 pos_W;
-in vec3 normal_W;
-in vec2 f_uv;
-in float z_Proj;
+in VS_OUT{
+	vec3 pos_W;
+	vec3 normal_W;
+	vec3 tangent_W;
+	vec2 uv;
+	float z_Proj; // project clip space depth
+} fs_in;
 
 
 layout(location = 2) uniform sampler2D u_diffuseMap;
@@ -104,7 +114,7 @@ float noShadow(vec3 posW, vec3 normalW) {
 
 subroutine (ShadowAttenType)
 float hardShadow(vec3 posW, vec3 normalW) {
-	int cascadeIdx = calcCascadeIndex(z_Proj);
+	int cascadeIdx = calcCascadeIndex(fs_in.z_Proj);
 	vec4 posL = u_lightVP[cascadeIdx] * vec4(posW, 1.f); // convert to light space
 	vec3 posProj = posL.xyz / posL.w;
 	posProj = posProj * 0.5f + 0.5f; // convert to DNC
@@ -121,7 +131,7 @@ float hardShadow(vec3 posW, vec3 normalW) {
 
 subroutine (ShadowAttenType)
 float softShadow(vec3 posW, vec3 normalW) {
-	int cascadeIdx = calcCascadeIndex(z_Proj);
+	int cascadeIdx = calcCascadeIndex(fs_in.z_Proj);
 	vec4 posL = u_lightVP[cascadeIdx] * vec4(posW, 1.f); // convert to light space
 	vec3 posProj = posL.xyz / posL.w;
 	posProj = posProj * 0.5f + 0.5f; // convert to DNC
@@ -145,19 +155,19 @@ float softShadow(vec3 posW, vec3 normalW) {
 }
 
 
-vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 specluarTexColor, in vec3 emissiveTexColor) {
+vec4 calcDirectionalLight(in vec3 normal, in vec3 diffuseTexColor, in vec3 specluarTexColor, in vec3 emissiveTexColor) {
 	// diffuse
-	float dotL = clamp(dot(normalize(u_toLight), normalize(normal_W)), 0.f, 1.f);
+	float dotL = clamp(dot(normalize(u_toLight), normal), 0.f, 1.f);
 	vec3 diffuse = u_lightColor.rgb * u_diffuseFactor.rgb * diffuseTexColor * u_lightColor.a * dotL;
 
 	// specular
-	float dotV = clamp(dot(normalize(normalize(u_cameraPosW - pos_W) + normalize(u_toLight)), normalize(normal_W)), 0.f, 1.f);
+	float dotV = clamp(dot(normalize(normalize(u_cameraPosW - fs_in.pos_W) + normalize(u_toLight)), normal), 0.f, 1.f);
 	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * specluarTexColor * u_lightColor.a * pow(dotV, u_specularFactor.a);
 
 	// emissive
 	vec3 emissive = u_emissiveColor * emissiveTexColor;
 
-	float shaodwAttn = u_shadowAtten(pos_W, normal_W);
+	float shaodwAttn = u_shadowAtten(fs_in.pos_W, normal);
 
 	return vec4((diffuse + specular) * shaodwAttn + emissive, 1.f);
 }
@@ -165,11 +175,19 @@ vec4 calcDirectionalLight(in vec3 diffuseTexColor, in vec3 specluarTexColor, in 
 out vec4 frag_color;
 
 void main() {
-	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, f_uv).rgb) : vec3(1.f);
-	vec3 specularTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, f_uv).rgb) : vec3(1.f);
-	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, f_uv).rgb) : vec3(0.f);
+	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, fs_in.uv).rgb) : vec3(1.f);
+	vec3 specularTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
+	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
 	
-	frag_color = calcDirectionalLight(diffuseTexColor, specularTexColor, emissiveTexColor);
+	vec3 normal = fs_in.normal_W;
+	if (u_hasNormalMap) {
+		normal = texture(u_normalMap, fs_in.uv).xyz;
+		normal = normal * 2.f - 1.f;
+		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
+		normal = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W)* normal);
+	}
+
+	frag_color = calcDirectionalLight(normal, diffuseTexColor, specularTexColor, emissiveTexColor);
 }
 
 

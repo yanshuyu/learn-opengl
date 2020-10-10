@@ -2,7 +2,7 @@
 #version 450 core
 
 layout(location = 0) in vec3 a_pos;
-layout(location = 4) in vec2 a_uv;
+layout(location = 3) in vec2 a_uv;
 
 uniform mat4 u_VPMat;
 uniform mat4 u_ModelMat;

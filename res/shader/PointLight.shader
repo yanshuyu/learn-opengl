@@ -3,23 +3,32 @@
 
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec3 a_normal;
-layout(location = 4) in vec2 a_uv;
+layout(location = 2) in vec3 a_tangent;
+layout(location = 3) in vec2 a_uv;
 
 layout(location = 0) uniform mat4 u_VPMat;
 layout(location = 1) uniform mat4 u_ModelMat;
 
-out vec3 pos_W;
-out vec3 normal_W;
-out vec2 f_uv;
+
+out VS_OUT{
+	vec3 pos_W;
+	vec3 normal_W;
+	vec3 tangent_W;
+	vec2 uv;
+} vs_out;
 
 invariant gl_Position;
 
 
 void main() {
 	gl_Position = u_VPMat * u_ModelMat * vec4(a_pos, 1.f);
-	pos_W = (u_ModelMat * vec4(a_pos, 1.f)).xyz;
-	normal_W = (u_ModelMat * vec4(a_normal, 0.f)).xyz;
-	f_uv = a_uv;
+	vs_out.pos_W = (u_ModelMat * vec4(a_pos, 1.f)).xyz;
+	
+	mat3 invTranModel = transpose(inverse(mat3(u_ModelMat)));
+	vs_out.normal_W = normalize(invTranModel * a_normal);
+	vs_out.tangent_W = normalize(invTranModel * a_tangent);
+
+	vs_out.uv = a_uv;
 }
 
 
@@ -42,11 +51,12 @@ const vec3 sampleOffsetDirections[20] = {
 };
 
 
-
-
-in vec3 pos_W;
-in vec3 normal_W;
-in vec2 f_uv;
+in VS_OUT{
+	vec3 pos_W;
+	vec3 normal_W;
+	vec3 tangent_W;
+	vec2 uv;
+} fs_in;
 
 
 layout(location = 2) uniform sampler2D u_diffuseMap;
@@ -97,7 +107,7 @@ float hardShadow(vec3 posW) {
 	vec3 l2v = posW - u_lightPos.xyz;
 	float depth = length(l2v) / u_lightPos.w;
 	if (depth > 1.f)
-		return 1.f;
+		return 0.f;
 
 	float closestDepth = texture(u_shadowMap, l2v).r;
 	return depth - u_shadowBias > closestDepth ? (1.f - u_shadowStrength) : 1.f;
@@ -108,7 +118,7 @@ float softShadow(vec3 posW) {
 	vec3 l2v = posW - u_lightPos.xyz;
 	float depth = length(l2v) / u_lightPos.w;
 	if (depth > 1.f)
-		return 1.f;
+		return 0.f;
 
 	float shadow = 0.f;
 	for (int i = 0; i < 20; i++) {
@@ -120,23 +130,23 @@ float softShadow(vec3 posW) {
 }
 
 
-vec4 calcPointLight(in vec3 diffuseTexColor, in vec3 specularTexColor , in vec3 emissiveTexColor) {
+vec4 calcPointLight(in vec3 normal , in vec3 diffuseTexColor, in vec3 specularTexColor, in vec3 emissiveTexColor) {
 	// diffuse
-	vec3 toLight = u_lightPos.xyz - pos_W;
+	vec3 toLight = u_lightPos.xyz - fs_in.pos_W;
 	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, length(toLight));
 	toLight = normalize(toLight);
-	float dotL = clamp( dot(toLight, normalize(normal_W)), 0.f, 1.f );
+	float dotL = clamp( dot(toLight, normal), 0.f, 1.f );
 	vec3 diffuse = u_lightColor.rgb * u_diffuseFactor.rgb * diffuseTexColor * u_lightColor.a * dotL * rangeAtten;
 
 	//specular
-	vec3 toView = normalize(u_cameraPosW - pos_W);
-	float dotV = clamp( dot(normalize( toLight + toView), normalize(normal_W)), 0.f, 1.f);
+	vec3 toView = normalize(u_cameraPosW - fs_in.pos_W);
+	float dotV = clamp( dot(normalize( toLight + toView), normal), 0.f, 1.f);
 	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * specularTexColor * u_lightColor.a * pow(dotV, u_specularFactor.a) * rangeAtten;
 
 	// emissive
 	vec3 emissive = emissiveTexColor * u_emissiveColor;
 
-	float shadowAtten = u_shadowAtten(pos_W);
+	float shadowAtten = u_shadowAtten(fs_in.pos_W);
 
 	return vec4((diffuse + specular) * shadowAtten + emissive, 1.f);
 }
@@ -146,8 +156,15 @@ out vec4 frag_color;
 
 
 void main() {
-	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, f_uv).rgb) : vec3(1.f);
-	vec3 sepcTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, f_uv).rgb) : vec3(1.f);
-	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, f_uv).rgb) : vec3(0.f);
-	frag_color = calcPointLight(diffuseTexColor, sepcTexColor, emissiveTexColor);
+	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, fs_in.uv).rgb) : vec3(1.f);
+	vec3 sepcTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
+	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
+	vec3 normal = fs_in.normal_W;
+	if (u_hasNormalMap) {
+		normal = texture(u_normalMap, fs_in.uv).xyz;
+		normal = normal * 2.f - 1.f;
+		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
+		normal = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
+	}
+	frag_color = calcPointLight(normal, diffuseTexColor, sepcTexColor, emissiveTexColor);
 }

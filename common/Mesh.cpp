@@ -75,7 +75,6 @@ void Mesh::genRenderBuffers() {
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // position
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // normal
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // tangent
-	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3); // bitangent
 	layoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 2); // uv
 
 	m_vao->bind();
