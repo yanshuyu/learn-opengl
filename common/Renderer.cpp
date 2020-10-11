@@ -5,6 +5,7 @@
 #include"ForwardRenderer.h"
 #include"DeferredRenderer.h"
 #include"Texture.h"
+#include"GuiMgr.h"
 #include<glm/gtx/transform.hpp>
 #include<functional>
 
@@ -149,6 +150,9 @@ void Renderer::renderScene(Scene* s) {
 	// transparency pass
 
 	m_renderTechnique->endFrame();
+
+	// Gui
+	GuiManager::getInstance()->render();
 }
 
 void Renderer::renderTask(const RenderTask_t& task) {

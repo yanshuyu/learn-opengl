@@ -80,14 +80,14 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
-    <IncludePath>$(solutionDir)deps\include;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(solutionDir)deps\src;$(solutionDir)deps\include;$(SolutionDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)deps\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
-    <IncludePath>$(solutionDir)deps\include;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(solutionDir)deps\src;$(solutionDir)deps\include;$(SolutionDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)deps\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -160,6 +160,8 @@
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
     <ClCompile Include="..\common\FrameBuffer.cpp" />
     <ClCompile Include="..\common\GLApplication.cpp" />
+    <ClCompile Include="..\common\GuiMgr.cpp" />
+    <ClCompile Include="..\common\GuiWindow.cpp" />
     <ClCompile Include="..\common\InputMgr.cpp" />
     <ClCompile Include="..\common\LightComponent.cpp" />
     <ClCompile Include="..\common\Material.cpp" />
@@ -189,6 +191,12 @@
     <ClCompile Include="..\common\VertexArray.cpp" />
     <ClCompile Include="..\common\VertexLayoutDescription.cpp" />
     <ClCompile Include="..\deps\src\glad.c" />
+    <ClCompile Include="..\deps\src\iamgui\imgui.cpp" />
+    <ClCompile Include="..\deps\src\iamgui\imgui_draw.cpp" />
+    <ClCompile Include="..\deps\src\iamgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\deps\src\iamgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\deps\src\iamgui\imgui_widgets.cpp" />
+    <ClCompile Include="LightControlGuiWindow.cpp" />
     <ClCompile Include="ShadowMappingApp.cpp" />
     <ClCompile Include="shadowMapping_main.cpp" />
   </ItemGroup>
@@ -204,6 +212,8 @@
     <ClInclude Include="..\common\ForwardRenderer.h" />
     <ClInclude Include="..\common\FrameBuffer.h" />
     <ClInclude Include="..\common\GLApplication.h" />
+    <ClInclude Include="..\common\GuiMgr.h" />
+    <ClInclude Include="..\common\GuiWindow.h" />
     <ClInclude Include="..\common\InputMgr.h" />
     <ClInclude Include="..\common\LightComponent.h" />
     <ClInclude Include="..\common\Material.h" />
@@ -235,6 +245,15 @@
     <ClInclude Include="..\common\Util.h" />
     <ClInclude Include="..\common\VertexArray.h" />
     <ClInclude Include="..\common\VertexLayoutDescription.h" />
+    <ClInclude Include="..\deps\src\iamgui\imconfig.h" />
+    <ClInclude Include="..\deps\src\iamgui\imgui.h" />
+    <ClInclude Include="..\deps\src\iamgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\deps\src\iamgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\deps\src\iamgui\imgui_internal.h" />
+    <ClInclude Include="..\deps\src\iamgui\imstb_rectpack.h" />
+    <ClInclude Include="..\deps\src\iamgui\imstb_textedit.h" />
+    <ClInclude Include="..\deps\src\iamgui\imstb_truetype.h" />
+    <ClInclude Include="LightControlGuiWindow.h" />
     <ClInclude Include="ShadowMappingApp.h" />
   </ItemGroup>
   <ItemGroup>

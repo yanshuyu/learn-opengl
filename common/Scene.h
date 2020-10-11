@@ -12,6 +12,16 @@ class LightComponent;
 class Scene {
 	friend class Renderer;
 	typedef std::vector<std::unique_ptr<SceneObject>> ObjectVector;
+
+public:
+	enum Tag {
+		UnKnown,
+		Camera,
+		DirectionalLight,
+		PointLight,
+		SpotLight,
+	};
+
 public:
 	Scene(const glm::vec2& wndSz, const std::string& name = "");
 	virtual ~Scene();

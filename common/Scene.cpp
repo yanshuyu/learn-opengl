@@ -105,7 +105,8 @@ SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm:
 	camera->m_transform.setPosition(p);
 	camera->m_transform.setRotation(r);
 	cameraComp->m_backGroundColor = glm::vec4(bgColor, 1.f);
-	
+	camera->setTag(Tag::Camera);
+
 	return camera;
 }
 
@@ -159,6 +160,7 @@ SceneObject* Scene::addDirectionalLight(const glm::vec3& color, float intensity,
 	lightComp->setIntensity(intensity);
 	lightComp->setShadowType(shadowType);
 	light->addComponent(lightComp);
+	light->setTag(Tag::DirectionalLight);
 
 	return light;
 }
@@ -172,6 +174,7 @@ SceneObject* Scene::addPointLight(const glm::vec3& color, float range, float int
 	lightComp->setIntensity(intensity);
 	lightComp->setShadowType(shadowType);
 	light->addComponent(lightComp);
+	light->setTag(PointLight);
 
 	return light;
 }
@@ -188,6 +191,7 @@ SceneObject* Scene::addSpotLight(const glm::vec3& color, float innerAngle, float
 	lightComp->setShadowType(shadowType);
 	lightComp->setShadowStrength(shadowStrength);
 	light->addComponent(lightComp);
+	light->setTag(Tag::SpotLight);
 
 	return light;
 }
@@ -197,7 +201,7 @@ SceneObject* Scene::findObjectWithID(ID id) const {
 }
 
 SceneObject* Scene::findObjectWithTag(ID tag) const {
-	return findObjectWithTag(tag);
+	return m_rootObject->findChildWithTag(tag);
 }
 
 SceneObject* Scene::findObjectWithName(const std::string& name) const {

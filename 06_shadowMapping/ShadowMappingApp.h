@@ -2,7 +2,8 @@
 #include<common/GLApplication.h>
 
 
-class ShadowMappingApp : public GLApplication {
+class ShadowMappingApp: public GLApplication {
+	friend class LightControlGuiWindow;
 public:
 	ShadowMappingApp(const std::string& wndTitle, int wndWidth = 1920, int wndHeight = 1080);
 

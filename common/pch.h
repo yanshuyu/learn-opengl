@@ -14,6 +14,7 @@
 #include"MeshMgr.h"
 #include"MaterialMgr.h"
 #include"InputMgr.h"
+#include"GuiMgr.h"
 #include"NotificationCenter.h"
 #include"Scene.h"
 #include"ForwardRenderer.h"

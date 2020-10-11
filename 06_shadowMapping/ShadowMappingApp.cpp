@@ -1,5 +1,5 @@
 #include"ShadowMappingApp.h"
-
+#include"LightControlGuiWindow.h"
 
 
 ShadowMappingApp::ShadowMappingApp(const std::string& t, int w, int h) :GLApplication(t, w, h)
@@ -11,6 +11,7 @@ ShadowMappingApp::ShadowMappingApp(const std::string& t, int w, int h) :GLApplic
 bool ShadowMappingApp::initailize() {
 	if (!__super::initailize())
 		return false;
+
 	RenderingSettings_t renderSettins;
 	renderSettins.renderSize = { m_wndWidth, m_wndHeight };
 	renderSettins.shadowMapResolution = { 1024.f, 1024.f };
@@ -109,19 +110,16 @@ bool ShadowMappingApp::initailize() {
 	//spotLight->m_transform.setPosition({ 0.f, 25.f, 8.f });
 	//spotLight->m_transform.setRotation({ -65.f, 0.f, 0.f });
 
+
+	GuiManager::getInstance()->addWindow(new LightControlGuiWindow("Shadow demo", this));
+
 }
 
 
 void ShadowMappingApp::update(double dt) {
-	if (!m_scene->isInitialize())
+	if (!m_scene->isInitialize()) {
 		ASSERT(m_scene->initialize());
-
-	static Renderer::Mode currentMode = m_renderer->getRenderMode();
-	if (InputManager::getInstance()->isKeyUp(KeyCode::Space)) {
-		currentMode = currentMode == Renderer::Mode::Forward ? Renderer::Mode::Deferred : Renderer::Mode::Forward;
-		m_renderer->setRenderMode(currentMode);
-		currentMode = m_renderer->getRenderMode();
-		std::cout << "Render mode: " << int(currentMode) << std::endl;
+		ASSERT(GuiManager::getInstance()->initialize());
 	}
 
 	m_scene->update(dt);

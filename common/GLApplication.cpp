@@ -1,5 +1,9 @@
 #include"GLApplication.h"
 #include"NotificationCenter.h"
+#include<iamgui/imgui.h>
+#include<iamgui/imgui_impl_glfw.h>
+#include<iamgui/imgui_impl_opengl3.h>
+
 
 GLApplication::GLApplication(const std::string& wndTitle, size_t wndWidth, size_t wndHeight, size_t major, size_t minor):m_wndName(wndTitle)
 , m_wndWidth(wndWidth)
@@ -13,6 +17,10 @@ GLApplication::GLApplication(const std::string& wndTitle, size_t wndWidth, size_
 
 
 bool GLApplication::initailize() {
+	glfwSetErrorCallback([](int error, const char* desc) {
+		throw AppException(AppException::Error::GLFW_ERROR, desc);
+	});
+
 	if (!glfwInit())
 		throw AppException(AppException::Error::GLFW_INIT_FAILED, "GLFW init failed!");
 
@@ -26,10 +34,8 @@ bool GLApplication::initailize() {
 		throw AppException(AppException::Error::GLFW_CREATE_WND_FAILED, "GLFW create window failed!");
 	}
 
-
 	// set current opengl context
 	glfwMakeContextCurrent(m_glfwWnd);
-
 
 	// gl function loader
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -46,12 +52,24 @@ bool GLApplication::initailize() {
 		WindowResizedNotification nc(width, height);
 		NotificationCenter::getInstance()->postNotification(&nc);
 	});
-	
-	GLCALL(glViewport(0, 0, m_wndWidth, m_wndHeight));
-	
+		
 	glfwSetWindowUserPointer(m_glfwWnd, this);
 	
 	InputManager::getInstance()->setWindow(m_glfwWnd);
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); //(void)io;
+	io.Fonts->AddFontDefault();
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
+	// Setup Platform/Renderer bindings
+	const char* glsl_version = "#version 130";
+	ImGui_ImplGlfw_InitForOpenGL(m_glfwWnd, true);
+	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	m_initailized = true;
 
@@ -66,11 +84,22 @@ void GLApplication::run() {
 	double now = glfwGetTime();
 	double last = now;
 	while (!glfwWindowShouldClose(m_glfwWnd)) {
-		InputManager::getInstance()->update();
-		update( now - last);
-		render();
-		glfwSwapBuffers(m_glfwWnd);
 		glfwPollEvents();
+
+		InputManager::getInstance()->update();
+		update(now - last);
+		
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		render();
+
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		glfwSwapBuffers(m_glfwWnd);
 
 		last = now;
 		now = glfwGetTime();
@@ -87,7 +116,12 @@ void GLApplication::onWindowResized(int width, int height) {
 }
 
 void GLApplication::shutdown() {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	if (m_glfwWnd != nullptr) {
+		glfwDestroyWindow(m_glfwWnd);
 		glfwTerminate();
 		m_glfwWnd = nullptr;
 	}

@@ -4,6 +4,7 @@
 class AppException: public std::runtime_error {
 public:
 	enum class Error {
+		GLFW_ERROR,
 		GLFW_INIT_FAILED,
 		GLFW_CREATE_WND_FAILED,
 		GLAD_LOAD_GL_FAILED,

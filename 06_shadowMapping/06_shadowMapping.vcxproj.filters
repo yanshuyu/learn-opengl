@@ -144,6 +144,30 @@
     <ClCompile Include="..\common\PointLightShadowMapping.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\deps\src\iamgui\imgui.cpp">
+      <Filter>dep</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\src\iamgui\imgui_draw.cpp">
+      <Filter>dep</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\src\iamgui\imgui_widgets.cpp">
+      <Filter>dep</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\src\iamgui\imgui_impl_glfw.cpp">
+      <Filter>dep</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\src\iamgui\imgui_impl_opengl3.cpp">
+      <Filter>dep</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GuiWindow.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GuiMgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="LightControlGuiWindow.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -274,6 +298,39 @@
     </ClInclude>
     <ClInclude Include="..\common\PointLightShadowMapping.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imconfig.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imgui.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imgui_internal.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imstb_rectpack.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imstb_textedit.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imstb_truetype.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imgui_impl_glfw.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\src\iamgui\imgui_impl_opengl3.h">
+      <Filter>dep</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GuiWindow.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GuiMgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="LightControlGuiWindow.h">
+      <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
