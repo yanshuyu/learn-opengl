@@ -113,7 +113,7 @@ ViewFrustum_t CameraComponent::getViewFrustum() const {
 		vf.points[ViewFrustum_t::PointIndex::LTN] = { -xn, yn, -m_near };
 		vf.points[ViewFrustum_t::PointIndex::LBN] = { -xn, -yn, -m_near };
 		vf.points[ViewFrustum_t::PointIndex::RTN] = { xn, yn, -m_near };
-		vf.points[ViewFrustum_t::PointIndex::RBN] = { xn, --yn, -m_near };
+		vf.points[ViewFrustum_t::PointIndex::RBN] = { xn, -yn, -m_near };
 
 		vf.points[ViewFrustum_t::PointIndex::LTF] = { -xf, yf, -m_far };
 		vf.points[ViewFrustum_t::PointIndex::LBF] = { -xf, -yf, -m_far };

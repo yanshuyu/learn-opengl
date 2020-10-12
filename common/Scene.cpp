@@ -110,6 +110,15 @@ SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm:
 	return camera;
 }
 
+SceneObject* Scene::addModel(std::shared_ptr<MeshGroup> model, const std::string& name) {
+	SceneObject* obj = addObject(name);
+	MeshRenderComponent* meshRenderComp = MeshRenderComponent::create();
+	meshRenderComp->setMeshes(model);
+	obj->addComponent(meshRenderComp);
+
+	return obj;
+}
+
 SceneObject* Scene::addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat) {
 	SceneObject* grid = addObject("Grid");
 	auto gridMesh = MeshManager::getInstance()->createGrid(w, d, spacing);

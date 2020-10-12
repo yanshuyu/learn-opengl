@@ -41,7 +41,7 @@ void ArcballCameraController::update(double dt) {
 		m_lastMouseYPos = cursorPos.second;
 	}
 
-	if (input->isMouseButtonPressed(MouseButtonCode::Left) && input->isKeyPressed(KeyCode::LCtrl)) {
+	if (input->isMouseButtonPressed(MouseButtonCode::Left) /*&& input->isKeyPressed(KeyCode::LCtrl)*/) {
 		auto cursorPos = input->getCursorPosition();
 		m_theta += (cursorPos.first - m_lastMouseXPos) * m_moveSpeed * float(dt);
 		m_phi += (cursorPos.second - m_lastMouseYPos) * m_moveSpeed * float(dt);

@@ -102,9 +102,8 @@ void MeshGroup::loadGeometry(const aiMesh* aMesh, std::vector<Vertex_t>& vertice
 		ASSERT(aMesh->HasNormals());
 		const aiVector3D normal = aMesh->mNormals[i];
 
-		ASSERT(aMesh->HasTangentsAndBitangents());
-		const aiVector3D tangent = aMesh->mTangents[i];
-		//const aiVector3D biTangent = aMesh->mBitangents[i];
+		//ASSERT(aMesh->HasTangentsAndBitangents());
+		const aiVector3D tangent = aMesh->HasTangentsAndBitangents() ? aMesh->mTangents[i] : aiVector3D();
 
 		const aiVector3D uv = aMesh->HasTextureCoords(0) ? aMesh->mTextureCoords[0][i] : aiVector3D();
 
