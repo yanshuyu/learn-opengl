@@ -18,6 +18,10 @@ protected:
 	virtual bool initailize();
 	virtual void update(double dt) {};
 	virtual void render() {};
+#ifdef _DEBUG
+	virtual	void debugDraw() {};
+#endif // _DEBUG
+
 	virtual void shutdown();
 	virtual void onWindowResized(int width, int height);
 

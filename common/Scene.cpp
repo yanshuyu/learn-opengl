@@ -12,7 +12,8 @@ Scene::Scene(const glm::vec2& wndSz, const std::string& name): m_name(name)
 , m_isInitialize(false)
 , m_id(0)
 , m_windowSize(wndSz)
-, m_defaultCamera(wndSz.x/wndSz.y){
+, m_defaultCamera(wndSz.x/wndSz.y) 
+, m_activeCamera(nullptr) {
 	m_id = reinterpret_cast<unsigned long>(this);
 	m_rootObject = std::make_unique<SceneObject>("root");
 }
@@ -45,7 +46,7 @@ void Scene::update(double dt) {
 }
 
 
-SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
+SceneRenderInfo_t* Scene::getSceneRenderInfo() const {
 	static SceneRenderInfo_t sri;
 	CameraComponent* activeCamera = nullptr;
 	sri.lights.clear();
@@ -69,12 +70,13 @@ SceneRenderInfo_t* Scene::gatherSceneRenderInfo() const {
 		return true;
 	});
 
-	if (activeCamera)
+	if (activeCamera) 
 		activeCamera->m_aspectRatio = m_windowSize.x / m_windowSize.y;
 	
 	if (!activeCamera)
 		sri.camera = m_defaultCamera.makeCamera(m_windowSize.x, m_windowSize.y);
 	
+	m_activeCamera = &sri.camera;
 
 	return &sri;
 }

@@ -50,13 +50,7 @@ public:
 
 	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f, ShadowType shadowType = ShadowType::HardShadow);
 	SceneObject* addPointLight(const glm::vec3& color, float range = 50, float intensity = 1.f, ShadowType shadowType = ShadowType::NoShadow);
-	SceneObject* addSpotLight(const glm::vec3& color, 
-								float innerAngle = 30.f, 
-								float outterAngle = 60.f, 
-								float range = 50.f,
-								float intesity = 1.f, 
-								ShadowType shadowType = ShadowType::NoShadow,
-								float shadowStrength = 0.5f);
+	SceneObject* addSpotLight(const glm::vec3& color, float innerAngle = 30.f, float outterAngle = 60.f, float range = 50.f,float intesity = 1.f, ShadowType shadowType = ShadowType::NoShadow,float shadowStrength = 0.5f);
 
 	SceneObject* findObjectWithID(ID id) const;
 	SceneObject* findObjectWithTag(ID tag) const;
@@ -81,7 +75,7 @@ public:
 	//
 	// rendering
 	//
-	SceneRenderInfo_t* gatherSceneRenderInfo() const;
+	SceneRenderInfo_t* getSceneRenderInfo() const;
 	void render(RenderContext* context);
 	
 	//
@@ -107,6 +101,10 @@ public:
 		m_windowSize = glm::vec2(w, h);
 	}
 
+	inline Camera_t* getActiveCamera() const {
+		return m_activeCamera;
+	}
+
 private:
 	ID m_id;
 	std::string m_name;
@@ -116,4 +114,5 @@ private:
 	glm::vec2 m_windowSize;
 
 	CameraComponent m_defaultCamera;
+	mutable Camera_t* m_activeCamera;
 };

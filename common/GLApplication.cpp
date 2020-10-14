@@ -3,6 +3,7 @@
 #include<iamgui/imgui.h>
 #include<iamgui/imgui_impl_glfw.h>
 #include<iamgui/imgui_impl_opengl3.h>
+#include"DebugDrawer.h"
 
 
 GLApplication::GLApplication(const std::string& wndTitle, size_t wndWidth, size_t wndHeight, size_t major, size_t minor):m_wndName(wndTitle)
@@ -71,6 +72,11 @@ bool GLApplication::initailize() {
 	ImGui_ImplGlfw_InitForOpenGL(m_glfwWnd, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
+#ifdef _DEBUG
+	DebugDrawer::setup();
+#endif // _DEBUG
+
+
 	m_initailized = true;
 
 	return m_initailized;
@@ -95,6 +101,10 @@ void GLApplication::run() {
 		ImGui::NewFrame();
 
 		render();
+		
+#ifdef _DEBUG
+		debugDraw();
+#endif // _DEBUG
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -119,6 +129,11 @@ void GLApplication::shutdown() {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+
+#ifdef _DEBUG
+	DebugDrawer::clenup();
+#endif // _DEBUG
+
 
 	if (m_glfwWnd != nullptr) {
 		glfwDestroyWindow(m_glfwWnd);

@@ -168,6 +168,21 @@
     <ClCompile Include="LightControlGuiWindow.cpp">
       <Filter>main</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\Interpolation.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\KeyFrameTrack.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\TransformTrack.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Transform.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\DebugDrawer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -332,6 +347,24 @@
     <ClInclude Include="LightControlGuiWindow.h">
       <Filter>main</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\Interpolation.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\KeyFrame.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\KeyFrameTrack.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TransformTrack.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Transform.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\DebugDrawer.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader">
@@ -364,9 +397,6 @@
     <None Include="..\res\shader\PointLightShadowPass.shader">
       <Filter>shader</Filter>
     </None>
-    <None Include="..\res\shader\SolidColor.shader">
-      <Filter>shader</Filter>
-    </None>
     <None Include="..\res\shader\SpotLight.shader">
       <Filter>shader</Filter>
     </None>
@@ -380,6 +410,9 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\UnlitDeferred.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\KeyFrameDebugViewer.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

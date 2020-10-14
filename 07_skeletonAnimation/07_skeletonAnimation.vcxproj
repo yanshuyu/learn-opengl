@@ -149,6 +149,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\DebugDrawer.cpp" />
+    <ClCompile Include="..\common\KeyFrameTrack.cpp" />
     <ClCompile Include="..\common\ArcballCameraController.cpp" />
     <ClCompile Include="..\common\Buffer.cpp" />
     <ClCompile Include="..\common\CameraComponent.cpp" />
@@ -163,6 +165,7 @@
     <ClCompile Include="..\common\GuiMgr.cpp" />
     <ClCompile Include="..\common\GuiWindow.cpp" />
     <ClCompile Include="..\common\InputMgr.cpp" />
+    <ClCompile Include="..\common\Interpolation.cpp" />
     <ClCompile Include="..\common\LightComponent.cpp" />
     <ClCompile Include="..\common\Material.cpp" />
     <ClCompile Include="..\common\MaterialMgr.cpp" />
@@ -186,7 +189,9 @@
     <ClCompile Include="..\common\SpotLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Texture.cpp" />
     <ClCompile Include="..\common\TextureMgr.cpp" />
+    <ClCompile Include="..\common\Transform.cpp" />
     <ClCompile Include="..\common\TransformComponent.cpp" />
+    <ClCompile Include="..\common\TransformTrack.cpp" />
     <ClCompile Include="..\common\Util.cpp" />
     <ClCompile Include="..\common\VertexArray.cpp" />
     <ClCompile Include="..\common\VertexLayoutDescription.cpp" />
@@ -201,6 +206,8 @@
     <ClCompile Include="SkeletonAnimationApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\DebugDrawer.h" />
+    <ClInclude Include="..\common\KeyFrameTrack.h" />
     <ClInclude Include="..\common\ArcballCameraController.h" />
     <ClInclude Include="..\common\Buffer.h" />
     <ClInclude Include="..\common\CameraComponent.h" />
@@ -215,6 +222,8 @@
     <ClInclude Include="..\common\GuiMgr.h" />
     <ClInclude Include="..\common\GuiWindow.h" />
     <ClInclude Include="..\common\InputMgr.h" />
+    <ClInclude Include="..\common\Interpolation.h" />
+    <ClInclude Include="..\common\KeyFrame.h" />
     <ClInclude Include="..\common\LightComponent.h" />
     <ClInclude Include="..\common\Material.h" />
     <ClInclude Include="..\common\MaterialMgr.h" />
@@ -241,7 +250,9 @@
     <ClInclude Include="..\common\SpotLightShadowMapping.h" />
     <ClInclude Include="..\common\Texture.h" />
     <ClInclude Include="..\common\TextureMgr.h" />
+    <ClInclude Include="..\common\Transform.h" />
     <ClInclude Include="..\common\TransformComponent.h" />
+    <ClInclude Include="..\common\TransformTrack.h" />
     <ClInclude Include="..\common\Util.h" />
     <ClInclude Include="..\common\VertexArray.h" />
     <ClInclude Include="..\common\VertexLayoutDescription.h" />
@@ -264,10 +275,10 @@
     <None Include="..\res\shader\DirectionalLightDeferred.shader" />
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
     <None Include="..\res\shader\GeometryPass.shader" />
+    <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />
     <None Include="..\res\shader\PointLightShadowPass.shader" />
-    <None Include="..\res\shader\SolidColor.shader" />
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />
     <None Include="..\res\shader\TextureDebugViewer.shader" />

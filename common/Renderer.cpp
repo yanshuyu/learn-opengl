@@ -100,7 +100,7 @@ void Renderer::onWindowResize(float w, float h) {
 
 void Renderer::renderScene(Scene* s) {
 	m_scene = s;
-	m_sceneRenderInfo = s->gatherSceneRenderInfo();
+	m_sceneRenderInfo = s->getSceneRenderInfo();
 	
 	if (m_clearColor != m_sceneRenderInfo->camera.backgrounColor)
 		setClearColor(m_sceneRenderInfo->camera.backgrounColor);
