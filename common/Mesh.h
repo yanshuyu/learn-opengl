@@ -22,6 +22,7 @@ enum MeshLoadOption {
 
 
 class Mesh {
+	friend class Model;
 	friend class MeshGroup;
 	friend class MeshManager;
 public:

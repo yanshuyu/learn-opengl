@@ -11,7 +11,7 @@ private:
 	bool initailize() override;
 	void update(double dt) override;
 	void render() override;
-	void debugDraw() override;
+	void debugDraw(double dt) override;
 	void onWindowResized(int width, int height) override;
 
 private:
@@ -20,4 +20,5 @@ private:
 
 	std::unique_ptr<ScalarTrack> m_scalarTrack;
 	std::unique_ptr<ScalarTrack> m_scalarTrackCubic;
+	std::unique_ptr<Model> m_Model;
 };

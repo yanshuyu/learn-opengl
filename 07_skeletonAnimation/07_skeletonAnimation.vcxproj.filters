@@ -183,6 +183,21 @@
     <ClCompile Include="..\common\DebugDrawer.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\AnimationClip.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Pose.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Skeleton.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MeshLoader.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Model.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -363,6 +378,21 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\DebugDrawer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\AnimationClip.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Pose.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Skeleton.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MeshLoader.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Model.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

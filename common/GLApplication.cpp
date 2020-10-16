@@ -103,7 +103,7 @@ void GLApplication::run() {
 		render();
 		
 #ifdef _DEBUG
-		debugDraw();
+		debugDraw(now - last);
 #endif // _DEBUG
 
 		ImGui::Render();

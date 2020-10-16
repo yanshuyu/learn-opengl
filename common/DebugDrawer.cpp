@@ -4,6 +4,7 @@
 #include"Buffer.h"
 #include"VertexArray.h"
 #include"Util.h"
+#include"Pose.h"
 #include<glm/gtx/transform.hpp>
 #include<algorithm>
 
@@ -159,4 +160,51 @@ void DebugDrawer::drawVectorTrack(VectorTrack* track, float numCycle, float numS
 	s_VBO->unbind();
 	GLCALL(glDisableVertexAttribArray(0));
 	s_VAO->unbind();
+}
+
+ 
+void DebugDrawer::drawPose(const Pose& pose, const glm::vec3& color, const glm::mat4& vp) {
+	auto shader = ShaderProgramManager::getInstance()->getProgram("KeyFrameDebugViewer");
+	if (!shader)
+		shader = ShaderProgramManager::getInstance()->addProgram("res/shader/KeyFrameDebugViewer.shader");
+	ASSERT(shader);
+
+	shader->bind();
+	
+	size_t vertexCnt = 0;
+	for (size_t i = 0; i < pose.size(); i++) {
+		int parentId = pose.getJointParent(i);
+		if (parentId > 0)
+			vertexCnt += 2;
+	}
+	
+	std::vector<glm::vec3> points;
+	points.reserve(vertexCnt);
+	for (size_t i = 0; i < pose.size(); i++) {
+		int parentId = pose.getJointParent(i);
+		if (parentId > 0) {
+			points.push_back(pose.getJointTransformGlobal(i).position);
+			points.push_back(pose.getJointTransformGlobal(parentId).position);
+		}
+	}
+
+	s_VAO->bind();
+	s_VBO->bind(Buffer::Target::VertexBuffer);
+	s_VBO->loadData(points.data(), sizeof(glm::vec3) * points.size(), Buffer::Usage::StreamDraw);
+
+	GLCALL(glEnableVertexAttribArray(0));
+	GLCALL(glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(glm::vec3), (void*)0));
+
+	if (shader->hasUniform("u_MVP"))
+		shader->setUniformMat4v("u_MVP", (float*)&vp[0][0]);
+	if (shader->hasUniform("u_Color"))
+		shader->setUniform4v("u_Color", (float*)&color[0]);
+
+	GLCALL(glDrawArrays(GL_LINES, 0, points.size()));
+
+	shader->unbind();
+	s_VBO->unbind();
+	GLCALL(glDisableVertexAttribArray(0));
+	s_VAO->unbind();
+
 }

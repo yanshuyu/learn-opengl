@@ -1,7 +1,5 @@
 #include"SkeletonAnimationApp.h"
 #include"LightControlGuiWindow.h"
-#include<common/Interpolation.h>
-#include<common/DebugDrawer.h>
 #include<stdarg.h>
 #include<glm/gtx/transform.hpp>
 
@@ -34,18 +32,19 @@ bool SkeletonAnimationApp::initailize() {
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
 
-	//auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx", MeshLoadOption::LoadMaterial);
+	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Whale.fbx", MeshLoadOption::LoadMaterial);
 	auto planeMat = matMgr->addMaterial("PlaneMaterial");
 
-
+	auto model = MeshLoader::getInstance()->load(meshMgr->getResourceAbsolutePath() + "Whale.fbx", MeshLoader::Option::LoadAnimations);
+	m_Model.reset(model);
 
 	m_scene->addPlane(250, 250, planeMat);
 	planeMat->m_shininess = 0.1f;
 
 
-	//auto obj = m_scene->addModel(monsterModel, "Monster");
-	//obj->m_transform.setScale({ 0.01f, 0.01f, 0.01f });
-	//obj->m_transform.setPosition({ 0.f, 0.f, 0.f });
+	auto obj = m_scene->addModel(monsterModel, "Monster");
+	obj->m_transform.setScale({ 0.1f, 0.1f, 0.1f });
+	obj->m_transform.setPosition({ 0.f, 16.f, 0.f });
 
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent(ArcballCameraController::create());
@@ -87,8 +86,12 @@ void SkeletonAnimationApp::render() {
 }
 
 
-void SkeletonAnimationApp::debugDraw() {
+void SkeletonAnimationApp::debugDraw(double dt) {
 	static glm::mat4 vp;
+	static glm::mat4 model(1.f);
+	static glm::mat4 mvp(1.f);
+
+	/*
 	vp = glm::ortho(0.f, float(m_wndWidth), 0.f, float(m_wndHeight), -1.f, 10.f);
 	m_scalarTrack->setInterpolationType(InterpolationType::Linear);
 	DebugDrawer::drawScalarTrack(m_scalarTrack.get(), 1.5, 100, LoopType::NoLoop, 50, 10, 4, { 0, 1, 0 }, vp);
@@ -100,8 +103,7 @@ void SkeletonAnimationApp::debugDraw() {
 	DebugDrawer::drawScalarTrack(m_scalarTrack.get(), 1.5, 100, LoopType::Loop, 50, 600, 4, { 0, 1, 1 }, vp);
 	DebugDrawer::drawScalarTrack(m_scalarTrack.get(), 1.5, 100, LoopType::PingPong, 50, 750, 4, { 0, 1, 1 }, vp);
 
-	static glm::mat4 model(1.f);
-	static glm::mat4 mvp(1.f);
+
 	model = glm::mat4(1.f);
 	mvp = glm::mat4(1.f);
 	model = glm::translate(model, glm::vec3(-100.f, -750.f, 0.f));
@@ -122,6 +124,33 @@ void SkeletonAnimationApp::debugDraw() {
 	model = glm::scale(model, glm::vec3(1.f, 80.f, 1.f));
 	mvp = vp * model;
 	DebugDrawer::drawScalarTrack(m_scalarTrackCubic.get(), 2.5, 100, LoopType::PingPong, 900, 10, 4, { 1, 0, 0 }, mvp);
+	*/
+
+
+	model = glm::mat4(1.f);
+	model = glm::translate(model, { -15.f, 16.f, 0.f });
+	model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
+
+	vp = m_scene->getActiveCamera()->projMatrix * m_scene->getActiveCamera()->viewMatrix;
+	mvp = vp * model;
+	DebugDrawer::drawPose(m_Model->getSkeleton()->getResPose(), { 0.f, 0.f, 1.f }, mvp);
+
+	//model = glm::mat4(1.f);
+	//model = glm::translate(model, { 15.f, 10.f, 0.f });
+	//model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
+	//mvp = vp * model;
+	//DebugDrawer::drawPose(m_Model->getSkeleton()->getBindPose(), { 1.f, 0.f, 0.f }, mvp);
+	
+	static double animTime = 0;
+	animTime += dt;
+	model = glm::mat4(1.f);
+	model = glm::translate(model, { 15.f, 10.f, 0.f });
+	model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
+	mvp = vp * model;
+	
+	Pose animatedPose = m_Model->getSkeleton()->getBindPose();
+	animatedPose = m_Model->animationAt(0)->sample(animatedPose, animTime, LoopType::Loop);
+	DebugDrawer::drawPose(animatedPose, { 0.f, 1.f, 0.f }, mvp);
 }
 
 void SkeletonAnimationApp::onWindowResized(int width, int height) {

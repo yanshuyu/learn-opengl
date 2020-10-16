@@ -19,7 +19,7 @@ protected:
 	virtual void update(double dt) {};
 	virtual void render() {};
 #ifdef _DEBUG
-	virtual	void debugDraw() {};
+	virtual	void debugDraw(double dt) {};
 #endif // _DEBUG
 
 	virtual void shutdown();
