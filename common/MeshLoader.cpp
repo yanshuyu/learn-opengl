@@ -165,8 +165,8 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 		aiAnimation* anim = aScene->mAnimations[i];
 		float dur = anim->mTicksPerSecond > 0 ? anim->mDuration / anim->mTicksPerSecond : anim->mDuration;
 		
-		//if (dur < 0.1) // ignore animation that is to short
-			//continue;
+		if (dur < 0.1) // ignore animation that is to short
+			continue;
 		
 		AnimationClip* animClip = new AnimationClip();
 		animations.push_back(animClip);
@@ -184,6 +184,10 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 				VectorTrack& posTrack = jointAnimTrack.getPositionTrack();
 				posTrack.setInterpolationType(InterpolationType::Linear); 
 				posTrack.resize(nodeAnim->mNumPositionKeys);
+				posTrack.m_preBehavior = VectorTrack::Behavior(nodeAnim->mPreState);
+				posTrack.m_postBehavior = VectorTrack::Behavior(nodeAnim->mPostState);
+				posTrack.m_defualtVal = skeleton->getBindPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).position;
+
 				for (size_t p = 0; p < nodeAnim->mNumPositionKeys; p++) { // for every position key frame
 					float t = anim->mTicksPerSecond > 0 ? nodeAnim->mPositionKeys[p].mTime / anim->mTicksPerSecond : nodeAnim->mPositionKeys[p].mTime;
 					aiVector3D val = nodeAnim->mPositionKeys[p].mValue;
@@ -196,6 +200,10 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 				VectorTrack& scaleTrack = jointAnimTrack.getScaleTrack();
 				scaleTrack.setInterpolationType(InterpolationType::Linear);
 				scaleTrack.resize(nodeAnim->mNumScalingKeys);
+				scaleTrack.m_preBehavior = VectorTrack::Behavior(nodeAnim->mPreState);
+				scaleTrack.m_postBehavior = VectorTrack::Behavior(nodeAnim->mPostState);
+				scaleTrack.m_defualtVal = skeleton->getBindPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).scale;
+
 				for (size_t s = 0; s < nodeAnim->mNumScalingKeys; s++) { // for every scale key frame
 					float t = anim->mTicksPerSecond > 0 ? nodeAnim->mScalingKeys[s].mTime / anim->mTicksPerSecond : nodeAnim->mScalingKeys[s].mTime;
 					aiVector3D val = nodeAnim->mScalingKeys[s].mValue;
@@ -208,11 +216,15 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 				QuaternionTrack& rotateTrack = jointAnimTrack.getRotationTrack();
 				rotateTrack.setInterpolationType(InterpolationType::Linear);
 				rotateTrack.resize(nodeAnim->mNumRotationKeys);
+				rotateTrack.m_preBehavior = QuaternionTrack::Behavior(nodeAnim->mPreState);
+				rotateTrack.m_postBehavior = QuaternionTrack::Behavior(nodeAnim->mPostState);
+				rotateTrack.m_defualtVal = skeleton->getBindPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).rotation;
+
 				for (size_t r = 0; r < nodeAnim->mNumRotationKeys; r++) { // for every rotation key frame
 					float t = anim->mTicksPerSecond > 0 ? nodeAnim->mRotationKeys[r].mTime / anim->mTicksPerSecond : nodeAnim->mRotationKeys[r].mTime;
 					aiQuaternion val = nodeAnim->mRotationKeys[r].mValue;
 					rotateTrack[r].m_time = t;
-					rotateTrack[r].m_value = glm::quat(val.x, val.y, val.z, val.w);
+					rotateTrack[r].m_value = glm::quat(val.w, val.x, val.y, val.z);
 				}
 			}
 		}

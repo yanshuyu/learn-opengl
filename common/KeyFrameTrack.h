@@ -11,6 +11,11 @@ class KeyFrameTrack {
 #ifdef _DEBUG
 	friend class DebugDrawer;
 #endif // _DEBUG
+public:
+	enum class Behavior {
+		Defualt,
+		Nearest,
+	};
 
 public:
 	KeyFrameTrack(InterpolationType interpolation = InterpolationType::Linear);
@@ -52,6 +57,7 @@ public:
 		m_interpolationType = interpolation;
 	}
 
+	
 protected:
 	T sampleConstant(int frameIdx, float weight) const;
 	T sampleLinear(int frameIdx, float weight) const;
@@ -63,6 +69,11 @@ protected:
 protected:
 	std::vector<KeyFrame<T>> m_keyFrames;
 	InterpolationType m_interpolationType;
+
+public:
+	Behavior m_preBehavior; // Defines how the animation behaves before the first key is encountered
+	Behavior m_postBehavior; // Defines how the animation behaves after the last key is encountered
+	T m_defualtVal;
 };
 
 

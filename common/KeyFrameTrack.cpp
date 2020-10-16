@@ -8,7 +8,10 @@ template KeyFrameTrack<glm::quat>;
 
 
 template<typename T>
-KeyFrameTrack<T>::KeyFrameTrack(InterpolationType interpolation) : m_interpolationType(interpolation) {
+KeyFrameTrack<T>::KeyFrameTrack(InterpolationType interpolation) : m_interpolationType(interpolation)
+, m_preBehavior(Behavior::Defualt)
+, m_postBehavior(Behavior::Defualt)
+, m_defualtVal() {
 	
 }
 
@@ -75,6 +78,12 @@ template<typename T>
 T KeyFrameTrack<T>::sample(float t, LoopType loop) const	{
 	if (!isValid())
 		return T();
+
+	if (t < getStartTime() && m_preBehavior == Behavior::Defualt)
+		return m_defualtVal;
+
+	if (t > getEndTime() && loop == LoopType::NoLoop && m_postBehavior == Behavior::Defualt)
+		return m_defualtVal;
 
 	int frameIdx = -1;
 	float weight = 0.f;
