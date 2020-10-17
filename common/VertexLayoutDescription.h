@@ -3,6 +3,7 @@
 #include<vector>
 
 class VertexLayoutDescription {
+	friend class VertexArray;
 public:
 	enum class AttributeElementType {
 		BYTE = GL_BYTE,
@@ -21,20 +22,18 @@ public:
 		VertexLayoutDescription::AttributeElementType elementType;
 		size_t elementCount;
 		size_t packedSize;
+		int location;
 		bool normalized;
 
 		VertexAttribute();
-		VertexAttribute(VertexLayoutDescription::AttributeElementType et, 
-																size_t ec, 
-																size_t ps,  
-																bool nor);
+		VertexAttribute(VertexLayoutDescription::AttributeElementType et, size_t ec, size_t ps, int loc, bool nor);
 	};
 
 
 public:
 	VertexLayoutDescription(size_t stride = 0);
 	
-	void pushAttribute(AttributeElementType et, size_t ec, size_t packedSz = 0, bool normalize = false);
+	void pushAttribute(AttributeElementType et, size_t ec, int loc, size_t packedSz = 0, bool normalize = false);
 	
 	void reset();
 
@@ -47,7 +46,9 @@ public:
 	}
 
 private:
-	size_t getAttributeElmentSize(AttributeElementType e);
+	size_t getAttributeElmentSize(AttributeElementType e) const;
+	bool isIntegerAttribute(AttributeElementType e) const;
+
 private:
 	size_t m_stride;
 	std::vector<VertexAttribute> m_attributes;

@@ -1,13 +1,12 @@
 #pragma once
 #include"Mesh.h"
-#include"Material.h"
-#include"Skeleton.h"
-#include"AnimationClip.h"
 #include<assimp/Importer.hpp>
 #include<assimp/mesh.h>
 #include<unordered_map>
 
 
+class Skeleton;
+class AnimationClip;
 
 
 class Model {
@@ -25,26 +24,45 @@ public:
 
 	void release();
 
-	void addMesh(const aiScene* scene, const aiMesh* mesh, aiMatrix4x4 transform, MeshLoadOption options);
-	void addMesh(Mesh* mesh);
-	void addMesh(std::unique_ptr<Mesh>&& mesh);
-	Mesh* addMesh(const std::vector<Vertex_t>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt = PrimitiveType::Triangle);
-	Mesh* addMesh(std::vector<Vertex_t>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt = PrimitiveType::Triangle);
+	void addMesh(IMesh* mesh);
+	void addMesh(std::unique_ptr<IMesh>&& mesh);
+
+	template<typename Vertex>
+	TMesh<Vertex>* addMesh(const std::vector<Vertex>& vertices, const std::vector<Index_t>& indices, PrimitiveType pt = PrimitiveType::Triangle) {
+		std::vector<Vertex> tempVertices = vertices;
+		std::vector<Index_t> tempIndices = indices;
+		return addMesh(std::move(tempVertices), std::move(tempIndices), pt);
+	}
+	
+	template<typename Vertex>
+	TMesh<Vertex>* addMesh(std::vector<Vertex>&& vertices, std::vector<Index_t>&& indices, PrimitiveType pt = PrimitiveType::Triangle) {
+		TMesh<Vertex>* mesh = new TMesh<Vertex>();
+		mesh->fill(std::move(vertices), std::move(indices));
+		mesh->setPrimitiveType(pt);
+		addMesh(mesh);
+
+		return mesh;
+	}
 
 	void setSkeleton(Skeleton* skeleton);
 	void addAnimation(AnimationClip* anim);
 
-	std::vector<const Mesh*> getMeshes() const;
+	std::vector<IMesh*> getMeshes() const;
 	std::vector<AnimationClip*> getAnimations() const;
 
-	std::shared_ptr<Material> embededMaterialForMesh(const Mesh* mesh);
+	bool addEmbededMaterial(const IMesh* mesh, const Material* mat);
+	std::shared_ptr<Material> embededMaterialForMesh(const IMesh* mesh);
 	std::shared_ptr<Material> embededMaterialForMesh(ID meshId);
 
 	inline ID id() const {
 		return m_id;
 	}
 
-	inline std::string filePath() const {
+	inline void setFilePath(const std::string& path) {
+		m_file = path;
+	}
+
+	inline std::string getFilePath() const {
 		return m_file;
 	}
 
@@ -60,7 +78,7 @@ public:
 		return m_meshes.size();
 	}
 
-	inline const Mesh* meshAt(size_t idx) const {
+	inline  IMesh* meshAt(size_t idx) const {
 		return m_meshes.at(idx).get();
 	}
 
@@ -85,21 +103,16 @@ public:
 	}
 
 private:
-	void loadGeometry(const aiMesh* aMesh, std::vector<Vertex_t>& vertices, std::vector<Index_t>& indices, PrimitiveType& pt);
-	std::shared_ptr<Material> loadMaterial(const aiScene* aScene, const aiMesh* aMesh);
-	std::shared_ptr<Texture> loadTexture(const std::string& name);
-
-private:
 	std::string m_file;
 	std::string m_name;
 	ID m_id;
 
-	std::vector<std::unique_ptr<Mesh>> m_meshes;
+	std::vector<std::unique_ptr<IMesh>> m_meshes;	// geometry data
 	std::unordered_map<ID, std::string> m_embededMaterials;
 
-	std::unique_ptr<Skeleton> m_skeleton;
+	std::unique_ptr<Skeleton> m_skeleton;	// skeleton animation data
 	std::vector<std::unique_ptr<AnimationClip>> m_animations;
 };
 
 
-std::ostream& operator << (std::ostream& o, const Model& meshGrp);
+std::ostream& operator << (std::ostream& o, const Model& model);

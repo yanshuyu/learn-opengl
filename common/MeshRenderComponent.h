@@ -1,12 +1,12 @@
 #pragma once
 #include"Component.h"
 #include"Material.h"
-#include"MeshGroup.h"
+#include"Model.h"
 #include"RendererCore.h"
 
 class MeshRenderComponent : public Component {
 public:
-	MeshRenderComponent(std::shared_ptr<MeshGroup> meshes = nullptr, bool useEmbededMaterial = true);
+	MeshRenderComponent(std::shared_ptr<Model> meshes = nullptr, bool useEmbededMaterial = true);
 	MeshRenderComponent(MeshRenderComponent&& rv) = default;
 	MeshRenderComponent& operator = (MeshRenderComponent&& rv) = default;
 
@@ -26,10 +26,10 @@ public:
 	//
 	// mesh managment
 	//
-	void setMeshes(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterials = true);
+	void setMeshes(std::shared_ptr<Model> meshes, bool useEmbededMaterials = true);
 	size_t meshCount() const;
 	
-	inline std::shared_ptr<MeshGroup> getMeshes() const {
+	inline std::shared_ptr<Model> getMeshes() const {
 		return m_meshes;
 	}	
 	
@@ -63,6 +63,6 @@ private:
 	void loadEmbededMaterials();
 	
 private:
-	std::shared_ptr<MeshGroup> m_meshes;
+	std::shared_ptr<Model> m_meshes;
 	std::vector<std::shared_ptr<Material>> m_materials;
 };  

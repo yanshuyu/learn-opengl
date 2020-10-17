@@ -21,6 +21,17 @@ struct Vertex_t {
 	Vertex_t();
 };
 
+struct SkinVertex_t {
+	glm::ivec4 joints;
+	glm::vec4 weights;
+	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec3 tangent;
+	glm::vec2 uv;
+
+	SkinVertex_t();
+};
+
 
 enum class PrimitiveType {
 	Point,

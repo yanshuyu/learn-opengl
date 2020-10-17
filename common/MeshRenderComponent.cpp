@@ -6,14 +6,14 @@
 
 COMPONENT_IDENTIFIER_IMP(MeshRenderComponent, "MeshRenderComponent");
 
-MeshRenderComponent::MeshRenderComponent(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterial):m_meshes(meshes)
+MeshRenderComponent::MeshRenderComponent(std::shared_ptr<Model> meshes, bool useEmbededMaterial):m_meshes(meshes)
 , m_materials() {
 	if (meshes && useEmbededMaterial)
 		loadEmbededMaterials();
 }
 
 
-void MeshRenderComponent::setMeshes(std::shared_ptr<MeshGroup> meshes, bool useEmbededMaterials) {
+void MeshRenderComponent::setMeshes(std::shared_ptr<Model> meshes, bool useEmbededMaterials) {
 	m_meshes = meshes;
 	m_materials.clear();
 
@@ -45,7 +45,7 @@ void MeshRenderComponent::destory(MeshRenderComponent* mrc){
 
 size_t MeshRenderComponent::meshCount() const {
 	if (m_meshes)
-		return m_meshes->meshesCount();
+		return m_meshes->meshCount();
 	return 0;
 }
 
@@ -107,8 +107,8 @@ void MeshRenderComponent::render(RenderContext* context) {
 
 void MeshRenderComponent::loadEmbededMaterials() {
 	if (m_meshes && m_meshes->embededMaterialCount() > 0) {
-		m_materials.resize(m_meshes->meshesCount(), nullptr);
-		for (size_t i = 0; i < m_meshes->meshesCount(); i++) {
+		m_materials.resize(m_meshes->meshCount(), nullptr);
+		for (size_t i = 0; i < m_meshes->meshCount(); i++) {
 			m_materials[i] = m_meshes->embededMaterialForMesh(m_meshes->meshAt(i));
 		}
 	}

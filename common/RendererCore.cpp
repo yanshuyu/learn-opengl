@@ -15,6 +15,16 @@ Vertex_t::Vertex_t(): position(0.f)
 }
 
 
+SkinVertex_t::SkinVertex_t() : joints(0)
+, weights(0.f)
+, position(0.f)
+, normal(0.f)
+, tangent(0.f)
+, uv(0.f) {
+
+}
+
+
 Viewport_t::Viewport_t() : Viewport_t(0, 0, 1, 1) {
 
 }

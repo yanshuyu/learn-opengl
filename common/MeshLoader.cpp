@@ -1,4 +1,10 @@
 #include"MeshLoader.h"
+#include"Model.h"
+#include"Skeleton.h"
+#include"AnimationClip.h"
+#include"Mesh.h"
+#include"MaterialMgr.h"
+#include"TextureMgr.h"
 #include<assimp/Importer.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<queue>
@@ -6,8 +12,7 @@
 #include<unordered_set>
 
 
-
-Model* MeshLoader::load(const std::string& file, Option options, Preset preset, const std::string& name) {
+Model* MeshLoader::load(const std::string& file, int options, Preset preset, const std::string& name) {
 	std::string modelName(name);
 	if (modelName.empty())
 		modelName = ExtractFileNameFromPath(file);
@@ -15,7 +20,7 @@ Model* MeshLoader::load(const std::string& file, Option options, Preset preset, 
 		modelName = file;
 
 	Assimp::Importer importer;
-	auto aScene = importer.ReadFile(file, preset);
+	auto aScene = importer.ReadFile(file, unsigned int (preset));
 	if (!aScene) {
 #ifdef _DEBUG
 		std::cerr << "[Mesh Load error] Failed to load model: \"" << file << "\", reason: " << importer.GetErrorString() << std::endl;
@@ -31,10 +36,14 @@ Model* MeshLoader::load(const std::string& file, Option options, Preset preset, 
 	}
 
 	auto model = new Model();
+	model->setName(modelName);
+	model->setFilePath(file);
 	model->setSkeleton(skeleton);
 	for (auto anim : animations) {
 		model->addAnimation(anim);
 	}
+
+	loadMeshes(aScene, aScene->mRootNode, model, options, aiMatrix4x4());
 
 	return model;
 }
@@ -290,3 +299,282 @@ const aiNode* MeshLoader::findSkeletonRootNode(const aiNode* node, const std::un
 
 	return nullptr;
 }
+
+
+void MeshLoader::loadMeshes(const aiScene* aScene, const aiNode* node, Model* model, int options, const aiMatrix4x4& parentTransform) {
+	aiMatrix4x4 transform = parentTransform * node->mTransformation;
+	for (size_t i = 0; i < node->mNumMeshes; i++) {
+		const aiMesh* aMesh = aScene->mMeshes[node->mMeshes[i]];
+		IMesh* mesh = model->hasSkeleton() ? loadGeometrys<SkinVertex_t>(aMesh, model->getSkeleton()) : loadGeometrys<Vertex_t>(aMesh, nullptr);
+		if (!mesh)
+			continue;
+
+		mesh->setTransform(glm::transpose(glm::make_mat4(&transform[0][0])));
+		model->addMesh(mesh);
+		std::cout << mesh << std::endl;
+		if (options & Option::LoadMaterials) {
+			Material* mat = loadMaterial(aScene, aMesh);
+			if (mat) {
+				mat->setName(model->getName() + "_" + mat->getName());
+				MaterialManager::getInstance()->addMaterial(mat);
+				model->addEmbededMaterial(mesh, mat);
+			}
+		}
+	}
+
+	for (size_t j = 0; j < node->mNumChildren; j++) {
+		loadMeshes(aScene, node->mChildren[j], model, options, transform);
+	}
+}
+
+
+template<typename Vertex>
+IMesh* MeshLoader::loadGeometrys(const aiMesh* aMesh, const Skeleton* skeleton) {
+	std::vector<Vertex> vertices;
+	std::vector<Index_t> indices;
+	PrimitiveType pt = PrimitiveType::Unknown;
+	vertices.reserve(aMesh->mNumVertices);
+
+	for (size_t i = 0; i < aMesh->mNumVertices; i++) {
+#ifdef _DEBUG
+		ASSERT(aMesh->HasPositions());
+		ASSERT(aMesh->HasNormals());
+#endif // _DEBUG
+
+		Vertex v;
+		const aiVector3D pos = aMesh->mVertices[i];
+		const aiVector3D normal = aMesh->mNormals[i];
+		const aiVector3D tangent = aMesh->HasTangentsAndBitangents() ? aMesh->mTangents[i] : aiVector3D();
+		const aiVector3D uv = aMesh->HasTextureCoords(0) ? aMesh->mTextureCoords[0][i] : aiVector3D();
+
+		v.position = glm::vec3(pos.x, pos.y, pos.z);
+		v.normal = glm::vec3(normal.x, normal.y, normal.z);
+		v.tangent = glm::vec3(tangent.x, tangent.y, tangent.z);
+		v.uv = glm::vec2(uv.x, uv.y);
+		vertices.push_back(v);
+	}
+
+	if (vertices.empty())
+		return nullptr;
+
+	loadBoneWeights(vertices, aMesh, skeleton);
+
+	pt = PrimitiveType::Unknown;
+	size_t primitiveIndexCount = 3;
+	switch (aMesh->mPrimitiveTypes)
+	{
+	case aiPrimitiveType_POINT:
+		pt = PrimitiveType::Point;
+		primitiveIndexCount = 1;
+		break;
+	case aiPrimitiveType_LINE:
+		pt = PrimitiveType::Line;
+		primitiveIndexCount = 2;
+		break;
+	case aiPrimitiveType_TRIANGLE:
+		pt = PrimitiveType::Triangle;
+		primitiveIndexCount = 3;
+		break;
+	case aiPrimitiveType_POLYGON:
+		pt = PrimitiveType::Polygon;
+		primitiveIndexCount = 4;
+		break;
+	default:
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+		return nullptr;
+	}
+
+	indices.clear();
+	indices.reserve(aMesh->mNumFaces * primitiveIndexCount);
+
+	for (size_t j = 0; j < aMesh->mNumFaces; j++) {
+		const aiFace face = aMesh->mFaces[j];
+		for (size_t k = 0; k < face.mNumIndices; k++) {
+			indices.push_back(face.mIndices[k]);
+		}
+	}
+
+
+	TMesh<Vertex>* mesh = new TMesh<Vertex>();
+	mesh->fill(std::move(vertices), std::move(indices));
+	mesh->setName(aMesh->mName.C_Str());
+	mesh->setPrimitiveType(pt);
+
+	return mesh;
+}
+
+template<>
+void MeshLoader::loadBoneWeights<Vertex_t>(std::vector<Vertex_t>& vertices, const aiMesh* mesh, const Skeleton* skeleton) {
+
+}
+
+
+template<>
+void MeshLoader::loadBoneWeights<SkinVertex_t>(std::vector<SkinVertex_t>& vertices, const aiMesh* aMesh, const Skeleton* skeleton) {
+	if (aMesh->HasBones()) {
+		for (size_t i = 0; i < aMesh->mNumBones; i++) {
+			const aiBone* bone = aMesh->mBones[i];
+			int boneId = skeleton->getJointId(bone->mName.C_Str());
+			for (size_t j = 0; j < bone->mNumWeights; j++) {
+				const aiVertexWeight& weight = bone->mWeights[j];
+				setVertexWeight(vertices[weight.mVertexId], boneId, weight.mWeight);
+			}
+		}
+	}
+}
+
+
+Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
+	if (!aScene->HasMaterials())
+		return nullptr;
+
+	if (aScene->mNumMaterials <= aMesh->mMaterialIndex)
+		return nullptr;
+
+	aiColor3D aiDiffuseColor(0.f, 0.f, 0.f);
+	aiColor3D aiSpecularColor(1.f, 1.f, 1.f);
+	aiColor3D aiEmissiveColor(0.f, 0.f, 0.f);
+	aiString aiName;
+	float aiOpacity = 1.f;
+	float aiShininess = 0.f;
+
+	bool hasDiffuseMap = false;
+	bool hasNormalMap = false;
+	bool hasEmissiveMap = false;
+	bool hasSpecularMap = false;
+	std::string diffuseTextureName;
+	std::string normalTextureName;
+	std::string specularTextureName;
+	std::string emissiveTextureName;
+
+	const aiMaterial* aMat = aScene->mMaterials[aMesh->mMaterialIndex];
+	aMat->Get(AI_MATKEY_COLOR_DIFFUSE, aiDiffuseColor);
+	aMat->Get(AI_MATKEY_COLOR_SPECULAR, aiSpecularColor);
+	aMat->Get(AI_MATKEY_COLOR_EMISSIVE, aiEmissiveColor);
+	aMat->Get(AI_MATKEY_OPACITY, aiOpacity);
+	aMat->Get(AI_MATKEY_SHININESS, aiShininess);
+	aMat->Get(AI_MATKEY_NAME, aiName);
+
+	if (aMat->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+		diffuseTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasDiffuseMap = !diffuseTextureName.empty();
+	}
+
+	if (aMat->GetTextureCount(aiTextureType_NORMALS) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_NORMALS, 0, &path);
+		normalTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasNormalMap = !normalTextureName.empty();
+	}
+
+	if (aMat->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_SPECULAR, 0, &path);
+		specularTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasSpecularMap = !specularTextureName.empty();
+	}
+
+	if (aMat->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+		aiString path;
+		aMat->GetTexture(aiTextureType_EMISSIVE, 0, &path);
+		emissiveTextureName = ExtractFileNameFromPath(path.C_Str());
+		hasEmissiveMap = !emissiveTextureName.empty();
+	}
+
+	auto mat = new Material();
+	mat->m_diffuseColor = glm::vec3(aiDiffuseColor.r, aiDiffuseColor.g, aiDiffuseColor.b);
+	mat->m_specularColor = glm::vec3(aiSpecularColor.r, aiSpecularColor.g, aiSpecularColor.b);
+	mat->m_emissiveColor = glm::vec3(aiEmissiveColor.r, aiEmissiveColor.g, aiEmissiveColor.b);
+	mat->m_opacity = aiOpacity;
+	mat->m_shininess = aiShininess;
+	
+	std::string name(aMesh->mName.C_Str()); 
+	name = name + "_" + aiName.C_Str();
+	mat->setName(name);
+
+	if (hasDiffuseMap) {
+		mat->m_diffuseMap = loadTexture(diffuseTextureName);
+		if (!mat->m_diffuseMap) {
+#ifdef _DEBUG	
+			std::string msg;
+			msg += "[Material Load error] Failed to load texture: ";
+			msg += (mat->getName() + "_" + diffuseTextureName);
+			CONSOLELOG(msg);
+#endif // _DEBUG
+
+		}
+	}
+	if (hasNormalMap) {
+		mat->m_normalMap = loadTexture(normalTextureName);
+		if (!mat->m_normalMap) {
+#ifdef _DEBUG
+			std::string msg;
+			msg += "[Material Load error] Failed to load texture: ";
+			msg += (mat->getName() + "_" + normalTextureName);
+			CONSOLELOG(msg);
+#endif // _DEBUG
+
+		}
+	}
+	if (hasSpecularMap) {
+		mat->m_specularMap = loadTexture(specularTextureName);
+		if (!mat->m_specularMap) {
+#ifdef _DEBUG
+			std::string msg;
+			msg += "[Material Load error] Failed to load texture: ";
+			msg += (mat->getName() + "_" + specularTextureName);
+			CONSOLELOG(msg);
+#endif // _DEBUG
+
+		}
+	}
+	if (hasEmissiveMap) {
+		mat->m_emissiveMap = loadTexture(emissiveTextureName);
+		if (!mat->m_emissiveMap) {
+#ifdef _DEBUG
+			std::string msg;
+			msg += "[Material Load error] Failed to load texture: ";
+			msg += (mat->getName() + "_" + emissiveTextureName);
+			CONSOLELOG(msg);
+#endif // _DEBUG
+
+		}
+	}
+
+	return mat;
+}
+
+
+std::shared_ptr<Texture> MeshLoader::loadTexture(const std::string& name) {
+	auto textureMgr = TextureManager::getInstance();
+	auto loadedTex = textureMgr->getTexture(name);
+
+	if (loadedTex != nullptr)
+		return loadedTex;
+
+	return textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + name, name);
+}
+
+
+void MeshLoader::setVertexWeight(SkinVertex_t& vertex, int jointId, float weight) {
+	int idx = 0;
+	while (vertex.weights[idx] > 0) {
+		idx++;
+		if (idx >= 4)
+			return;
+	}
+
+	vertex.weights[idx] = weight;
+	vertex.joints[idx] = jointId;
+}
+
+
+
+template IMesh* MeshLoader::loadGeometrys<Vertex_t>(const aiMesh* mesh, const Skeleton* skeleton);
+template IMesh* MeshLoader::loadGeometrys<SkinVertex_t>(const aiMesh* mesh, const Skeleton* skeleton);
+template void MeshLoader::loadBoneWeights<Vertex_t>(std::vector<Vertex_t>& vertices, const aiMesh* mesh, const Skeleton* skeleton);
+template void MeshLoader::loadBoneWeights<SkinVertex_t>(std::vector<SkinVertex_t>& vertices, const aiMesh* mesh, const Skeleton* skeleton);

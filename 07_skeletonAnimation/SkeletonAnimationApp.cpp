@@ -3,6 +3,7 @@
 #include<stdarg.h>
 #include<glm/gtx/transform.hpp>
 
+
 ScalarFrame makeScalarFrame(float time, float val);
 ScalarFrame makeScalarFrame(float time, float in, float val, float out);
 ScalarTrack* makeScalarTrack(InterpolationType interp, int numFrames, ...);
@@ -31,20 +32,26 @@ bool SkeletonAnimationApp::initailize() {
 	auto meshMgr = MeshManager::getInstance();
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
-
-	auto monsterModel = meshMgr->addModel(meshMgr->getResourceAbsolutePath() + "Whale.fbx", MeshLoadOption::LoadMaterial);
+	
+	auto monsterModel = meshMgr->addMesh(meshMgr->getResourceAbsolutePath() + "Alien_Animal.fbx");
 	auto planeMat = matMgr->addMaterial("PlaneMaterial");
+	m_animModel = monsterModel.get();
 
-	auto model = MeshLoader::getInstance()->load(meshMgr->getResourceAbsolutePath() + "Whale.fbx", MeshLoader::Option::LoadAnimations);
-	m_Model.reset(model);
+
+	auto cubeTexture = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "wall.jpg");
+	auto cubeMat = matMgr->addMaterial("CubeMaterial");
+	cubeMat->m_diffuseMap = cubeTexture;
+	cubeMat->m_shininess = 0.1f;
+	auto cube = m_scene->addCube(cubeMat);
+	cube->m_transform.setScale({ 4.f, 4.f, 4.f });
+	cube->m_transform.setPosition({ -40.f, 0.f, 10.f });
 
 	m_scene->addPlane(250, 250, planeMat);
 	planeMat->m_shininess = 0.1f;
 
-
 	auto obj = m_scene->addModel(monsterModel, "Monster");
-	obj->m_transform.setScale({ 0.1f, 0.1f, 0.1f });
-	obj->m_transform.setPosition({ 0.f, 16.f, 0.f });
+	obj->m_transform.setScale({ 0.01f, 0.01f, 0.01f });
+	obj->m_transform.setPosition({ 0.f, 0.f, 0.f });
 
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent(ArcballCameraController::create());
@@ -52,8 +59,6 @@ bool SkeletonAnimationApp::initailize() {
 	auto cameraController = camera->getComponent<ArcballCameraController>();
 	cameraController->setPosition({ 0.f, 4.f, 16.f });
 
-	auto cameraComp = camera->getComponent<CameraComponent>();
-	cameraComp->m_fov = 45.f;
 
 	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
 	dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
@@ -68,6 +73,7 @@ bool SkeletonAnimationApp::initailize() {
 		makeScalarFrame(0.5f, 25.82528f, 1, 25.82528f),
 		makeScalarFrame(0.6333333f, 7.925411f, 0.4500741f, 7.925411f),
 		makeScalarFrame(0.75f, 0, 0, 0)));
+
 }
 
 
@@ -126,31 +132,31 @@ void SkeletonAnimationApp::debugDraw(double dt) {
 	DebugDrawer::drawScalarTrack(m_scalarTrackCubic.get(), 2.5, 100, LoopType::PingPong, 900, 10, 4, { 1, 0, 0 }, mvp);
 	*/
 
+	if (m_animModel->hasSkeleton()) {
+		model = glm::mat4(1.f);
+		model = glm::translate(model, { -20.f, 0.f, 0.f });
+		model = glm::scale(model, { 0.01f, 0.01f, 0.01f });
 
-	model = glm::mat4(1.f);
-	model = glm::translate(model, { -15.f, 16.f, 0.f });
-	model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
+		vp = m_scene->getActiveCamera()->projMatrix * m_scene->getActiveCamera()->viewMatrix;
+		mvp = vp * model;
+		DebugDrawer::drawPose(m_animModel->getSkeleton()->getResPose(), { 0.f, 1.f, 0.f }, mvp);
+		//model = glm::mat4(1.f);
+		//model = glm::translate(model, { 15.f, 10.f, 0.f });
+		//model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
+		//mvp = vp * model;
+		//DebugDrawer::drawPose(m_Model->getSkeleton()->getBindPose(), { 1.f, 0.f, 0.f }, mvp);
 
-	vp = m_scene->getActiveCamera()->projMatrix * m_scene->getActiveCamera()->viewMatrix;
-	mvp = vp * model;
-	DebugDrawer::drawPose(m_Model->getSkeleton()->getResPose(), { 0.f, 0.f, 1.f }, mvp);
+		static double animTime = 0;
+		animTime += dt;
+		model = glm::mat4(1.f);
+		model = glm::translate(model, { 20.f, 0.f, 0.f });
+		model = glm::scale(model, { 0.01f, 0.01f, 0.01f });
+		mvp = vp * model;
 
-	//model = glm::mat4(1.f);
-	//model = glm::translate(model, { 15.f, 10.f, 0.f });
-	//model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
-	//mvp = vp * model;
-	//DebugDrawer::drawPose(m_Model->getSkeleton()->getBindPose(), { 1.f, 0.f, 0.f }, mvp);
-	
-	static double animTime = 0;
-	animTime += dt;
-	model = glm::mat4(1.f);
-	model = glm::translate(model, { 15.f, 10.f, 0.f });
-	model = glm::scale(model, { 0.1f, 0.1f, 0.1f });
-	mvp = vp * model;
-	
-	Pose animatedPose = m_Model->getSkeleton()->getBindPose();
-	animatedPose = m_Model->animationAt(0)->sample(animatedPose, animTime, LoopType::Loop);
-	DebugDrawer::drawPose(animatedPose, { 0.f, 1.f, 0.f }, mvp);
+		Pose animatedPose = m_animModel->getSkeleton()->getResPose();
+		animatedPose = m_animModel->animationAt(0)->sample(animatedPose, animTime, LoopType::PingPong);
+		DebugDrawer::drawPose(animatedPose, { 1.f, 0.f, 0.f }, mvp);
+	}
 }
 
 void SkeletonAnimationApp::onWindowResized(int width, int height) {

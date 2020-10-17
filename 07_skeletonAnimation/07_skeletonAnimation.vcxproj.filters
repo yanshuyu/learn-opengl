@@ -72,9 +72,6 @@
     <ClCompile Include="..\common\Mesh.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\MeshGroup.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\MeshMgr.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -198,6 +195,9 @@
     <ClCompile Include="..\common\Model.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\IMesh.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -252,9 +252,6 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\Mesh.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\common\MeshGroup.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\MeshMgr.h">
@@ -393,6 +390,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\Model.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IMesh.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

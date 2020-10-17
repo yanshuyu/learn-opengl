@@ -2,18 +2,16 @@
 #include"Util.h"
 #include<algorithm>
 
-VertexLayoutDescription::VertexAttribute::VertexAttribute():VertexAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 0, 0, false) {
+VertexLayoutDescription::VertexAttribute::VertexAttribute():VertexAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 0, 0, -1, false) {
 
 }
 
 
-VertexLayoutDescription::VertexAttribute::VertexAttribute(VertexLayoutDescription::AttributeElementType et,
-																								size_t ec,
-																								size_t ps,
-																								bool nor) {
+VertexLayoutDescription::VertexAttribute::VertexAttribute(VertexLayoutDescription::AttributeElementType et, size_t ec, size_t ps, int loc, bool nor) {
 	elementType = et;
 	elementCount = ec;
 	packedSize = ps;
+	location = loc;
 	normalized = nor;
 }
 
@@ -22,11 +20,11 @@ VertexLayoutDescription::VertexLayoutDescription(size_t stride) :m_stride(stride
 }
 
 
-void VertexLayoutDescription::pushAttribute(AttributeElementType et, size_t ec, size_t packedSz, bool normalize) {
+void VertexLayoutDescription::pushAttribute(AttributeElementType et, size_t ec, int loc, size_t packedSz, bool normalize) {
 	if (packedSz <= 0) {
 		packedSz = ec * getAttributeElmentSize(et);
 	}
-	m_attributes.push_back(VertexAttribute(et, ec, packedSz, normalize));
+	m_attributes.push_back(VertexAttribute(et, ec, packedSz, loc, normalize));
 }
 
 
@@ -48,7 +46,7 @@ size_t VertexLayoutDescription::getStride() const {
 }
 
 
-size_t VertexLayoutDescription::getAttributeElmentSize(AttributeElementType e) {
+size_t VertexLayoutDescription::getAttributeElmentSize(AttributeElementType e) const {
 	switch (e)
 	{
 	case VertexLayoutDescription::AttributeElementType::BYTE:
@@ -84,4 +82,15 @@ size_t VertexLayoutDescription::getAttributeElmentSize(AttributeElementType e) {
 	default:
 		ASSERT(false);
 	}
+}
+
+bool VertexLayoutDescription::isIntegerAttribute(AttributeElementType e) const {
+	if (e == AttributeElementType::SHORT ||
+		e == AttributeElementType::UNSIGNED_SHORT ||
+		e == AttributeElementType::INT ||
+		e == AttributeElementType::UNSIGNED_INT) {
+		return true;
+	}
+
+	return false;
 }

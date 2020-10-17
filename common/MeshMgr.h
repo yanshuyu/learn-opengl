@@ -1,32 +1,35 @@
 #pragma once
 #include"Singleton.h"
-#include"MeshGroup.h"
+#include"Model.h"
+#include"MeshLoader.h"
 #include<unordered_map>
-#include<unordered_set>
 #include<string>
 #include<memory>
 #include<vector>
-#include<assimp/scene.h>
 
 
 class MeshManager : public Singleton<MeshManager> {
-	typedef std::unordered_map<std::string, std::shared_ptr<MeshGroup>> MeshContainer;
+	typedef std::unordered_map<std::string, std::shared_ptr<Model>> MeshContainer;
 public:
 	MeshManager() = default;
 	~MeshManager() {};
 
-	std::shared_ptr<MeshGroup> addModel(const std::string& file, MeshLoadOption options = MeshLoadOption::None, const std::string& name = "");
-	bool addMesh(std::shared_ptr<MeshGroup> mesh, const std::string& name = "");
+	std::shared_ptr<Model> addMesh(const std::string& file,
+		int loadingOptions = MeshLoader::Option::LoadAnimations | MeshLoader::Option::LoadMaterials,
+		MeshLoader::Preset preset = MeshLoader::Preset::Quality, 
+		const std::string& name = "");
+	bool addMesh(std::shared_ptr<Model> mesh, const std::string& name = "");
 
-	std::shared_ptr<MeshGroup> createGrid(float width, float depth, float spacing = 1);
-	std::shared_ptr<MeshGroup> createPlane(float width, float depth);
-	std::shared_ptr<MeshGroup> createCube();
+	std::shared_ptr<Model> createGrid(float width, float depth, float spacing = 1);
+	std::shared_ptr<Model> createPlane(float width, float depth);
+	std::shared_ptr<Model> createCube();
 
-	std::shared_ptr<MeshGroup> getMesh(ID id) const;
-	std::shared_ptr<MeshGroup> getMesh(const std::string& name)const;
+	std::shared_ptr<Model> getMesh(ID id) const;
+	std::shared_ptr<Model> getMesh(const std::string& name)const;
 
-	std::shared_ptr<MeshGroup> removeMesh(ID id);
-	std::shared_ptr<MeshGroup> removeMesh(const std::string& name);
+	std::shared_ptr<Model> removeMesh(ID id);
+	std::shared_ptr<Model> removeMesh(const std::string& name);
+	
 	void removeAllMesh();
 
 	inline std::string getResourceAbsolutePath() const {
@@ -38,11 +41,5 @@ public:
 	}
 
 private:
-	void gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform, MeshLoadOption options);
-	std::unordered_set<std::string> gatherBonesName(const aiScene* scene);
-	const aiNode* findBonesRootNode(const aiNode* node, const std::unordered_set<std::string> bonesName);
-	void dumpBoneHiearcy(const aiNode* root, std::string indent = "");
-
-private:
-	std::unordered_map<std::string, std::shared_ptr<MeshGroup>> m_meshes;
+	std::unordered_map<std::string, std::shared_ptr<Model>> m_meshes;
 };

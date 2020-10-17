@@ -112,7 +112,7 @@ SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm:
 	return camera;
 }
 
-SceneObject* Scene::addModel(std::shared_ptr<MeshGroup> model, const std::string& name) {
+SceneObject* Scene::addModel(std::shared_ptr<Model> model, const std::string& name) {
 	SceneObject* obj = addObject(name);
 	MeshRenderComponent* meshRenderComp = MeshRenderComponent::create();
 	meshRenderComp->setMeshes(model);

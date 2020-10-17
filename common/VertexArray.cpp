@@ -25,13 +25,20 @@ void VertexArray::storeVertexLayout(const VertexLayoutDescription& vbDesc) {
 	auto attributes = vbDesc.getAttributes();
 	for (size_t i = 0; i < attributes.size(); i++) {
 		auto& a = attributes[i];
-		GLCALL(glEnableVertexAttribArray(i));
-		GLCALL(glVertexAttribPointer(i,
-							a.elementCount,
-							GLenum(a.elementType),
-							a.normalized,
-							stride,
-							reinterpret_cast<void*>(offset)));
+		GLCALL(glEnableVertexAttribArray(a.location));
+		if (vbDesc.isIntegerAttribute(a.elementType)) {
+			GLCALL(glVertexAttribIPointer(a.location, a.elementCount, 
+				GLenum(a.elementType),
+				stride, 
+				reinterpret_cast<void*>(offset)));
+		} else {
+			GLCALL(glVertexAttribPointer(a.location,
+				a.elementCount,
+				GLenum(a.elementType),
+				a.normalized,
+				stride,
+				reinterpret_cast<void*>(offset)));
+		}
 		offset += a.packedSize;
 	}
 }

@@ -2,6 +2,8 @@
 #include<common/GLApplication.h>
 #include<common/KeyFrameTrack.h>
 
+
+
 class SkeletonAnimationApp : public GLApplication {
 	friend class LightControlGuiWindow;
 public:
@@ -20,5 +22,6 @@ private:
 
 	std::unique_ptr<ScalarTrack> m_scalarTrack;
 	std::unique_ptr<ScalarTrack> m_scalarTrackCubic;
-	std::unique_ptr<Model> m_Model;
+	
+	Model* m_animModel;
 };

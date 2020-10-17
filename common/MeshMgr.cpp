@@ -10,50 +10,31 @@
 
 
 
-std::shared_ptr<MeshGroup> MeshManager::addModel(const std::string& file, MeshLoadOption options, const std::string& name) {
-	std::string modelName(name);
-	if (modelName.empty())
-		modelName = ExtractFileNameFromPath(file);
-	if (modelName.empty())
-		modelName = file;
-
-	Assimp::Importer importer;
-	auto scene = importer.ReadFile(file, aiProcessPreset_TargetRealtime_Quality);
-	if (!scene) {
-#ifdef _DEBUG
-		std::cerr << "[Mesh Load error] Failed to load model: \"" << file << "\", reason: " << importer.GetErrorString() << std::endl;
-#endif // _DEBUG
+std::shared_ptr<Model> MeshManager::addMesh(const std::string& file, int loadingOptions, MeshLoader::Preset preset, const std::string& name) {
+	Model* model = MeshLoader::getInstance()->load(file, loadingOptions, preset, name);
+	if (!model)
 		return nullptr;
-	}
 
-	auto bonesName = gatherBonesName(scene);
-	auto rootBone = findBonesRootNode(scene->mRootNode, bonesName);
+	m_meshes.insert({ model->getName(), std::shared_ptr<Model>(model) });
 
-	auto meshGroup = std::make_shared<MeshGroup>();
-	meshGroup->m_file = file;
-	meshGroup->m_name = modelName;
+	return  m_meshes[model->getName()];
+}
 
-	gatherMeshes(scene, scene->mRootNode, meshGroup.get(), aiMatrix4x4(), options);
+bool MeshManager::addMesh(std::shared_ptr<Model> mesh, const std::string& name) {
+	std::string meshName(name);
+	if (meshName.empty())
+		meshName = mesh->getName();
 
-#ifdef _DEBUG
-	std::stringstream msg;
-	msg << "[MeshMgr]Loaded mesh " << "\"" << meshGroup->m_name << "\": " << *meshGroup.get() << std::endl;
-	msg << "bones hiearcy: " << std::endl;
-	CONSOLELOG(msg.str());
-	dumpBoneHiearcy(rootBone);
-#endif // _DEBUG
+	if (getMesh(meshName) != nullptr)
+		return false;
 
-	if (meshGroup->meshesCount() <= 0) {
-		return nullptr;
-	}
+	m_meshes.insert({ meshName, mesh });
 
-	m_meshes.insert({ modelName, meshGroup });
-
-	return meshGroup;
+	return true;
 }
 
 
-std::shared_ptr<MeshGroup> MeshManager::createGrid(float width, float depth, float spacing) {
+std::shared_ptr<Model> MeshManager::createGrid(float width, float depth, float spacing) {
 	std::stringstream ss;
 	ss << "Grid@" << width << "x" << depth << "x" << spacing;
 
@@ -90,7 +71,7 @@ std::shared_ptr<MeshGroup> MeshManager::createGrid(float width, float depth, flo
 	}
 
 	
-	auto grid = std::make_shared<MeshGroup>();
+	auto grid = std::make_shared<Model>();
 	grid->setName(ss.str());
 	grid->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Line);
 
@@ -100,7 +81,7 @@ std::shared_ptr<MeshGroup> MeshManager::createGrid(float width, float depth, flo
 }
 
 
-std::shared_ptr<MeshGroup> MeshManager::createPlane(float width, float depth) {
+std::shared_ptr<Model> MeshManager::createPlane(float width, float depth) {
 	std::stringstream ss;
 	ss << "Plane" << "@" << width << "x" << depth;
 
@@ -136,7 +117,7 @@ std::shared_ptr<MeshGroup> MeshManager::createPlane(float width, float depth) {
 	v.uv = { 0.f, 1.f };
 	vertices.push_back(v);
 
-	auto plane = std::make_shared<MeshGroup>();
+	auto plane = std::make_shared<Model>();
 	plane->setName(ss.str());
 	plane->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangle);
 
@@ -146,7 +127,7 @@ std::shared_ptr<MeshGroup> MeshManager::createPlane(float width, float depth) {
 }
 
 
-std::shared_ptr<MeshGroup> MeshManager::createCube() {
+std::shared_ptr<Model> MeshManager::createCube() {
 	std::string cubeName("Cube");
 	
 	if (auto founded = getMesh(cubeName))
@@ -287,7 +268,7 @@ std::shared_ptr<MeshGroup> MeshManager::createCube() {
 		22, 23, 20,
 	};
 
-	auto cube = std::make_shared<MeshGroup>();
+	auto cube = std::make_shared<Model>();
 	cube->setName(cubeName);
 	cube->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangle);
 
@@ -297,20 +278,7 @@ std::shared_ptr<MeshGroup> MeshManager::createCube() {
 }
 
 
-bool MeshManager::addMesh(std::shared_ptr<MeshGroup> mesh, const std::string& name) {
-	std::string meshName(name);
-	if (meshName.empty())
-		meshName = mesh->getName();
-	
-	if (getMesh(meshName) != nullptr)
-		return false;
-
-	m_meshes.insert({ meshName, mesh });
-	
-	return true;
-}
-
-std::shared_ptr<MeshGroup> MeshManager::getMesh(ID id) const {
+std::shared_ptr<Model> MeshManager::getMesh(ID id) const {
 	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
 		if (mesh.second && mesh.second->id() == id)
 			return true;
@@ -323,7 +291,7 @@ std::shared_ptr<MeshGroup> MeshManager::getMesh(ID id) const {
 	return pos->second;
 }
 
-std::shared_ptr<MeshGroup> MeshManager::getMesh(const std::string& name) const {
+std::shared_ptr<Model> MeshManager::getMesh(const std::string& name) const {
 	auto pos = m_meshes.find(name);
 	if (pos == m_meshes.end())
 		return nullptr;
@@ -332,7 +300,7 @@ std::shared_ptr<MeshGroup> MeshManager::getMesh(const std::string& name) const {
 }
 
 
-std::shared_ptr<MeshGroup> MeshManager::removeMesh(ID id) {
+std::shared_ptr<Model> MeshManager::removeMesh(ID id) {
 	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
 		if (mesh.second && mesh.second->id() == id)
 			return true;
@@ -347,7 +315,7 @@ std::shared_ptr<MeshGroup> MeshManager::removeMesh(ID id) {
 	return pos->second;
 }
 
-std::shared_ptr<MeshGroup> MeshManager::removeMesh(const std::string& name) {
+std::shared_ptr<Model> MeshManager::removeMesh(const std::string& name) {
 	auto pos = m_meshes.find(name);
 	if (pos == m_meshes.end())
 		return nullptr;
@@ -360,98 +328,4 @@ std::shared_ptr<MeshGroup> MeshManager::removeMesh(const std::string& name) {
 
 void MeshManager::removeAllMesh() {
 	m_meshes.clear();
-}
-
-
-void MeshManager::gatherMeshes(const aiScene* scene, const aiNode* node, MeshGroup* meshGroup, aiMatrix4x4 parentTransform, MeshLoadOption options) {
-	aiMatrix4x4 transform = parentTransform * node->mTransformation;
-	for (size_t i = 0; i < node->mNumMeshes; i++) {
-		const aiMesh* mesh = scene->mMeshes[ node->mMeshes[i] ];
-		meshGroup->addMesh(scene, mesh, transform, options);
-	}
-	
-	for (size_t j = 0; j < node->mNumChildren; j++) {
-		gatherMeshes(scene, node->mChildren[j], meshGroup, transform, options);
-	}
-}
-
-
-
-std::unordered_set<std::string> MeshManager::gatherBonesName(const aiScene* scene) {
-	std::unordered_set<std::string> names;
-	for (size_t i = 0; i < scene->mNumMeshes; i++) {
-		for (size_t j = 0; j < scene->mMeshes[i]->mNumBones; ++j) {
-			names.insert(scene->mMeshes[i]->mBones[j]->mName.C_Str());
-		}
-	}
-	return std::move(names);
-}
-
-
-const aiNode* MeshManager::findBonesRootNode(const aiNode* node, const std::unordered_set<std::string> bonesName) {
-	if (!node)
-		return nullptr;
-	
-	std::queue<const aiNode*> rows;
-	std::queue<size_t> nodesCountInRow;
-	rows.push(node);
-	nodesCountInRow.push(1);
-
-	while (!nodesCountInRow.empty()) {
-		size_t curRownodeCount = nodesCountInRow.front();
-		std::vector<const aiNode*> bonesNodeInRow;
-		size_t newRowNodeCount = 0;
-
-		while (curRownodeCount--) {
-			auto curNode = rows.front();
-			if (bonesName.find(curNode->mName.C_Str()) != bonesName.end()) // a bone node in row
-				bonesNodeInRow.push_back(curNode);
-			
-			rows.pop();
-			for (size_t i = 0; i < curNode->mNumChildren; i++) {
-				rows.push(curNode->mChildren[i]);
-				newRowNodeCount++;
-			}
-		}
-
-		if (bonesNodeInRow.size() == 1) // find only one bone in row
-			return bonesNodeInRow.front();
-
-		if (bonesNodeInRow.size() > 1) { // find multiple bones in row
-			std::unordered_set<const aiNode*> parents;
-			std::for_each(bonesNodeInRow.begin(), bonesNodeInRow.end(), [&](const aiNode* boneNode) {
-				if (boneNode->mParent)
-					parents.insert(boneNode->mParent);
-			});
-
-			while (parents.size() > 1) {
-				std::unordered_set<const aiNode*> copy = parents;
-				parents.clear();
-
-				std::for_each(copy.begin(), copy.end(), [&](const aiNode* boneNode) {
-					if (boneNode->mParent)
-						parents.insert(boneNode->mParent);
-				});
-			}
-
-			ASSERT(parents.size() == 1);
-			return *parents.begin();
-		}
-
-		nodesCountInRow.pop();
-		if (newRowNodeCount > 0)
-			nodesCountInRow.push(newRowNodeCount);
-	}
-	return nullptr;
-}
-
-
-
-void MeshManager::dumpBoneHiearcy(const aiNode* root, std::string indent) {
-	if (root) {
-		std::cout << indent << root->mName.C_Str() << "\n";
-		for (size_t i = 0; i < root->mNumChildren; ++i) {
-			dumpBoneHiearcy(root->mChildren[i], indent + " | ");
-		}
-	}
 }
