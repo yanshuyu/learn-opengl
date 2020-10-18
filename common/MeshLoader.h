@@ -37,7 +37,7 @@ protected:
 
 	void loadMeshes(const aiScene* aScene, const aiNode* node, Model* model, int options, const aiMatrix4x4& parentTransform);
 	Material* loadMaterial(const aiScene* aScene, const aiMesh* mesh);
-	std::shared_ptr<Texture> loadTexture(const std::string& name);
+	std::weak_ptr<Texture> loadTexture(const std::string& name);
 	
 	template<typename Vertex>
 	IMesh* loadGeometrys(const aiMesh* mesh, const Skeleton* skeleton);

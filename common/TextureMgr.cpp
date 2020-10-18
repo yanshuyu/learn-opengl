@@ -2,46 +2,46 @@
 #include"Util.h"
 
 
-std::shared_ptr<Texture> TextureManager::addTexture(const std::string& file, const std::string& name) {
+std::weak_ptr<Texture> TextureManager::addTexture(const std::string& file, const std::string& name) {
 	std::string textureName(name);
 	if (textureName.empty())
 		textureName = ExtractFileNameFromPath(file);
 	if (textureName.empty())
 		textureName = file;
 
-	auto texture = getTexture(textureName);
-	if (texture != nullptr)
-		return texture;
+	auto found = getTexture(textureName);
+	if (!found.expired())
+		return found;
 	
-	texture = std::make_shared<Texture>();
+	auto texture = std::make_shared<Texture>();
 	if (!texture->loadImage2DFromFile(file))
-		return nullptr;
+		return std::weak_ptr<Texture>();
 
 	m_textures.insert(std::make_pair(textureName, texture));
 	
-	return texture;
+	return std::weak_ptr<Texture>(texture);
 }
 
-std::shared_ptr<Texture> TextureManager::getTexture(const std::string& name) const {
+std::weak_ptr<Texture> TextureManager::getTexture(const std::string& name) const {
 	auto pos = m_textures.find(name);
 	if (pos != m_textures.end())
-		return pos->second;
+		return std::weak_ptr<Texture>(pos->second);
 	
-	return nullptr;
+	return std::weak_ptr<Texture>();
 }
 
 
-std::shared_ptr<Texture> TextureManager::removeTexture(const std::string& name) {
+bool TextureManager::removeTexture(const std::string& name) {
 	auto pos = m_textures.find(name);
 	if (pos != m_textures.end()) {
 		m_textures.erase(pos);
-		return pos->second;
+		return true;
 	}
 
-	return nullptr;
+	return false;
 }
 
 
 bool TextureManager::hasTexture(const std::string& name) const {
-	return getTexture(name) != nullptr;
+	return !getTexture(name).expired();
 }

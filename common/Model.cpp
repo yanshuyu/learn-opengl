@@ -93,14 +93,14 @@ bool Model::addEmbededMaterial(const IMesh* mesh, const Material* mat) {
 	return m_embededMaterials.insert({ mesh->id(), mat->getName() }).second;
 }
 
-std::shared_ptr<Material> Model::embededMaterialForMesh(const IMesh* mesh) {
+std::weak_ptr<Material> Model::embededMaterialForMesh(const IMesh* mesh) {
 	return embededMaterialForMesh(mesh->id());
 }
 
-std::shared_ptr<Material> Model::embededMaterialForMesh(ID meshId) {
+std::weak_ptr<Material> Model::embededMaterialForMesh(ID meshId) {
 	auto pos = m_embededMaterials.find(meshId);
 	if (pos == m_embededMaterials.end())
-		return nullptr;
+		return std::weak_ptr<Material>();
 
 	return MaterialManager::getInstance()->getMaterial(pos->second);
 }

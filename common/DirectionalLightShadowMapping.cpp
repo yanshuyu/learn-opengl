@@ -86,12 +86,12 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 	calcViewFrumstumCascades(light, camera);
 	
 	auto shader = ShaderProgramManager::getInstance()->getProgram("DirectionalLightShadowPass");
-	if (!shader)
+	if (shader.expired())
 		shader = ShaderProgramManager::getInstance()->addProgram("res/shader/DirectionalLightShadowPass.shader");
+	ASSERT(!shader.expired());
 
-	ASSERT(shader);
-
-	shader->bind();
+	std::shared_ptr<ShaderProgram> strongShader = shader.lock();
+	strongShader->bind();
 	m_FBO->bind();
 
 	m_renderer->clearScreen(ClearFlags::Depth);
@@ -101,18 +101,18 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 	//using cull back face mode to output back face depth
 	m_renderer->setCullFaceMode(CullFaceMode::Front);
 	
-	if (shader->hasUniform("u_numCascade"))
-		shader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
+	if (strongShader->hasUniform("u_numCascade"))
+		strongShader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
 
-	if (shader->hasUniform("u_lightVP[0]")) {
+	if (strongShader->hasUniform("u_lightVP[0]")) {
 		std::vector<glm::mat4> lightsVP;
 		std::for_each(m_cascadeCameras.begin(), m_cascadeCameras.end(), [&](const Camera_t& c) {
 			lightsVP.push_back(c.projMatrix * c.viewMatrix);
 		});
-		shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
+		strongShader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
 	}
 
-	m_renderer->pullingRenderTask(shader.get());
+	m_renderer->pullingRenderTask(shader);
 }
 
 

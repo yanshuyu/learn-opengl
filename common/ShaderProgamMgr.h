@@ -12,9 +12,9 @@ class ShaderProgramManager: public Singleton<ShaderProgramManager> {
 public:
 	ShaderProgramManager() {};
 
-	std::shared_ptr<ShaderProgram> addProgram(const std::string& file, const std::string& name = "");
-	std::shared_ptr<ShaderProgram> getProgram(const std::string name) const;
-	std::shared_ptr<ShaderProgram> removeProgram(const std::string& name);
+	std::weak_ptr<ShaderProgram> addProgram(const std::string& file, const std::string& name = "");
+	std::weak_ptr<ShaderProgram> getProgram(const std::string name) const;
+	bool removeProgram(const std::string& name);
 	bool hasProgram(const std::string& name) const;
 	
 	inline void removeAllProgram() {

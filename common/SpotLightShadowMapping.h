@@ -21,11 +21,6 @@ public:
 	void endLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
 	void onShadowMapResolutionChange(float w, float h) override;
 
-#ifdef _DEBUG
-	void visualizeShadowMap(const glm::vec2& wndSz, const glm::vec4& rect);
-#endif // _DEBUG
-
-
 private:
 	Camera_t makeLightCamera(const Light_t& light);
 

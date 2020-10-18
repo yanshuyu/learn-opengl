@@ -6,7 +6,7 @@
 
 class MeshRenderComponent : public Component {
 public:
-	MeshRenderComponent(std::shared_ptr<Model> meshes = nullptr, bool useEmbededMaterial = true);
+	MeshRenderComponent(std::weak_ptr<Model> meshes = std::weak_ptr<Model>(), bool useEmbededMaterial = true);
 	MeshRenderComponent(MeshRenderComponent&& rv) = default;
 	MeshRenderComponent& operator = (MeshRenderComponent&& rv) = default;
 
@@ -26,23 +26,22 @@ public:
 	//
 	// mesh managment
 	//
-	void setMeshes(std::shared_ptr<Model> meshes, bool useEmbededMaterials = true);
-	size_t meshCount() const;
-	
-	inline std::shared_ptr<Model> getMeshes() const {
+	void setMeshes(std::weak_ptr<Model> meshes, bool useEmbededMaterials = true);
+
+	inline std::weak_ptr<Model> getMeshes() const {
 		return m_meshes;
 	}	
 	
 	//
 	//material managment
 	//
-	void addMaterial(std::shared_ptr<Material> m);
-	void setMaterialAt(size_t index, std::shared_ptr<Material> m);
-	std::shared_ptr<Material> materialAt(size_t index) const;
+	void addMaterial(std::weak_ptr<Material> m);
+	void setMaterialAt(size_t index, std::weak_ptr<Material> m);
+	std::weak_ptr<Material> materialAt(size_t index) const;
 	void swapMaterial(size_t formIndex, size_t toIndex);
 	void moveMaterial(size_t srcIndex, size_t dstIndex);
 
-	inline const std::vector<std::shared_ptr<Material>>& materials() const {
+	inline const std::vector<std::weak_ptr<Material>>& materials() const {
 		return m_materials;
 	}
 
@@ -63,6 +62,6 @@ private:
 	void loadEmbededMaterials();
 	
 private:
-	std::shared_ptr<Model> m_meshes;
-	std::vector<std::shared_ptr<Material>> m_materials;
+	std::weak_ptr<Model> m_meshes;
+	std::vector<std::weak_ptr<Material>> m_materials;
 };  

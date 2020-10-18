@@ -6,18 +6,18 @@
 
 COMPONENT_IDENTIFIER_IMP(MeshRenderComponent, "MeshRenderComponent");
 
-MeshRenderComponent::MeshRenderComponent(std::shared_ptr<Model> meshes, bool useEmbededMaterial):m_meshes(meshes)
+MeshRenderComponent::MeshRenderComponent(std::weak_ptr<Model> meshes, bool useEmbededMaterial):m_meshes(meshes)
 , m_materials() {
-	if (meshes && useEmbededMaterial)
+	if (!meshes.expired() && useEmbededMaterial)
 		loadEmbededMaterials();
 }
 
 
-void MeshRenderComponent::setMeshes(std::shared_ptr<Model> meshes, bool useEmbededMaterials) {
+void MeshRenderComponent::setMeshes(std::weak_ptr<Model> meshes, bool useEmbededMaterials) {
 	m_meshes = meshes;
 	m_materials.clear();
 
-	if (m_meshes && useEmbededMaterials)
+	if (!m_meshes.expired() && useEmbededMaterials)
 		loadEmbededMaterials();
 	
 }
@@ -43,23 +43,17 @@ void MeshRenderComponent::destory(MeshRenderComponent* mrc){
 }
 
 
-size_t MeshRenderComponent::meshCount() const {
-	if (m_meshes)
-		return m_meshes->meshCount();
-	return 0;
-}
-
-void MeshRenderComponent::addMaterial(std::shared_ptr<Material> m) {
+void MeshRenderComponent::addMaterial(std::weak_ptr<Material> m) {
 	m_materials.push_back(m);
 }
 
-void MeshRenderComponent::setMaterialAt(size_t index, std::shared_ptr<Material> m) {
+void MeshRenderComponent::setMaterialAt(size_t index, std::weak_ptr<Material> m) {
 	m_materials[index] = m;
 }
 
-std::shared_ptr<Material> MeshRenderComponent::materialAt(size_t index) const {
-	if (index >= m_materials.size())
-		return nullptr;
+std::weak_ptr<Material> MeshRenderComponent::materialAt(size_t index) const {
+	if (index < 0 || index >= m_materials.size())
+		return std::weak_ptr<Material>();
 	
 	return m_materials[index];
 }
@@ -86,19 +80,25 @@ void MeshRenderComponent::moveMaterial(size_t srcIndex, size_t dstIndex) {
 }
 
 void MeshRenderComponent::render(RenderContext* context) {
-	if (!m_isEnable || meshCount() <= 0)
+	if (!m_isEnable || m_meshes.expired())
 		return;
 
-	for (size_t i = 0; i < meshCount(); i++) {
+	auto model = m_meshes.lock();
+
+	if (model->meshCount() <= 0)
+		return;
+
+	for (size_t i = 0; i < model->meshCount(); i++) {
 		RenderTask_t task;
-		auto mesh = m_meshes->meshAt(i);
-		auto material = materialAt(i) ? materialAt(i).get() : MaterialManager::defaultMaterial();
+		std::shared_ptr<Material> strongMat = materialAt(i).expired() ? nullptr : materialAt(i).lock();
+		auto mesh = model->meshAt(i);
+		auto mat = strongMat ? strongMat.get() : MaterialManager::getInstance()->defaultMaterial();
 
 		task.vao = mesh->vertexArray();
 		task.vertexCount = mesh->verticesCount();
 		task.indexCount = mesh->indicesCount();
 		task.primitive = mesh->getPrimitiveType();
-		task.material = material;
+		task.material = mat;
 		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform(); 
 		context->renderer()->renderTask(task);
 	}
@@ -106,10 +106,15 @@ void MeshRenderComponent::render(RenderContext* context) {
 
 
 void MeshRenderComponent::loadEmbededMaterials() {
-	if (m_meshes && m_meshes->embededMaterialCount() > 0) {
-		m_materials.resize(m_meshes->meshCount(), nullptr);
-		for (size_t i = 0; i < m_meshes->meshCount(); i++) {
-			m_materials[i] = m_meshes->embededMaterialForMesh(m_meshes->meshAt(i));
+	if (m_meshes.expired())
+		return;
+
+	auto model = m_meshes.lock();
+
+	if (model->embededMaterialCount() > 0) {
+		m_materials.resize(model->meshCount());
+		for (size_t i = 0; i < model->meshCount(); i++) {
+			m_materials[i] = model->embededMaterialForMesh(model->meshAt(i));
 		}
 	}
 }

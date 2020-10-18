@@ -132,12 +132,7 @@ void ForwardRenderer::beginFrame() {
 }
 
 
-void ForwardRenderer::endFrame() {
-	if (m_activeShader) {
-		m_activeShader->unbind();
-		m_activeShader = nullptr;
-	}
-	
+void ForwardRenderer::endFrame() {	
 	GLCALL(glBindVertexArray(0));
 
 	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
@@ -147,6 +142,11 @@ void ForwardRenderer::endFrame() {
 
 	m_invoker->setDepthTestMode(DepthTestMode::Enable);
 	m_invoker->setColorMask(true);
+
+	if (m_activeShader) {
+		m_activeShader->unbind();
+		m_activeShader = nullptr;
+	}
 }
 
 
@@ -157,14 +157,12 @@ void ForwardRenderer::beginDepthPass() {
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto preZShader = shaderMgr->getProgram("DepthPass");
-	if (!preZShader)
+	if (preZShader.expired())
 		preZShader = shaderMgr->addProgram("res/shader/DepthPass.shader");
+	ASSERT(!preZShader.expired());
 
-	ASSERT(preZShader);
-
-	preZShader->bind();
-
-	m_activeShader = preZShader.get();
+	m_activeShader = preZShader.lock();
+	m_activeShader->bind();
 	m_currentPass = RenderPass::DepthPass;
 
 	// set view project matrix
@@ -197,14 +195,12 @@ void ForwardRenderer::endGeometryPass() {
 
 void ForwardRenderer::beginUnlitPass() {
 	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
-	if (!unlitShader)
+	if (unlitShader.expired())
 			unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/Unlit.shader");
-	
-	ASSERT(unlitShader != nullptr);
+	ASSERT(!unlitShader.expired());
 
-	unlitShader->bind();
-
-	m_activeShader = unlitShader.get();
+	m_activeShader = unlitShader.lock();
+	m_activeShader->bind();
 	m_currentPass = RenderPass::UnlitPass;
 
 	// set view project matrix
@@ -287,15 +283,15 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 	switch (l.type) {
 	case LightType::DirectioanalLight: {
 		auto directionalLightShader = ShaderProgramManager::getInstance()->getProgram("DirectionalLight");
-		if (!directionalLightShader)
+		if (directionalLightShader.expired())
 			directionalLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DirectionalLight.shader");
-		ASSERT(directionalLightShader);
+		ASSERT(!directionalLightShader.expired());
 
-		directionalLightShader->bind();
-		m_activeShader = directionalLightShader.get();
-
+		m_activeShader = directionalLightShader.lock();
+		m_activeShader->bind();
+	
 		// set directional light block
-		if (directionalLightShader->hasUniformBlock("LightBlock")) {
+		if (m_activeShader->hasUniformBlock("LightBlock")) {
 			static DirectionalLightBlock dlb;
 			dlb.color = glm::vec4(glm::vec3(l.color), l.intensity);
 			dlb.inverseDiretion = -l.direction;
@@ -303,24 +299,24 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			m_directionalLightUBO->loadSubData(&dlb, 0, sizeof(dlb));
 
 			m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
-			directionalLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+			m_activeShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 		}
 
-		m_dirLightShadow->beginLighttingPhase(l, m_activeShader);
+		m_dirLightShadow->beginLighttingPhase(l, m_activeShader.get());
 
 	}break;
 
 	case LightType::PointLight: {
 		auto pointLightShader = ShaderProgramManager::getInstance()->getProgram("PointLight");
-		if (!pointLightShader)
+		if (pointLightShader.expired())
 			pointLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/PointLight.shader");
-		ASSERT(pointLightShader);
+		ASSERT(!pointLightShader.expired());
 
-		pointLightShader->bind();
-		m_activeShader = pointLightShader.get();
-
+		m_activeShader = pointLightShader.lock();
+		m_activeShader->bind();
+		
 		// set point light block
-		if (pointLightShader->hasUniformBlock("LightBlock")) {
+		if (m_activeShader->hasUniformBlock("LightBlock")) {
 			static PointLightBlock plb;
 			plb.position = glm::vec4(l.position, l.range);
 			plb.color = glm::vec4(l.color, l.intensity);
@@ -328,24 +324,23 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			m_pointLightUBO->bind(Buffer::Target::UniformBuffer);
 			m_pointLightUBO->loadSubData(&plb, 0, sizeof(plb));
 			m_pointLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
-			pointLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+			m_activeShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 		}
 
-		m_pointLightShadow->beginLighttingPhase(l, m_activeShader);
+		m_pointLightShadow->beginLighttingPhase(l, m_activeShader.get());
 
 	}break;
 
 	case LightType::SpotLight: {
 		auto spotLightShader = ShaderProgramManager::getInstance()->getProgram("SpotLight");
-		if (!spotLightShader)
+		if (spotLightShader.expired())
 			spotLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/SpotLight.shader");
-		ASSERT(spotLightShader);
+		ASSERT(!spotLightShader.expired());
 
-		spotLightShader->bind();
-		m_activeShader = spotLightShader.get();
-
-		// set spot light block
-		if (spotLightShader->hasUniformBlock("LightBlock")) {
+		m_activeShader = spotLightShader.lock();
+		m_activeShader->bind();
+				// set spot light block
+		if (m_activeShader->hasUniformBlock("LightBlock")) {
 			static SpotLightBlock slb;
 			slb.position = glm::vec4(l.position, l.range);
 			slb.color = glm::vec4(l.color, l.intensity);
@@ -355,10 +350,10 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 			m_spotLightUBO->bind(Buffer::Target::UniformBuffer);
 			m_spotLightUBO->loadSubData(&slb, 0, sizeof(slb));
 			m_spotLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
-			spotLightShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+			m_activeShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
 		}
 
-		m_spotLightShadow->beginLighttingPhase(l, m_activeShader);
+		m_spotLightShadow->beginLighttingPhase(l, m_activeShader.get());
 
 	}break;
 
@@ -388,17 +383,17 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	switch (l.type) {
 	case LightType::DirectioanalLight:
 		m_directionalLightUBO->unbind();
-		m_dirLightShadow->endLighttingPhase(l, m_activeShader);
+		m_dirLightShadow->endLighttingPhase(l, m_activeShader.get());
 		break;
 
 	case LightType::PointLight:
 		m_pointLightUBO->unbind();;
-		m_pointLightShadow->endLighttingPhase(l, m_activeShader);
+		m_pointLightShadow->endLighttingPhase(l, m_activeShader.get());
 		break;
 	
 	case LightType::SpotLight:
 		m_spotLightUBO->unbind();
-		m_spotLightShadow->endLighttingPhase(l, m_activeShader);
+		m_spotLightShadow->endLighttingPhase(l, m_activeShader.get());
 		break;
 
 	default:
@@ -440,7 +435,7 @@ void ForwardRenderer::performTask(const RenderTask_t& task) {
 		return;
 	}
 
-	taskExecutor->second->executeTask(task, m_activeShader);
+	taskExecutor->second->executeTask(task, m_activeShader.get());
 }
 
 

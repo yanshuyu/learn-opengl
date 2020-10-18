@@ -80,12 +80,12 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 	m_lightCamera = makeLightCamera(light);
 
 	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
-	if (!preZShader)
+	if (preZShader.expired())
 		preZShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DepthPass.shader");
+	ASSERT(!preZShader.expired());
 
-	ASSERT(preZShader);
-
-	preZShader->bind();
+	std::shared_ptr<ShaderProgram> strongShader = preZShader.lock();
+	strongShader->bind();
 	m_shadowMapFBO->bind();
 	m_shadowMapFBO->setDrawBufferLocation({});
 	m_shadowMapFBO->setReadBufferLocation(-1);
@@ -98,12 +98,12 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 	m_renderer->clearScreen(ClearFlags::Depth);
 
 	// set view project matrix
-	if (preZShader->hasUniform("u_VPMat")) {
+	if (strongShader->hasUniform("u_VPMat")) {
 		glm::mat4 vp = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;
-		preZShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+		strongShader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 	
-	m_renderer->pullingRenderTask(preZShader.get());
+	m_renderer->pullingRenderTask(preZShader);
 }
 
 
@@ -159,9 +159,3 @@ Camera_t SpotLightShadowMapping::makeLightCamera(const Light_t& light) {
 	return cam;
 }
 
-
-#ifdef _DEBUG
-void SpotLightShadowMapping::visualizeShadowMap(const glm::vec2& wndSz, const glm::vec4& rect) {
-	Renderer::visualizeDepthBuffer(m_shadowMap.get(), wndSz, rect, 1.f, m_lightCamera.far);
-}
-#endif // _DEBUG

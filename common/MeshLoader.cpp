@@ -316,8 +316,10 @@ void MeshLoader::loadMeshes(const aiScene* aScene, const aiNode* node, Model* mo
 			Material* mat = loadMaterial(aScene, aMesh);
 			if (mat) {
 				mat->setName(model->getName() + "_" + mat->getName());
-				MaterialManager::getInstance()->addMaterial(mat);
-				model->addEmbededMaterial(mesh, mat);
+				if (MaterialManager::getInstance()->addMaterial(mat))
+					model->addEmbededMaterial(mesh, mat);
+				else
+					delete mat;
 			}
 		}
 	}
@@ -498,7 +500,7 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 
 	if (hasDiffuseMap) {
 		mat->m_diffuseMap = loadTexture(diffuseTextureName);
-		if (!mat->m_diffuseMap) {
+		if (mat->m_diffuseMap.expired()) {
 #ifdef _DEBUG	
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
@@ -510,7 +512,7 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 	}
 	if (hasNormalMap) {
 		mat->m_normalMap = loadTexture(normalTextureName);
-		if (!mat->m_normalMap) {
+		if (mat->m_normalMap.expired()) {
 #ifdef _DEBUG
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
@@ -522,7 +524,7 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 	}
 	if (hasSpecularMap) {
 		mat->m_specularMap = loadTexture(specularTextureName);
-		if (!mat->m_specularMap) {
+		if (mat->m_specularMap.expired()) {
 #ifdef _DEBUG
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
@@ -534,7 +536,7 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 	}
 	if (hasEmissiveMap) {
 		mat->m_emissiveMap = loadTexture(emissiveTextureName);
-		if (!mat->m_emissiveMap) {
+		if (mat->m_emissiveMap.expired()) {
 #ifdef _DEBUG
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
@@ -549,12 +551,10 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 }
 
 
-std::shared_ptr<Texture> MeshLoader::loadTexture(const std::string& name) {
+std::weak_ptr<Texture> MeshLoader::loadTexture(const std::string& name) {
 	auto textureMgr = TextureManager::getInstance();
-	auto loadedTex = textureMgr->getTexture(name);
-
-	if (loadedTex != nullptr)
-		return loadedTex;
+	if (textureMgr->hasTexture(name))
+		return textureMgr->getTexture(name);
 
 	return textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + name, name);
 }

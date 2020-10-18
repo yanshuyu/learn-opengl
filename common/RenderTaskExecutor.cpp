@@ -56,6 +56,8 @@ UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(RenderTechnique* rt) :R
 }
 
 void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
+	std::shared_ptr<Texture> strongDiffuseMap;
+
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
 		if (shader->hasUniform("u_ModelMat")) {
 			glm::mat4 m = renderTask.modelMatrix;
@@ -75,7 +77,8 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, Sh
 			int hasTexture = renderTask.material->hasDiffuseTexture() ? 1 : 0;
 			shader->setUniform1("u_hasDiffuseMap", hasTexture);
 			if (hasTexture) {
-				renderTask.material->m_diffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+				strongDiffuseMap = renderTask.material->m_diffuseMap.lock();
+				strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 				shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
 			}
 		}
@@ -141,6 +144,10 @@ bool LightPassRenderTaskExecuter::initialize() {
 
 void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
 	renderTask.vao->bind();
+	std::shared_ptr<Texture> strongDiffuseMap;
+	std::shared_ptr<Texture> strongNormalMap;
+	std::shared_ptr<Texture> strongSpecularMap;
+	std::shared_ptr<Texture> strongEmissiveMap;
 
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
 		if (shader->hasUniform("u_ModelMat")) {
@@ -164,7 +171,8 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, Sh
 			int hasDiffuseMap = renderTask.material->hasDiffuseTexture();
 			shader->setUniform1("u_hasDiffuseMap", hasDiffuseMap);
 			if (hasDiffuseMap) {
-				renderTask.material->m_diffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+				strongDiffuseMap = renderTask.material->m_diffuseMap.lock();
+				strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 				shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
 			}
 		}
@@ -173,7 +181,8 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, Sh
 			int hasNormalMap = renderTask.material->hasNormalTexture();
 			shader->setUniform1("u_hasNormalMap", hasNormalMap);
 			if (hasNormalMap) {
-				renderTask.material->m_normalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+				strongNormalMap = renderTask.material->m_normalMap.lock();
+				strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 				shader->setUniform1("u_normalMap", int(Texture::Unit::NormalMap));
 			}
 		}
@@ -182,7 +191,8 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, Sh
 			int hasSpecMap = renderTask.material->hasSpecularTexture();
 			shader->setUniform1("u_hasSpecularMap", hasSpecMap);
 			if (hasSpecMap) {
-				renderTask.material->m_specularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+				strongSpecularMap = renderTask.material->m_specularMap.lock();
+				strongSpecularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
 				shader->setUniform1("u_specularMap", int(Texture::Unit::SpecularMap));
 			}
 		}
@@ -191,7 +201,8 @@ void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, Sh
 			int hasEmissiveMap = renderTask.material->hasEmissiveTexture();
 			shader->setUniform1("u_hasEmissiveMap", hasEmissiveMap);
 			if (hasEmissiveMap) {
-				renderTask.material->m_emissiveMap->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
+				strongEmissiveMap = renderTask.material->m_emissiveMap.lock();
+				strongEmissiveMap->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
 				shader->setUniform1("u_emissiveMap", int(Texture::Unit::EmissiveMap));
 			}
 		}
@@ -242,7 +253,10 @@ bool GeometryPassRenderTaskExecutor::initialize() {
 
 void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
 	auto renderer = static_cast<DeferredRenderer*>(m_renderer);
-	//auto shader = renderer->m_activeShader;
+	std::shared_ptr<Texture> strongDiffuseMap;
+	std::shared_ptr<Texture> strongNormalMap;
+	std::shared_ptr<Texture> strongSpecularMap;
+	std::shared_ptr<Texture> strongEmissiveMap;
 
 	renderTask.vao->bind();
 
@@ -268,7 +282,8 @@ void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask,
 		int hasDiffuseMap = renderTask.material->hasDiffuseTexture();
 		shader->setUniform1("u_hasDiffuseMap", hasDiffuseMap);
 		if (hasDiffuseMap) {
-			renderTask.material->m_diffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			strongDiffuseMap = renderTask.material->m_diffuseMap.lock();
+			strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_diffuseMap", int(Texture::Unit::DiffuseMap));
 		}
 	}
@@ -277,7 +292,8 @@ void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask,
 		int hasNormalMap = renderTask.material->hasNormalTexture();
 		shader->setUniform1("u_hasNormalMap", hasNormalMap);
 		if (hasNormalMap) {
-			renderTask.material->m_normalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+			strongNormalMap = renderTask.material->m_normalMap.lock();
+			strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_normalMap", int(Texture::Unit::NormalMap));
 		}
 	}
@@ -286,7 +302,8 @@ void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask,
 		int hasSpecMap = renderTask.material->hasSpecularTexture();
 		shader->setUniform1("u_hasSpecularMap", hasSpecMap);
 		if (hasSpecMap) {
-			renderTask.material->m_specularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+			strongSpecularMap = renderTask.material->m_specularMap.lock();
+			strongSpecularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_specularMap", int(Texture::Unit::SpecularMap));
 		}
 	}
@@ -295,7 +312,8 @@ void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask,
 		int hasEmissiveMap = renderTask.material->hasEmissiveTexture();
 		shader->setUniform1("u_hasEmissiveMap", hasEmissiveMap);
 		if (hasEmissiveMap) {
-			renderTask.material->m_emissiveMap->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
+			strongEmissiveMap = renderTask.material->m_emissiveMap.lock();
+			strongEmissiveMap->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_emissiveMap", int(Texture::Unit::EmissiveMap));
 		}
 	}

@@ -9,9 +9,9 @@
 class TextureManager : public Singleton<TextureManager> {
 public:
 
-	std::shared_ptr<Texture> addTexture(const std::string& file, const std::string& name = "");
-	std::shared_ptr<Texture> getTexture(const std::string& name) const;
-	std::shared_ptr<Texture> removeTexture(const std::string& name);
+	std::weak_ptr<Texture> addTexture(const std::string& file, const std::string& name = "");
+	std::weak_ptr<Texture> getTexture(const std::string& name) const;
+	bool removeTexture(const std::string& name);
 	bool hasTexture(const std::string& name) const;
 	
 	inline void removeAllTextures() {

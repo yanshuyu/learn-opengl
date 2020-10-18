@@ -20,19 +20,19 @@ public:
 	Material* copy() const;
 	
 	inline bool hasDiffuseTexture() const {
-		return m_diffuseMap != nullptr;
+		return !m_diffuseMap.expired();
 	}
 
 	inline bool hasSpecularTexture() const {
-		return m_specularMap != nullptr;
+		return !m_specularMap.expired();
 	}
 
 	inline bool hasNormalTexture() const {
-		return m_normalMap != nullptr;
+		return !m_normalMap.expired();
 	}
 
 	inline bool hasEmissiveTexture() const {
-		return m_emissiveMap != nullptr;
+		return !m_emissiveMap.expired();
 	}
 
 	inline ID id() const {
@@ -54,10 +54,10 @@ public:
 	float m_opacity;
 	float m_shininess;
 	float m_ambientAbsorb;
-	std::shared_ptr<Texture> m_diffuseMap;
-	std::shared_ptr<Texture> m_specularMap;
-	std::shared_ptr<Texture> m_emissiveMap;
-	std::shared_ptr<Texture> m_normalMap;
+	std::weak_ptr<Texture> m_diffuseMap;
+	std::weak_ptr<Texture> m_specularMap;
+	std::weak_ptr<Texture> m_emissiveMap;
+	std::weak_ptr<Texture> m_normalMap;
 
 protected:
 	ID m_id;

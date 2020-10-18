@@ -9,13 +9,6 @@ class Texture;
 
 
 class Renderer {
-
-#ifdef _DEBUG
-public:
-	static void visualizeTexture(Texture* tex, const glm::vec2& windowSz, const glm::vec4& rect);
-	static void visualizeDepthBuffer(Texture* tex, const glm::vec2& windowSz, const glm::vec4& rect, float near = 0.1f, float far = 1000.f);
-#endif // _DEBUG
-
 public:
 	enum class Mode {
 		None,
@@ -70,7 +63,7 @@ public:
 
 	void renderScene(Scene* s);
 	void renderTask(const RenderTask_t& task);
-	void pullingRenderTask(ShaderProgram* activeShader = nullptr);
+	void pullingRenderTask(std::weak_ptr<ShaderProgram> activeShader = std::weak_ptr<ShaderProgram>());
 
 
 	inline  glm::vec4 getClearColor() const {

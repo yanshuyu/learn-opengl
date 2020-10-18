@@ -23,5 +23,5 @@ private:
 	std::unique_ptr<ScalarTrack> m_scalarTrack;
 	std::unique_ptr<ScalarTrack> m_scalarTrackCubic;
 	
-	Model* m_animModel;
+	std::weak_ptr<Model> m_animModel;
 };

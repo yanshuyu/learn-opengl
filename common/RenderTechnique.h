@@ -1,7 +1,7 @@
 #pragma once
 #include"RendererCore.h"
 #include<string>
-
+#include<memory>
 
 class ShaderProgram;
 
@@ -45,15 +45,15 @@ public:
 	virtual void performTask(const RenderTask_t& task) = 0;
 	virtual bool shouldRunPass(RenderPass pass) = 0;
 
-	void setActiveShader(ShaderProgram* shader) {
-		m_activeShader = shader;
+	inline void setActiveShader(std::weak_ptr<ShaderProgram> shader) {
+		m_activeShader = shader.lock();
 	}
 
-	ShaderProgram* getActiveShader(ShaderProgram* shader) const {
+	inline std::shared_ptr<ShaderProgram> getActiveShader() const {
 		return m_activeShader;
 	}
 
 protected:
 	Renderer* m_invoker;
-	ShaderProgram* m_activeShader;
+	std::shared_ptr<ShaderProgram> m_activeShader;
 };

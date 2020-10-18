@@ -10,35 +10,33 @@
 
 
 
-std::shared_ptr<Model> MeshManager::addMesh(const std::string& file, int loadingOptions, MeshLoader::Preset preset, const std::string& name) {
+std::weak_ptr<Model> MeshManager::addMesh(const std::string& file, int loadingOptions, MeshLoader::Preset preset, const std::string& name) {
 	Model* model = MeshLoader::getInstance()->load(file, loadingOptions, preset, name);
 	if (!model)
-		return nullptr;
+		return std::weak_ptr<Model>();
 
 	m_meshes.insert({ model->getName(), std::shared_ptr<Model>(model) });
 
-	return  m_meshes[model->getName()];
+	return  std::weak_ptr<Model>(m_meshes[model->getName()]);
 }
 
-bool MeshManager::addMesh(std::shared_ptr<Model> mesh, const std::string& name) {
-	std::string meshName(name);
-	if (meshName.empty())
-		meshName = mesh->getName();
-
-	if (getMesh(meshName) != nullptr)
+bool MeshManager::addMesh(Model* mesh) {
+	auto founded = getMesh(mesh->getName());
+	if (!founded.expired())
 		return false;
 
-	m_meshes.insert({ meshName, mesh });
+	m_meshes.insert({ mesh->getName(), std::shared_ptr<Model>(mesh) });
 
 	return true;
 }
 
 
-std::shared_ptr<Model> MeshManager::createGrid(float width, float depth, float spacing) {
+std::weak_ptr<Model> MeshManager::createGrid(float width, float depth, float spacing) {
 	std::stringstream ss;
 	ss << "Grid@" << width << "x" << depth << "x" << spacing;
 
-	if (auto founded = getMesh(ss.str()))
+	auto founded = getMesh(ss.str());
+	if (!founded.expired())
 		return founded;
 
 	std::vector<Vertex_t> vertices;
@@ -71,21 +69,22 @@ std::shared_ptr<Model> MeshManager::createGrid(float width, float depth, float s
 	}
 
 	
-	auto grid = std::make_shared<Model>();
+	Model* grid = new Model();
 	grid->setName(ss.str());
 	grid->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Line);
 
 	addMesh(grid);
 
-	return grid;
+	return std::weak_ptr<Model>(getMesh(grid->getName()));
 }
 
 
-std::shared_ptr<Model> MeshManager::createPlane(float width, float depth) {
+std::weak_ptr<Model> MeshManager::createPlane(float width, float depth) {
 	std::stringstream ss;
 	ss << "Plane" << "@" << width << "x" << depth;
 
-	if (auto founded = getMesh(ss.str()))
+	auto founded = getMesh(ss.str());
+	if (!founded.expired())
 		return founded;
 
 	std::vector<Vertex_t> vertices;
@@ -117,20 +116,21 @@ std::shared_ptr<Model> MeshManager::createPlane(float width, float depth) {
 	v.uv = { 0.f, 1.f };
 	vertices.push_back(v);
 
-	auto plane = std::make_shared<Model>();
+	Model* plane = new Model();
 	plane->setName(ss.str());
 	plane->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangle);
 
 	addMesh(plane);
 
-	return plane;
+	return std::weak_ptr<Model>(getMesh(plane->getName()));
 }
 
 
-std::shared_ptr<Model> MeshManager::createCube() {
+std::weak_ptr<Model> MeshManager::createCube() {
 	std::string cubeName("Cube");
 	
-	if (auto founded = getMesh(cubeName))
+	auto founded = getMesh(cubeName);
+	if (!founded.expired())
 		return founded;
 
 	std::vector<Vertex_t> vertices;
@@ -268,17 +268,17 @@ std::shared_ptr<Model> MeshManager::createCube() {
 		22, 23, 20,
 	};
 
-	auto cube = std::make_shared<Model>();
+	Model* cube = new Model();
 	cube->setName(cubeName);
 	cube->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangle);
 
 	addMesh(cube);
 
-	return cube;
+	return std::weak_ptr<Model>(getMesh(cube->getName()));
 }
 
 
-std::shared_ptr<Model> MeshManager::getMesh(ID id) const {
+std::weak_ptr<Model> MeshManager::getMesh(ID id) const {
 	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
 		if (mesh.second && mesh.second->id() == id)
 			return true;
@@ -286,43 +286,43 @@ std::shared_ptr<Model> MeshManager::getMesh(ID id) const {
 		});
 
 	if (pos == m_meshes.end())
-		return nullptr;
+		return std::weak_ptr<Model>();
 
-	return pos->second;
+	return std::weak_ptr<Model>(pos->second);
 }
 
-std::shared_ptr<Model> MeshManager::getMesh(const std::string& name) const {
+std::weak_ptr<Model> MeshManager::getMesh(const std::string& name) const {
 	auto pos = m_meshes.find(name);
 	if (pos == m_meshes.end())
-		return nullptr;
+		return std::weak_ptr<Model>();;
 
-	return pos->second;
+	return std::weak_ptr<Model>(pos->second);
 }
 
 
-std::shared_ptr<Model> MeshManager::removeMesh(ID id) {
+bool MeshManager::removeMesh(ID id) {
 	auto pos = std::find_if(m_meshes.begin(), m_meshes.end(), [=](const MeshContainer::value_type& mesh) {
 		if (mesh.second && mesh.second->id() == id)
 			return true;
 		return false;
-		});
+	});
 
 	if (pos == m_meshes.end())
-		return nullptr;
+		return false;
 	
 	m_meshes.erase(pos);
 
-	return pos->second;
+	return true;
 }
 
-std::shared_ptr<Model> MeshManager::removeMesh(const std::string& name) {
+bool MeshManager::removeMesh(const std::string& name) {
 	auto pos = m_meshes.find(name);
 	if (pos == m_meshes.end())
-		return nullptr;
+		return false;
 
 	m_meshes.erase(pos);
 
-	return pos->second;
+	return true;
 }
 
 

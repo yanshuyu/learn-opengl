@@ -42,7 +42,7 @@ public:
 	void addOject(SceneObject* object);
 	void addObject(std::unique_ptr<SceneObject>&& object);
 	
-	SceneObject* addModel(std::shared_ptr<Model> model, const std::string& name = "");
+	SceneObject* addModel( const std::string& file, const std::string& name = "");
 	SceneObject* addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addPlane(float w, float d, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addCube(std::shared_ptr<Material> mat = nullptr);

@@ -76,12 +76,12 @@ void PointLightShadowMapping::cleanUp() {
 
 void PointLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera_t& camera) {
 	auto shader = ShaderProgramManager::getInstance()->getProgram("PointLightShadowPass");
-	if (!shader)
+	if (shader.expired())
 		shader = ShaderProgramManager::getInstance()->addProgram("res/shader/PointLightShadowPass.shader");
+	ASSERT(!shader.expired());
 
-	ASSERT(shader);
-
-	shader->bind();
+	std::shared_ptr<ShaderProgram> strongShader = shader.lock();
+	strongShader->bind();
 	m_FBO->bind();
 	
 	m_rendererViewPort = m_renderer->getViewport();
@@ -89,18 +89,18 @@ void PointLightShadowMapping::beginShadowPhase(const Light_t& light, const Camer
 	m_renderer->setViewPort(Viewport_t(0.f, 0.f, m_shadowMapResolution.x, m_shadowMapResolution.y));
 	m_renderer->setCullFaceMode(CullFaceMode::Front);
 
-	if (shader->hasUniform("u_lightVP[0]")) {
+	if (strongShader->hasUniform("u_lightVP[0]")) {
 		auto transforms = calclightLightCameraMatrixs(light);
-		shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(transforms.front()), transforms.size());
+		strongShader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(transforms.front()), transforms.size());
 	}
 
-	if (shader->hasUniform("u_near"))
-		shader->setUniform1("u_near", 1.f);
+	if (strongShader->hasUniform("u_near"))
+		strongShader->setUniform1("u_near", 1.f);
 	
-	if (shader->hasUniform("u_far"))
-		shader->setUniform1("u_far", light.range);
+	if (strongShader->hasUniform("u_far"))
+		strongShader->setUniform1("u_far", light.range);
 
-	m_renderer->pullingRenderTask(shader.get());
+	m_renderer->pullingRenderTask(shader);
 
 }
 

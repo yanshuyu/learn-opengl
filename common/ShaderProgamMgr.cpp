@@ -5,45 +5,44 @@
 
 
 
-std::shared_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& file, const std::string& name) {
+std::weak_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& file, const std::string& name) {
 	std::string shaderName(name);
 	if (shaderName.empty())
 		shaderName = ExtractFileNameFromPath(file, false);
 	if (shaderName.empty())
 		shaderName = file;
 	
-	auto program = getProgram(shaderName);
+	auto found = getProgram(shaderName);
+	if (!found.expired())
+		return found;
 
-	if (program != nullptr)
-		return program;
-
-	program = std::make_shared<ShaderProgram>(shaderName, file);
+	auto program = std::make_shared<ShaderProgram>(shaderName, file);
 	if (program->compileAndLink()) {
 		m_shaderPrograms.insert(std::make_pair(shaderName, program));
-		return program;
+		return std::weak_ptr<ShaderProgram>(program);
 	}
 
-	return nullptr;
+	return std::weak_ptr<ShaderProgram>();
 }
 
 
 bool ShaderProgramManager::hasProgram(const std::string& name) const {
-	return getProgram(name) != nullptr;
+	return !getProgram(name).expired();
 }
 
-std::shared_ptr<ShaderProgram> ShaderProgramManager::getProgram(const std::string name) const {
+std::weak_ptr<ShaderProgram> ShaderProgramManager::getProgram(const std::string name) const {
 	auto pos = m_shaderPrograms.find(name);
 	if (pos == m_shaderPrograms.end())
-		return nullptr;
+		return std::weak_ptr<ShaderProgram>();
 	
-	return pos->second;
+	return std::weak_ptr<ShaderProgram>(pos->second);
 }
 
-std::shared_ptr<ShaderProgram> ShaderProgramManager::removeProgram(const std::string& name) {
+bool ShaderProgramManager::removeProgram(const std::string& name) {
 	auto pos = m_shaderPrograms.find(name);
 	if (pos != m_shaderPrograms.end()) {
 		m_shaderPrograms.erase(pos);
-		return pos->second;
+		return true;
 	}
-	return nullptr;
+	return false;
 }
