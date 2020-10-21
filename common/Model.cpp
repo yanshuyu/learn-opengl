@@ -15,7 +15,8 @@ Model::Model() :m_name()
 , m_meshes()
 , m_embededMaterials()
 , m_skeleton()
-, m_animations() {
+, m_animations()
+, m_animatedPose() {
 	m_id = reinterpret_cast<ID>(this);
 }
 

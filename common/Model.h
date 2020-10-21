@@ -7,7 +7,7 @@
 
 class Skeleton;
 class AnimationClip;
-
+class Pose;
 
 class Model {
 	friend class MeshLoader;
@@ -82,6 +82,10 @@ public:
 		return m_meshes.at(idx).get();
 	}
 
+	inline bool hasAnimation() const {
+		return hasSkeleton() && animationCount() > 0;
+	}
+
 	inline size_t animationCount() const {
 		return m_animations.size();
 	}
@@ -102,6 +106,13 @@ public:
 		return m_embededMaterials.size();
 	}
 
+	inline void setAnimatedPose(const Pose* pose) {
+		m_animatedPose = pose;
+	}
+
+	inline const Pose* getAnimatedPose() const {
+		return m_animatedPose;
+	}
 private:
 	std::string m_file;
 	std::string m_name;
@@ -112,6 +123,8 @@ private:
 
 	std::unique_ptr<Skeleton> m_skeleton;	// skeleton animation data
 	std::vector<std::unique_ptr<AnimationClip>> m_animations;
+
+	const Pose* m_animatedPose; // pose animated by animator
 };
 
 

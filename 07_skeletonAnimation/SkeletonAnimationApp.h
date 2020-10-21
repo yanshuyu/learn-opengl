@@ -1,11 +1,11 @@
 #pragma once
 #include<common/GLApplication.h>
 #include<common/KeyFrameTrack.h>
-
+#include"AnimatorController.h"
 
 
 class SkeletonAnimationApp : public GLApplication {
-	friend class LightControlGuiWindow;
+	friend class MainGuiWindow;
 public:
 	SkeletonAnimationApp(const std::string& wndTitle, int wndWidth = 1920, int wndHeight = 1080);
 
@@ -23,5 +23,6 @@ private:
 	std::unique_ptr<ScalarTrack> m_scalarTrack;
 	std::unique_ptr<ScalarTrack> m_scalarTrackCubic;
 	
-	std::weak_ptr<Model> m_animModel;
+	AnimatorComponent* m_animator;
+	AnimatorController* m_animatorController;
 };

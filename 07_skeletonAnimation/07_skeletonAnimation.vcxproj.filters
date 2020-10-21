@@ -162,9 +162,6 @@
     <ClCompile Include="SkeletonAnimationApp-main.cpp">
       <Filter>main</Filter>
     </ClCompile>
-    <ClCompile Include="LightControlGuiWindow.cpp">
-      <Filter>main</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\Interpolation.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -197,6 +194,27 @@
     </ClCompile>
     <ClCompile Include="..\common\IMesh.cpp">
       <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\AnimationState.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ConditionVariable.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\AnimationTransition.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\TransitionCondition.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\AnimatorComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimatorController.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="MainGuiWindow.cpp">
+      <Filter>main</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -356,9 +374,6 @@
     <ClInclude Include="SkeletonAnimationApp.h">
       <Filter>main</Filter>
     </ClInclude>
-    <ClInclude Include="LightControlGuiWindow.h">
-      <Filter>main</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\Interpolation.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -394,6 +409,27 @@
     </ClInclude>
     <ClInclude Include="..\common\IMesh.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\AnimationState.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\AnimationTransition.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ConditionVariable.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TransitionCondition.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\AnimatorComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimatorController.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="MainGuiWindow.h">
+      <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

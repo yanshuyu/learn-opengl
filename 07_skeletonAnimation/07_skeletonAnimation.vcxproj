@@ -150,7 +150,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\common\AnimationClip.cpp" />
+    <ClCompile Include="..\common\AnimationTransition.cpp" />
     <ClCompile Include="..\common\DebugDrawer.cpp" />
+    <ClCompile Include="..\common\AnimatorComponent.cpp" />
+    <ClCompile Include="..\common\ConditionVariable.cpp" />
+    <ClCompile Include="..\common\AnimationState.cpp" />
     <ClCompile Include="..\common\IMesh.cpp" />
     <ClCompile Include="..\common\KeyFrameTrack.cpp" />
     <ClCompile Include="..\common\ArcballCameraController.cpp" />
@@ -197,6 +201,7 @@
     <ClCompile Include="..\common\Transform.cpp" />
     <ClCompile Include="..\common\TransformComponent.cpp" />
     <ClCompile Include="..\common\TransformTrack.cpp" />
+    <ClCompile Include="..\common\TransitionCondition.cpp" />
     <ClCompile Include="..\common\Util.cpp" />
     <ClCompile Include="..\common\VertexArray.cpp" />
     <ClCompile Include="..\common\VertexLayoutDescription.cpp" />
@@ -206,13 +211,18 @@
     <ClCompile Include="..\deps\src\iamgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\deps\src\iamgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\deps\src\iamgui\imgui_widgets.cpp" />
-    <ClCompile Include="LightControlGuiWindow.cpp" />
+    <ClCompile Include="AnimatorController.cpp" />
+    <ClCompile Include="MainGuiWindow.cpp" />
     <ClCompile Include="SkeletonAnimationApp-main.cpp" />
     <ClCompile Include="SkeletonAnimationApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h" />
     <ClInclude Include="..\common\DebugDrawer.h" />
+    <ClInclude Include="..\common\AnimatorComponent.h" />
+    <ClInclude Include="..\common\ConditionVariable.h" />
+    <ClInclude Include="..\common\AnimationState.h" />
+    <ClInclude Include="..\common\AnimationTransition.h" />
     <ClInclude Include="..\common\IMesh.h" />
     <ClInclude Include="..\common\KeyFrameTrack.h" />
     <ClInclude Include="..\common\ArcballCameraController.h" />
@@ -263,6 +273,7 @@
     <ClInclude Include="..\common\Transform.h" />
     <ClInclude Include="..\common\TransformComponent.h" />
     <ClInclude Include="..\common\TransformTrack.h" />
+    <ClInclude Include="..\common\TransitionCondition.h" />
     <ClInclude Include="..\common\Util.h" />
     <ClInclude Include="..\common\VertexArray.h" />
     <ClInclude Include="..\common\VertexLayoutDescription.h" />
@@ -274,7 +285,8 @@
     <ClInclude Include="..\deps\src\iamgui\imstb_rectpack.h" />
     <ClInclude Include="..\deps\src\iamgui\imstb_textedit.h" />
     <ClInclude Include="..\deps\src\iamgui\imstb_truetype.h" />
-    <ClInclude Include="LightControlGuiWindow.h" />
+    <ClInclude Include="AnimatorController.h" />
+    <ClInclude Include="MainGuiWindow.h" />
     <ClInclude Include="SkeletonAnimationApp.h" />
   </ItemGroup>
   <ItemGroup>

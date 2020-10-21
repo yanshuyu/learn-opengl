@@ -26,6 +26,7 @@
 #include"MeshRenderComponent.h"
 #include"CameraComponent.h"
 #include"LightComponent.h"
+#include"AnimatorComponent.h"
 #include"FirstPersonCameraController.h"
 #include"ArcballCameraController.h"
 #include"DebugDrawer.h"

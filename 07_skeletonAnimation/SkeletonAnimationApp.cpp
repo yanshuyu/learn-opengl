@@ -1,5 +1,5 @@
 #include"SkeletonAnimationApp.h"
-#include"LightControlGuiWindow.h"
+#include"MainGuiWindow.h"
 #include<stdarg.h>
 #include<glm/gtx/transform.hpp>
 
@@ -51,8 +51,9 @@ bool SkeletonAnimationApp::initailize() {
 	auto obj = m_scene->addModel(MeshManager::getInstance()->getResourceAbsolutePath() + "Alien_Animal.fbx");
 	obj->m_transform.setScale({ 0.01f, 0.01f, 0.01f });
 	obj->m_transform.setPosition({ 0.f, 0.f, 0.f });
-	m_animModel = MeshManager::getInstance()->getMesh(obj->getName());
-
+	m_animator = obj->getComponent<AnimatorComponent>();
+	m_animatorController = obj->addComponent<AnimatorController>();
+	
 	// camera
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent(ArcballCameraController::create());
@@ -65,7 +66,7 @@ bool SkeletonAnimationApp::initailize() {
 	dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
 
 	
-	GuiManager::getInstance()->addWindow(new LightControlGuiWindow("Light Setting", this));
+	GuiManager::getInstance()->addWindow(new MainGuiWindow("Skeleton Animation Test", this));
 
 	m_scalarTrack.reset(makeScalarTrack(InterpolationType::Linear, 3, makeScalarFrame(1, 50), makeScalarFrame(4, 150), makeScalarFrame(8, 100)));
 	m_scalarTrackCubic.reset(makeScalarTrack(InterpolationType::Cubic, 5,
@@ -75,6 +76,7 @@ bool SkeletonAnimationApp::initailize() {
 		makeScalarFrame(0.6333333f, 7.925411f, 0.4500741f, 7.925411f),
 		makeScalarFrame(0.75f, 0, 0, 0)));
 
+	return true;
 }
 
 
@@ -132,10 +134,11 @@ void SkeletonAnimationApp::debugDraw(double dt) {
 	mvp = vp * model;
 	DebugDrawer::drawScalarTrack(m_scalarTrackCubic.get(), 2.5, 100, LoopType::PingPong, 900, 10, 4, { 1, 0, 0 }, mvp);
 	*/
-	if (m_animModel.expired())
+
+	if (m_animator->getAvatar().expired())
 		return;
 
-	auto animModel = m_animModel.lock();
+	auto animModel = m_animator->getAvatar().lock();
 
 	if (animModel->hasSkeleton()) {
 		model = glm::mat4(1.f);
@@ -157,10 +160,7 @@ void SkeletonAnimationApp::debugDraw(double dt) {
 		model = glm::translate(model, { 20.f, 0.f, 0.f });
 		model = glm::scale(model, { 0.01f, 0.01f, 0.01f });
 		mvp = vp * model;
-
-		Pose animatedPose = animModel->getSkeleton()->getResPose();
-		animatedPose = animModel->animationAt(0)->sample(animatedPose, animTime, LoopType::Loop);
-		DebugDrawer::drawPose(animatedPose, { 1.f, 0.f, 0.f }, mvp);
+		DebugDrawer::drawPose(m_animator->animatedPose() , { 1.f, 0.f, 0.f }, mvp);
 	}
 }
 

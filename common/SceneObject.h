@@ -38,12 +38,24 @@ public:
 	bool addComponent(std::unique_ptr<Component>&& c);
 	std::unique_ptr<Component> removeComponent(const std::string& identifier);
 	Component* findComponent(const std::string& identifier) const;
-	template<class T> T* getComponent() const {
-		Component* comp = findComponent(T::s_identifier);
-		if (!comp)
+
+	template<typename T, typename ... Args> T* addComponent(Args&& ... args) {
+		Component* c = findComponent(T::s_identifier);
+		if (c)
+			return static_cast<T*>(c);
+		
+		c = new T(std::forward<Args>(args)...);
+		addComponent(c);
+		
+		return static_cast<T*>(c);
+	}
+
+	template<typename T> T* getComponent() const {
+		Component* c = findComponent(T::s_identifier);
+		if (!c)
 			return nullptr;
 
-		return static_cast<T*>(comp);
+		return static_cast<T*>(c);
 	}
 
 	inline size_t componentCount() const {

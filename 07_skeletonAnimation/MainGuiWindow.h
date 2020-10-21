@@ -4,10 +4,11 @@
 class SkeletonAnimationApp;
 class LightComponent;
 class Renderer;
+class AnimatorController;
 
-class LightControlGuiWindow : public GuiWindow {
+class MainGuiWindow : public GuiWindow {
 public:
-	LightControlGuiWindow(const std::string& title, SkeletonAnimationApp* app);
+	MainGuiWindow(const std::string& title, SkeletonAnimationApp* app);
 
 	bool initialize() override;
 
@@ -21,4 +22,7 @@ protected:
 	float m_lightIntensity = 1.f;
 	float m_shadowBias = 0.f;
 	int m_renderMode = 0;
+
+	AnimatorController* m_animAC = nullptr;
+	float m_speed = 0.f;
 };

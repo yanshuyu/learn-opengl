@@ -39,17 +39,13 @@ bool TransformTrack::isValid() const {
 	return posValid || scaleValid || rotateValid;
 }
 
-Transform TransformTrack::sample(const Transform& ref, float time, LoopType loop) const {
+void TransformTrack::sample(Transform& outTransform, float time, LoopType loop) const {
 	if (!isValid())
-		return ref;
-	
-	Transform result = ref;
+		return;
 	if (m_positionTrack.isValid())
-		result.position = m_positionTrack.sample(time, loop);
+		outTransform.position = m_positionTrack.sample(time, loop);
 	if (m_scaleTrack.isValid())
-		result.scale = m_scaleTrack.sample(time, loop);
+		outTransform.scale = m_scaleTrack.sample(time, loop);
 	if (m_rotationTrack.isValid())
-		result.rotation = m_rotationTrack.sample(time, loop);
-
-	return result;
+		outTransform.rotation = m_rotationTrack.sample(time, loop);
 }

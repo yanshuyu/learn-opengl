@@ -3,6 +3,7 @@
 #include"MeshMgr.h"
 #include"NotificationCenter.h"
 #include"LightComponent.h"
+#include"AnimatorComponent.h"
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<algorithm>
@@ -114,13 +115,17 @@ SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm:
 
 SceneObject* Scene::addModel(const std::string& file, const std::string& name) {
 	auto model = MeshManager::getInstance()->addMesh(file).lock();
+
 	std::string modelName = name.empty() ? model->getName() : name;
 	SceneObject* obj = addObject(modelName);
 	
-	MeshRenderComponent* meshRenderComp = MeshRenderComponent::create();
-	meshRenderComp->setMeshes(model);
-	if (!obj->addComponent(meshRenderComp))
-		MeshRenderComponent::destory(meshRenderComp);
+	MeshRenderComponent* meshRender = obj->addComponent<MeshRenderComponent>();
+	meshRender->setMeshes(model);
+
+	if (model->hasAnimation()) {
+		AnimatorComponent* animator = obj->addComponent<AnimatorComponent>();
+		animator->setAvater(model);
+	}
 
 	return obj;
 }

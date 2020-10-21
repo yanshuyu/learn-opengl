@@ -12,9 +12,12 @@ class AnimationClip {
 public:
 	AnimationClip(const std::string& name = "", float duration = 0.f);
 
-	Pose& sample(Pose& ref, float time, LoopType loop);
+	float sample(Pose& outPose, float time, LoopType loop);
 
 	bool isValid() const;
+
+	float getStartTime() const;
+	float getEndTime() const;
 
 	inline TransformTrack& trackAt(size_t idx) {
 		return m_jointsTrack[idx];
@@ -47,6 +50,9 @@ public:
 	inline void setDuration(float duration) {
 		m_duration = duration;
 	}
+
+protected:
+	float ajustTimeToFitClip(float time, LoopType loop);
 
 protected:
 	std::vector<TransformTrack> m_jointsTrack;
