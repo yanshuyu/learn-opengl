@@ -33,7 +33,7 @@ float AnimationState::update(Pose& outPose, float dt) {
 	return m_progress;
 }
 
-AnimationTransition* AnimationState::firstActiveTransition() const {
+AnimationTransition* AnimationState::anyActiveTransition() const {
 	for (size_t i = 0; i < m_transitions.size(); i++)	{
 		if (m_transitions[i]->canTransition())
 			return m_transitions[i].get();

@@ -25,4 +25,5 @@ protected:
 
 	AnimatorController* m_animAC = nullptr;
 	float m_speed = 0.f;
+	float m_hp = 1.f;
 };

@@ -5,9 +5,9 @@
 COMPONENT_IDENTIFIER_IMP(AnimatorComponent, "AnimatorComponent");
 
 
-template std::shared_ptr<TConditionVariable<int>> AnimatorComponent::addConditionVar<int>(const std::string& name);
-template std::shared_ptr<TConditionVariable<float>> AnimatorComponent::addConditionVar<float>(const std::string& name);
-template std::shared_ptr<TConditionVariable<bool>> AnimatorComponent::addConditionVar<bool>(const std::string& name);
+template std::shared_ptr<TConditionVariable<int>> AnimatorComponent::addConditionVar<int>(const std::string& name, int val);
+template std::shared_ptr<TConditionVariable<float>> AnimatorComponent::addConditionVar<float>(const std::string& name, float val);
+template std::shared_ptr<TConditionVariable<bool>> AnimatorComponent::addConditionVar<bool>(const std::string& name, bool val);
 
 template bool AnimatorComponent::setConditionVar<int>(const std::string& name, int val);
 template bool AnimatorComponent::setConditionVar<float>(const std::string& name, float val);
@@ -54,7 +54,19 @@ void AnimatorComponent::update(double dt) {
 	}
 
 	auto strongAvatar = m_avatar.lock();
-	if (AnimationTransition* transition = m_curState->firstActiveTransition()) {
+	
+	AnimationTransition* transition = m_anyState->anyActiveTransition();
+
+	if (transition && m_curState == transition->getDestinationState())
+		transition = nullptr;
+
+	if (transition )
+		m_anyState->setAnimationClip(m_curState->getAnimationClip());
+
+	if (!transition)
+		transition = m_curState->anyActiveTransition();
+
+	if (transition) {
 		m_curState->onExit();
 		m_animatedPose = strongAvatar->getSkeleton()->getResPose();
 		m_curState = transition->getDestinationState();
@@ -155,10 +167,15 @@ bool AnimatorComponent::isInitState(AnimationState* state) {
 
 
 template<typename T>
-std::shared_ptr<TConditionVariable<T>> AnimatorComponent::addConditionVar(const std::string& name) {
+std::shared_ptr<TConditionVariable<T>> AnimatorComponent::addConditionVar(const std::string& name, T val) {
 	if (m_condVars.find(name) == m_condVars.end()) {
 		m_condVars.insert({ name, std::shared_ptr<ConditionVariable>(new TConditionVariable<T>(name)) });
 	}
+
+
+#ifdef _DEBUG
+	ASSERT(setConditionVar<T>(name, val));
+#endif // _DEBUG
 
 	return std::static_pointer_cast<TConditionVariable<T>>(m_condVars.at(name));
 }

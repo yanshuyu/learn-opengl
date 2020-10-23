@@ -25,7 +25,7 @@ public:
 	void onExit();
 	float update(Pose& outPose, float dt);
 
-	AnimationTransition* firstActiveTransition() const;
+	AnimationTransition* anyActiveTransition() const;
 
 	// transition managment
 	void addTransition(AnimationState* dst, float duration = 0.5f);

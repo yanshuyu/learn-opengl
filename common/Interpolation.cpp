@@ -49,11 +49,11 @@ glm::vec3 slerp(const glm::vec3& a, const glm::vec3& b, float t) {
 }
 
 glm::quat lerp(const glm::quat& q1, const glm::quat& q2, float t) {
-	return q1 * (1 - t) + q2 * t;
+	return q1 * (1 - t) + (glm::dot(q1, q2) < 0 ? -q2 : q2) * t;
 }
 
-glm::quat nlerp(const glm::quat& q1, const glm::quat& q2, float t) {
-	return glm::fastMix(q1, q2, t);
+glm::quat nlerp(const glm::quat& q1, const glm::quat& q2, float t) {	
+	return glm::fastMix(q1, glm::dot(q1, q2) < 0 ? -q2 : q2, t);
 }
 
 

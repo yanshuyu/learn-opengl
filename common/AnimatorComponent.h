@@ -38,7 +38,7 @@ public:
 
 	// condition variables management
 	template<typename T>
-	std::shared_ptr<TConditionVariable<T>> addConditionVar(const std::string& name);
+	std::shared_ptr<TConditionVariable<T>> addConditionVar(const std::string& name, T val = T());
 
 	template<typename T>
 	bool setConditionVar(const std::string& name, T val);

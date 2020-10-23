@@ -68,6 +68,9 @@ void MainGuiWindow::render() {
 	if (ImGui::SliderFloat("Speed", &m_speed, 0.f, 3.f))
 		m_animAC->setSpeed(m_speed);
 
+	if (ImGui::SliderFloat("HP", &m_hp, 0.f, 1.f))
+		m_animAC->setHp(m_hp);
+
 
 	ImGui::End();
 }

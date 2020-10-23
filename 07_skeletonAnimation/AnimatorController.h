@@ -13,6 +13,7 @@ public:
 	bool initialize() override;
 
 	void setSpeed(float speed);
+	void setHp(float hp);
 	
 	inline std::string identifier() const override {
 		return s_identifier;
