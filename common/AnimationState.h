@@ -1,17 +1,20 @@
 #pragma once
 #include"AnimationTransition.h"
 #include"Interpolation.h"
+#include"Pose.h"
+#include"AnimationClip.h"
+#include"Util.h"
 #include<string>
 #include<memory>
 
 
-class Pose;
 class AnimationClip;
-class Skeleton;
+
 
 // state contain state specsific data 
 // and collection of possible transitions to other state.
 class AnimationState {
+	friend class AnimationPlayer;
 public:
 	AnimationState(const std::string& name = "");
 	AnimationState(const AnimationState& other) = delete;
@@ -25,9 +28,9 @@ public:
 	AnimationTransition* firstActiveTransition() const;
 
 	// transition managment
-	void addTransition(AnimationState* dst);
+	void addTransition(AnimationState* dst, float duration = 0.5f);
 	template<typename T>
-	void addTransition(AnimationState* dst, std::weak_ptr<TConditionVariable<T>> conVar, ConditionComparer cmp, T refVar);
+	void addTransition(AnimationState* dst, std::weak_ptr<TConditionVariable<T>> conVar, ConditionComparer cmp, T refVar, float duration = 0.5f);
 
 	bool removeTransition(AnimationState* dst);
 	bool removeTransition(const std::string& dstStateName);
@@ -47,6 +50,7 @@ public:
 		m_transitions.clear();
 	}
 
+
 	// setter & getter
 	inline void setName(const std::string& name) {
 		m_name = name;
@@ -64,12 +68,34 @@ public:
 		return m_clip;
 	}
 
+	inline float getAnimationDuration() const {
+		if (m_clip)
+			return m_clip->getDuration();
+		return 0.f;
+	}
+
 	inline void setAnimationLoopType(LoopType loop) {
 		m_loopMode = loop;
 	}
 
 	inline LoopType getAnimationLoopType() const {
 		return m_loopMode;
+	}
+
+	inline void setAnimationSpeed(float speed) {
+		m_speed = MAX(speed, 0.f);
+	}
+
+	inline float getAnimationSpeed() const {
+		return m_speed;
+	}
+
+	inline void setPose(const Pose& pose) {
+		m_refPose = pose;
+	}
+
+	inline const Pose& getPose() const {
+		return m_refPose;
 	}
 
 protected:
@@ -80,7 +106,9 @@ protected:
 	std::vector<std::unique_ptr<AnimationTransition>> m_transitions; //out transitions
 
 	AnimationClip* m_clip;
+	Pose m_refPose;
 	LoopType m_loopMode;
-	float m_timer;
+
+	float m_speed;
 	float m_progress;
 };

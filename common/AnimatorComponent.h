@@ -3,6 +3,7 @@
 #include"Pose.h"
 #include"Component.h"
 #include"Util.h"
+#include"AnimationPlayer.h"
 #include<unordered_map>
 #include<memory>
 
@@ -25,7 +26,6 @@ public:
 	
 	void setAvater(std::weak_ptr<Model> avatar);
 	void update(double dt) override;
-	void performTransition(AnimationTransition* t);
 	void reset();
 
 	// states management
@@ -84,6 +84,7 @@ protected:
 
 	AnimationState* m_curState;
 	float m_curAnimProgress;
+	AnimationPlayer m_player;
 
 	std::unordered_map<std::string, std::unique_ptr<AnimationState>> m_states;
 	std::unordered_map<std::string, std::shared_ptr<ConditionVariable>> m_condVars;

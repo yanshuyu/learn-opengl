@@ -1,5 +1,7 @@
 #include"AnimationTransition.h"
-
+#include"AnimationState.h"
+#include"AnimationClip.h"
+#include"Util.h"
 
 template TTransitionCondition<int>* AnimationTransition::addCondition(std::weak_ptr<IntConditionVar> conVar, ConditionComparer cmp, int refVar);
 template TTransitionCondition<float>* AnimationTransition::addCondition(std::weak_ptr<FloatConditionVar> conVar, ConditionComparer cmp, float refVar);
@@ -17,6 +19,7 @@ template TTransitionCondition<bool>* AnimationTransition::getCondition<bool>(con
 
 AnimationTransition::AnimationTransition(AnimationState* src, AnimationState* dst) : m_srcState(src)
 , m_dstState(dst)
+, m_duration(0.f)
 , m_conditions() {
 
 }
@@ -98,6 +101,12 @@ bool AnimationTransition::canTransition() const {
 	}
 
 	return canTransition;
+}
+
+
+void AnimationTransition::setDuration(float dur) {
+	float minLen = MIN(m_srcState->getAnimationDuration(), m_dstState->getAnimationDuration());
+	m_duration = MIN(dur, minLen);
 }
 
 

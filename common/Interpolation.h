@@ -1,6 +1,8 @@
 #pragma once
 #include<glm/glm.hpp>
 
+class Pose;
+
 enum class LoopType {
 	NoLoop,
 	Loop,
@@ -47,3 +49,11 @@ glm::vec3 hermite(const glm::vec3& p1, const glm::vec3& s1, const glm::vec3& p2,
 glm::quat hermite(const glm::quat& p1, const glm::quat& s1, const glm::quat& p2, const glm::quat& s2, float t);
 
 
+
+//
+// animation blending
+//
+
+void blend(Pose& outPose, const Pose& a, const Pose& b, float t);
+
+void addtiveBlend(Pose& outPose, const Pose& pose, const Pose& addPose, const Pose& addBase);

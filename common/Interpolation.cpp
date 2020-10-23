@@ -1,7 +1,9 @@
 #include"Interpolation.h"
+#include"Pose.h"
 #include<glm/gtx/norm.hpp>
 #include<glm/gtx/vector_angle.hpp>
 #include<glm/gtx/quaternion.hpp>
+
 
 
 bool epslion_zero(float v) {
@@ -84,4 +86,37 @@ glm::quat hermite(const glm::quat& p1, const glm::quat& s1, const glm::quat& p2,
 	glm::quat reslut = hermite_imp(p1, s1, _p2, s2, t);
 	
 	return glm::normalize(reslut);
+}
+
+
+void blend(Pose& outPose, const Pose& a, const Pose& b, float t) {
+	if (t <= 0) {
+		outPose = a;
+		return;
+	}
+
+	if (t >= 1) {
+		outPose = b;
+		return;
+	}
+
+	outPose = a;
+
+	for (size_t i = 0; i < a.size(); i++) {
+		outPose[i].position = lerp(a[i].position, b[i].position, t);
+		outPose[i].scale = lerp(a[i].scale, b[i].scale, t);
+		outPose[i].rotation = nlerp(a[i].rotation, b[i].rotation, t);
+	}
+}
+
+
+void addtiveBlend(Pose& outPose, const Pose& pose, const Pose& addPose, const Pose& addBase) {
+	if (&outPose != &pose)
+		outPose = pose;
+
+	for (size_t i = 0; i < pose.size(); i++) {
+		outPose[i].position = pose[i].position + (addPose[i].position - addBase[i].position);
+		outPose[i].scale = pose[i].scale + (addPose[i].scale - addBase[i].scale);
+		outPose[i].rotation = glm::normalize(pose[i].rotation * (glm::inverse(addBase[i].rotation) * addPose[i].rotation));
+	}
 }

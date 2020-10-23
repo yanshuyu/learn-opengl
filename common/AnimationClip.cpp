@@ -6,13 +6,17 @@ AnimationClip::AnimationClip(const std::string& name, float duration): m_name(na
 
 }
 
-float AnimationClip::sample(Pose& outPose, float time, LoopType loop) {
+float AnimationClip::sample(const Pose& inPose, Pose& outPose, float time, LoopType loop) {
+	if (&inPose != &outPose)
+		outPose = inPose;
+
 	if (!isValid())
 		return 0.f;
 
 	float ajustedTime = ajustTimeToFitClip(time, loop);
+
 	for (auto& track : m_jointsTrack) {
-		track.sample(outPose[track.getJointId()], ajustedTime, loop);
+		track.sample(inPose[track.getJointId()], outPose[track.getJointId()], ajustedTime, loop);
 	}
 
 	return ajustedTime / getDuration();

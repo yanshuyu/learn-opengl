@@ -216,6 +216,9 @@
     <ClCompile Include="MainGuiWindow.cpp">
       <Filter>main</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\AnimationPlayer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -430,6 +433,9 @@
     </ClInclude>
     <ClInclude Include="MainGuiWindow.h">
       <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\AnimationPlayer.h">
+      <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

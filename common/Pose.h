@@ -26,6 +26,10 @@ public:
 		return m_joints[jointId];
 	}
 
+	inline const Transform& operator [] (int jointId) const {
+		return m_joints[jointId];
+	}
+
 	inline int getJointParent(int jointId) const {
 		return m_parents[jointId];
 	}

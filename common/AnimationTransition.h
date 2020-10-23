@@ -36,6 +36,8 @@ public:
 
 	bool canTransition() const;
 	
+	void setDuration(float dur);
+
 	inline size_t conditionCount() const {
 		return m_conditions.size();
 	}
@@ -52,6 +54,10 @@ public:
 		return m_dstState;
 	}
 
+	inline float getDuration() const {
+		return m_duration;
+	}
+
 protected:
 	int getConditionIndex(std::function<bool(const TransitionCondition*)> criteria);
 	int getConditionIndex(const std::string& name);
@@ -60,6 +66,7 @@ protected:
 protected:
 	AnimationState* m_srcState;
 	AnimationState* m_dstState;
+	float m_duration;
 	std::vector<std::unique_ptr<TransitionCondition>> m_conditions;
 };
 

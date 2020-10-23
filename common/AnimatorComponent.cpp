@@ -25,7 +25,8 @@ AnimatorComponent::AnimatorComponent(): m_avatar()
 , m_startState()
 , m_anyState()
 , m_states()
-, m_condVars() {
+, m_condVars()
+, m_player() {
 	m_startState.reset(new AnimationState("Start"));
 	m_startToInitCond = std::shared_ptr<BoolConditionVar>(new BoolConditionVar("Animator@Start", true));
 	m_anyState.reset(new AnimationState("Any"));
@@ -53,22 +54,19 @@ void AnimatorComponent::update(double dt) {
 	}
 
 	auto strongAvatar = m_avatar.lock();
-	AnimationTransition* tansition = m_curState->firstActiveTransition();
-	if (tansition) {
+	if (AnimationTransition* transition = m_curState->firstActiveTransition()) {
+		m_curState->onExit();
 		m_animatedPose = strongAvatar->getSkeleton()->getResPose();
+		m_curState = transition->getDestinationState();
+		m_curState->setPose(m_animatedPose);
+		m_curState->onEnter();
+		m_player.fadeTo(m_curState, transition->getDuration());
 		m_curAnimProgress = 0.f;
-		performTransition(tansition);
-		return;
 	}
-	m_curAnimProgress = m_curState->update(m_animatedPose, dt);
+
+	m_curAnimProgress = m_player.update(m_animatedPose, dt);
 }
 
-void AnimatorComponent::performTransition(AnimationTransition* t) {
-	m_curState->onExit();
-	m_curState = t->getDestinationState();
-	m_curState->onEnter();
-	
-}
 
 void AnimatorComponent::reset() {
 	m_avatar.reset();

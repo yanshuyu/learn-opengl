@@ -12,7 +12,7 @@ class AnimationClip {
 public:
 	AnimationClip(const std::string& name = "", float duration = 0.f);
 
-	float sample(Pose& outPose, float time, LoopType loop);
+	float sample(const Pose& inPose, Pose& outPose, float time, LoopType loop);
 
 	bool isValid() const;
 

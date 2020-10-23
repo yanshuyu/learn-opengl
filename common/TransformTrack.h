@@ -18,7 +18,7 @@ public:
 	float getDuration() const;
 	bool isValid() const;
 
-	void sample(Transform& outTransform, float time, LoopType loop) const;
+	void sample(const Transform& inTransform, Transform& outTransform, float time, LoopType loop) const;
 
 	inline VectorTrack& getPositionTrack() {
 		return m_positionTrack;

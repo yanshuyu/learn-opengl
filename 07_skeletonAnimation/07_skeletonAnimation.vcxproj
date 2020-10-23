@@ -150,6 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\common\AnimationClip.cpp" />
+    <ClCompile Include="..\common\AnimationPlayer.cpp" />
     <ClCompile Include="..\common\AnimationTransition.cpp" />
     <ClCompile Include="..\common\DebugDrawer.cpp" />
     <ClCompile Include="..\common\AnimatorComponent.cpp" />
@@ -218,6 +219,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h" />
+    <ClInclude Include="..\common\AnimationPlayer.h" />
     <ClInclude Include="..\common\DebugDrawer.h" />
     <ClInclude Include="..\common\AnimatorComponent.h" />
     <ClInclude Include="..\common\ConditionVariable.h" />

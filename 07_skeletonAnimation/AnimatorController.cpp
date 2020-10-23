@@ -33,16 +33,16 @@ bool AnimatorController::setupAnimationStates() {
 
 	walk->setAnimationClip(model->animationAt(9));
 	walk->setAnimationLoopType(LoopType::Loop);
+	//walk->setAnimationSpeed(2.f);
 
 	run->setAnimationClip(model->animationAt(8));
 	run->setAnimationLoopType(LoopType::Loop);
 
-
 	// transitions
-	idle->addTransition<float>(walk, speed, ConditionComparer::Greater, 0.f);
-	walk->addTransition<float>(idle, speed, ConditionComparer::Less_Equal, 0.f);
-	walk->addTransition<float>(run, speed, ConditionComparer::Greater, 2.0f);
-	run->addTransition<float>(walk, speed, ConditionComparer::Less_Equal, 2.0f);
+	idle->addTransition<float>(walk, speed, ConditionComparer::Greater, 0.f, 2.f);
+	walk->addTransition<float>(idle, speed, ConditionComparer::Less_Equal, 0.f, 2.f);
+	walk->addTransition<float>(run, speed, ConditionComparer::Greater, 2.0f, 2.f);
+	run->addTransition<float>(walk, speed, ConditionComparer::Less_Equal, 2.0f, 2.f);
 
 }
 
