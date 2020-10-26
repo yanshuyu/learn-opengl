@@ -177,8 +177,10 @@ RenderingSettings_t::RenderingSettings_t(): renderSize(0.f)
 
 RenderTask_t::RenderTask_t(): vao(nullptr)
 , material(nullptr)
+, bonesTransform(nullptr)
 , indexCount(0)
 , vertexCount(0)
+, boneCount(0)
 , primitive(PrimitiveType::Unknown)
 , modelMatrix(1.f) {
 }

@@ -28,5 +28,5 @@ protected:
 	bool setupAnimationStates();
 
 protected:
-	AnimatorComponent* m_animator;
+	std::weak_ptr<AnimatorComponent> m_animator;
 };

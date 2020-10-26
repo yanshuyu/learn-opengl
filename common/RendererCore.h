@@ -156,8 +156,11 @@ struct RenderingSettings_t {
 struct RenderTask_t {
 	const VertexArray* vao;
 	const Material* material;
+	const glm::mat4* bonesTransform;
 	size_t indexCount;
 	size_t vertexCount;
+	size_t boneCount;
+
 	PrimitiveType primitive;
 	glm::mat4 modelMatrix;
 

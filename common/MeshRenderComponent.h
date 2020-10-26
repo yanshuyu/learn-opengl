@@ -26,11 +26,16 @@ public:
 	//
 	// mesh managment
 	//
-	void setMeshes(std::weak_ptr<Model> meshes, bool useEmbededMaterials = true);
+	virtual void setMeshes(std::weak_ptr<Model> meshes, bool useEmbededMaterials = true);
 
 	inline std::weak_ptr<Model> getMeshes() const {
 		return m_meshes;
-	}	
+	}
+
+	inline bool isMeshValid() const {
+		return !m_meshes.expired();
+	}
+
 	
 	//
 	//material managment
@@ -56,12 +61,12 @@ public:
 	//
 	// mesh render
 	//
-	void render(RenderContext* context) override;
+	virtual void render(RenderContext* context) override;
 
-private:
+protected:
 	void loadEmbededMaterials();
 	
-private:
+protected:
 	std::weak_ptr<Model> m_meshes;
 	std::vector<std::weak_ptr<Material>> m_materials;
 };  

@@ -10,7 +10,7 @@
 class Renderer;
 
 class SceneObject {
-	typedef std::vector<std::unique_ptr<Component>> ComponentVector;
+	typedef std::vector<std::shared_ptr<Component>> ComponentVector;
 	typedef std::vector<std::unique_ptr<SceneObject>> ObjectVector;
 
 public:
@@ -35,8 +35,8 @@ public:
 	// component managment
 	//
 	bool addComponent(Component* c);
-	bool addComponent(std::unique_ptr<Component>&& c);
-	std::unique_ptr<Component> removeComponent(const std::string& identifier);
+	bool addComponent(std::shared_ptr<Component> c);
+	bool removeComponent(const std::string& identifier);
 	Component* findComponent(const std::string& identifier) const;
 
 	template<typename T, typename ... Args> T* addComponent(Args&& ... args) {
@@ -50,12 +50,12 @@ public:
 		return static_cast<T*>(c);
 	}
 
-	template<typename T> T* getComponent() const {
-		Component* c = findComponent(T::s_identifier);
-		if (!c)
-			return nullptr;
+	template<typename T> std::weak_ptr<T> getComponent() {
+		ComponentVector::iterator found = findComponent_if(T::s_identifier);
+		if (found == m_components.end())
+			return std::weak_ptr<T>();
 
-		return static_cast<T*>(c);
+		return std::static_pointer_cast<T>(*found);
 	}
 
 	inline size_t componentCount() const {
@@ -150,7 +150,7 @@ public:
 
 private:
 	std::vector<std::unique_ptr<SceneObject>> m_childs;
-	std::vector<std::unique_ptr<Component>> m_components;
+	std::vector<std::shared_ptr<Component>> m_components; // for components have refrence to other components using a weak ptr
 	std::string m_name;
 	ID m_id;
 	ID m_tag;

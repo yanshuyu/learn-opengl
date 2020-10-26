@@ -4,6 +4,7 @@
 #include"NotificationCenter.h"
 #include"LightComponent.h"
 #include"AnimatorComponent.h"
+#include"SkinMeshRenderComponent.h"
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<algorithm>
@@ -119,13 +120,20 @@ SceneObject* Scene::addModel(const std::string& file, const std::string& name) {
 	std::string modelName = name.empty() ? model->getName() : name;
 	SceneObject* obj = addObject(modelName);
 	
-	MeshRenderComponent* meshRender = obj->addComponent<MeshRenderComponent>();
-	meshRender->setMeshes(model);
-
 	if (model->hasAnimation()) {
+		SkinMeshRenderComponent* meshRender = obj->addComponent<SkinMeshRenderComponent>();
+		meshRender->setMeshes(model);
+
 		AnimatorComponent* animator = obj->addComponent<AnimatorComponent>();
 		animator->setAvater(model);
+
+		meshRender->setAnimator(obj->getComponent<AnimatorComponent>());
 	}
+	else {
+		MeshRenderComponent* meshRender = obj->addComponent<MeshRenderComponent>();
+		meshRender->setMeshes(model);
+	}
+
 
 	return obj;
 }

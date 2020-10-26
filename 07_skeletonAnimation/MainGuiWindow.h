@@ -1,5 +1,6 @@
 #pragma once
 #include<common/GuiWindow.h>
+#include<memory>
 
 class SkeletonAnimationApp;
 class LightComponent;
@@ -16,14 +17,14 @@ public:
 
 protected: 
 	SkeletonAnimationApp* m_application;
-	LightComponent* m_dirLight;
+	std::weak_ptr<LightComponent> m_dirLight;
 	float m_lightColor[3] = { 0 };
 	float m_lightDirection[3] = { 0 };
 	float m_lightIntensity = 1.f;
 	float m_shadowBias = 0.f;
 	int m_renderMode = 0;
 
-	AnimatorController* m_animAC = nullptr;
+	std::weak_ptr<AnimatorController> m_animAC;
 	float m_speed = 0.f;
 	float m_hp = 1.f;
 };

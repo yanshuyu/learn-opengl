@@ -8,7 +8,10 @@ class Skeleton {
 public:
 	Skeleton() = default;
 
-	void set(const Pose& resPose, const Pose& bindPose, const std::vector<std::string>& jointNames);
+	void set(const Pose& resPose,
+		const Pose& invBindPose,
+		const std::vector<std::string>& jointNames, 
+		const glm::mat4& invRoot = glm::mat4(1.f));
 
 	int getJointId(const std::string& jointName) const;
 	
@@ -16,12 +19,12 @@ public:
 		return m_resPose;
 	}
 
-	inline const Pose& getBindPose() const {
-		return m_bindPose;
+	inline const Pose& getInvBindPose() const {
+		return m_invBindPose;
 	}
 
-	inline const Pose& getInvBindPose() const {
-		return m_resolvedInvBindPose;
+	inline glm::mat4 getInvRootTransform() const {
+		return m_invRootTransform;
 	}
 
 	inline std::vector<std::string> getJointNames() const {
@@ -32,18 +35,14 @@ public:
 		return m_resPose.size();
 	}
 
-	inline void resize(size_t sz) {
-		m_resPose.resize(sz);
-		m_bindPose.resize(sz);
-		m_resolvedInvBindPose.resize(sz);
-	}
 
 protected:
-	void calcInvBindPose();
+	//void calcBindPoseAndInvBindPose(const Pose& worldBindPose);
 
 protected:
 	Pose m_resPose;
-	Pose m_bindPose;
-	Pose m_resolvedInvBindPose;
+	//Pose m_bindPose;
+	Pose m_invBindPose;
 	std::vector<std::string> m_jointsName;
+	glm::mat4 m_invRootTransform;
 };

@@ -1,11 +1,14 @@
 #shader vertex
 #version 450 core
 
+#define MAX_NUM_BONE 156
 
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec3 a_tangent;
 layout(location = 3) in vec2 a_uv;
+layout(location = 4) in ivec4 a_bones;
+layout(location = 5) in vec4 a_weights;
 
 
 out VS_OUT{
@@ -17,18 +20,36 @@ out VS_OUT{
 } vs_out;
 
 
-layout(location = 0) uniform mat4 u_VPMat;
-layout(location = 1) uniform mat4 u_ModelMat;
+uniform mat4 u_VPMat;
+uniform mat4 u_ModelMat;
+uniform mat4 u_SkinPose[MAX_NUM_BONE];
+
+subroutine vec4 TransformType(vec4 pos, ivec4 bones, vec4 weights);
+subroutine uniform TransformType u_Transform;
+
+subroutine(TransformType)
+vec4 staticMesh(vec4 pos, ivec4 bones, vec4 weights) {
+	return u_ModelMat * pos;
+}
+
+subroutine(TransformType)
+vec4 skinMesh(vec4 pos, ivec4 bones, vec4 weights) {
+	mat4 skinMat = u_SkinPose[bones.x] * weights.x
+		+ u_SkinPose[bones.y] * weights.y
+		+ u_SkinPose[bones.z] * weights.z
+		+ u_SkinPose[bones.w] * weights.w;
+
+	return u_ModelMat * skinMat * pos;
+}
 
 invariant gl_Position;
 
 void main() {
-	gl_Position = u_VPMat * u_ModelMat * vec4(a_pos, 1.f);
-	vs_out.pos_W = (u_ModelMat * vec4(a_pos, 1.f)).xyz;
+	gl_Position = u_VPMat * u_Transform(vec4(a_pos, 1.f), a_bones, a_weights);
+	vs_out.pos_W = u_Transform(vec4(a_pos, 1.f), a_bones, a_weights).xyz;
 	
-	mat3 invTranModel = transpose(inverse(mat3(u_ModelMat)));
-	vs_out.normal_W = normalize(invTranModel * a_normal);
-	vs_out.tangent_W = normalize(invTranModel * a_tangent);
+	vs_out.normal_W = normalize(u_Transform(vec4(a_normal, 0.f), a_bones, a_weights).xyz);
+	vs_out.tangent_W = normalize(u_Transform(vec4(a_tangent, 0.f), a_bones, a_weights).xyz);
 	
 	vs_out.uv = a_uv;
 	vs_out.z_Proj = gl_Position.z;
@@ -53,28 +74,28 @@ in VS_OUT{
 } fs_in;
 
 
-layout(location = 2) uniform sampler2D u_diffuseMap;
-layout(location = 3) uniform bool u_hasDiffuseMap;
+uniform sampler2D u_diffuseMap;
+uniform bool u_hasDiffuseMap;
 
-layout(location = 4) uniform sampler2D u_normalMap;
-layout(location = 5) uniform bool u_hasNormalMap;
+uniform sampler2D u_normalMap;
+uniform bool u_hasNormalMap;
 
-layout(location = 6) uniform sampler2D u_specularMap;
-layout(location = 7) uniform bool u_hasSpecularMap;
+uniform sampler2D u_specularMap;
+uniform bool u_hasSpecularMap;
 
-layout(location = 8) uniform sampler2D u_emissiveMap;
-layout(location = 9) uniform bool u_hasEmissiveMap;
+uniform sampler2D u_emissiveMap;
+ uniform bool u_hasEmissiveMap;
 
-layout(location = 10) uniform vec3 u_cameraPosW;
+uniform vec3 u_cameraPosW;
 
-layout(location = 12) uniform sampler2DArray u_shadowMapArray;
+uniform sampler2DArray u_shadowMapArray;
 
-layout(location = 13) uniform mat4 u_lightVP[MAXNUMCASCADE];
-layout(location = 17) uniform float u_cascadesFarZ[MAXNUMCASCADE];
-layout(location = 21) uniform int u_numCascade;
+uniform mat4 u_lightVP[MAXNUMCASCADE];
+uniform float u_cascadesFarZ[MAXNUMCASCADE];
+uniform int u_numCascade;
 
-layout(location = 22) uniform float u_shadowStrength;
-layout(location = 23) uniform float u_shadowBias;
+uniform float u_shadowStrength;
+uniform float u_shadowBias;
 
 layout(std140) uniform LightBlock {
 	vec4 u_lightColor; //(a for intensity)

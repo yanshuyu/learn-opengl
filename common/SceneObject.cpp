@@ -82,7 +82,7 @@ bool SceneObject::addComponent(Component* c) {
 	if (!c)
 		return false;
 
-	if (findComponent_if(c->identifier()) != m_components.end())
+	if (findComponent(c->identifier()))
 		return false;
 
 	c->m_owner = this;
@@ -90,28 +90,29 @@ bool SceneObject::addComponent(Component* c) {
 	return true;
 }
 
-bool SceneObject::addComponent(std::unique_ptr<Component>&& c) {
+bool SceneObject::addComponent(std::shared_ptr<Component> c) {
 	if (!c)
 		return false;
+	
+	if (c->m_owner)
+		return false;
 
-	if (findComponent_if(c->identifier()) != m_components.end())
+	if (findComponent(c->identifier()))
 		return false;
 	
 	c->m_owner = this;
-	m_components.push_back(std::move(c));
+	m_components.push_back(c);
 	return true;
 }
 
-std::unique_ptr<Component> SceneObject::removeComponent(const std::string& identifier) {
+bool SceneObject::removeComponent(const std::string& identifier) {
 	auto pos = findComponent_if(identifier);
 	if (pos != m_components.end()) {
-		std::unique_ptr<Component> removed = std::move(*pos);
 		m_components.erase(pos);
-		removed->m_owner = nullptr;
-		return std::move(removed);
+		return true;
 	}
 
-	return nullptr;
+	return false;
 }
 
 Component* SceneObject::findComponent(const std::string& identifier) const {

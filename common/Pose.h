@@ -14,7 +14,9 @@ public:
 	Pose& operator = (const Pose& other);
 	Pose& operator = (Pose&& rv);
 
-	Pose resolvePose() const;
+	Pose getGlobalPose() const;
+	
+	void getSkinMatrix(std::vector<glm::mat4>& skinMat) const; 
 
 	Transform getJointTransformGlobal(int jointId) const;
 
@@ -43,7 +45,7 @@ public:
 	}
 
 	inline void resize(size_t sz) {
-		m_joints.resize(sz);
+		m_joints.resize(sz, Transform());
 		m_parents.resize(sz, -1);
 	}
 

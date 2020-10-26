@@ -23,6 +23,5 @@ private:
 	std::unique_ptr<ScalarTrack> m_scalarTrack;
 	std::unique_ptr<ScalarTrack> m_scalarTrackCubic;
 	
-	AnimatorComponent* m_animator;
-	AnimatorController* m_animatorController;
+ 	std::weak_ptr<AnimatorComponent> m_animator;
 };

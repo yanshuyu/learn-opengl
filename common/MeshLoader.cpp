@@ -73,21 +73,21 @@ Skeleton* MeshLoader::loadSkeletion(const aiScene* aScene) {
 		rootBoneParents.push(rootParent);
 		rootParent = rootParent->mParent;
 	}
-
+	
 	// flatten skeleton to array
 	std::vector<const aiNode*> joints;
 	std::vector<int> parents;
 	std::unordered_map<std::string, int> jointIdMap;
 	std::queue<const aiNode*> bftQueue;
 	std::queue<int> parentIdQueue;
-
+	
 	while (!rootBoneParents.empty()) {
 		joints.push_back(rootBoneParents.top());
 		parents.push_back(parents.size() - 1);
 		jointIdMap.insert({ rootBoneParents.top()->mName.C_Str(), joints.size() - 1 });
 		rootBoneParents.pop();
 	}
-
+	
 	bftQueue.push(rootBone);
 	parentIdQueue.push(parents.size() - 1);
 	while (!bftQueue.empty()) {
@@ -116,12 +116,11 @@ Skeleton* MeshLoader::loadSkeletion(const aiScene* aScene) {
 		resPose[i] = mat2Transform(glm::make_mat4(&transform[0][0]));
 		resPose.setJointParent(i, parents[i]);
 	}
-
-	// load bind pose
-	// first convert res pose joints transform to world space
-	Pose bindPose = resPose;
 	
-	/*
+	// load invert bind pose
+	// first convert res pose joints transform to world space
+	Pose worldBindPose = resPose.getGlobalPose();
+	
 	// second using joints bind pose transform to overwrite res pose joints world transform
 	// result a bind pose in world space
 	for (auto bone : bones) {
@@ -137,21 +136,17 @@ Skeleton* MeshLoader::loadSkeletion(const aiScene* aScene) {
 			continue;
 		}
 
-		aiMatrix4x4 offsetMat = bone.second->mOffsetMatrix; 
-		offsetMat = offsetMat.Transpose();
-		glm::mat4 invBindMat = glm::make_mat4(&offsetMat[0][0]);
-		bindPose[boneId] = mat2Transform(glm::inverse(invBindMat));
+		aiMatrix4x4 bindPoseMat = bone.second->mOffsetMatrix;
+		bindPoseMat = bindPoseMat.Inverse().Transpose();
+		worldBindPose[boneId] = mat2Transform(glm::make_mat4(&bindPoseMat[0][0]));
 	}
 
-	// finally convert bind pose joints transform from world sapce to local space
-	
-	for (int i = bindPose.size() - 1; i >= 0; i--) {
-		int parentId = bindPose.getJointParent(i);
-		if (parentId >= 0) {
-			bindPose[i] = combine(inverse(bindPose[parentId]), bindPose[i]);
-		}
+	// invert world bind pose result a invBindPose
+	Pose invBindPose;
+	invBindPose.resize(worldBindPose.size());
+	for (int i = 0; i < worldBindPose.size(); i++) {
+		invBindPose[i] = inverse(worldBindPose[i]);
 	}
-	*/
 
 	// load joint names
 	std::vector<std::string> names;
@@ -160,8 +155,12 @@ Skeleton* MeshLoader::loadSkeletion(const aiScene* aScene) {
 		names.push_back(joint->mName.C_Str());
 	}
 
+	// invert root tansform
+	aiMatrix4x4 rootTransform = aScene->mRootNode->mTransformation;
+	glm::mat4 invRootTransform = glm::make_mat4(&rootTransform.Inverse().Transpose()[0][0]);
+	
 	Skeleton* skeleton = new Skeleton();
-	skeleton->set(resPose, bindPose, names);
+	skeleton->set(resPose, invBindPose, names, invRootTransform);
 
 	return skeleton;
 }
@@ -195,7 +194,7 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 				posTrack.resize(nodeAnim->mNumPositionKeys);
 				posTrack.m_preBehavior = VectorTrack::Behavior(nodeAnim->mPreState);
 				posTrack.m_postBehavior = VectorTrack::Behavior(nodeAnim->mPostState);
-				posTrack.m_defualtVal = skeleton->getBindPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).position;
+				posTrack.m_defualtVal = skeleton->getResPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).position;
 
 				for (size_t p = 0; p < nodeAnim->mNumPositionKeys; p++) { // for every position key frame
 					float t = anim->mTicksPerSecond > 0 ? nodeAnim->mPositionKeys[p].mTime / anim->mTicksPerSecond : nodeAnim->mPositionKeys[p].mTime;
@@ -211,7 +210,7 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 				scaleTrack.resize(nodeAnim->mNumScalingKeys);
 				scaleTrack.m_preBehavior = VectorTrack::Behavior(nodeAnim->mPreState);
 				scaleTrack.m_postBehavior = VectorTrack::Behavior(nodeAnim->mPostState);
-				scaleTrack.m_defualtVal = skeleton->getBindPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).scale;
+				scaleTrack.m_defualtVal = skeleton->getResPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).scale;
 
 				for (size_t s = 0; s < nodeAnim->mNumScalingKeys; s++) { // for every scale key frame
 					float t = anim->mTicksPerSecond > 0 ? nodeAnim->mScalingKeys[s].mTime / anim->mTicksPerSecond : nodeAnim->mScalingKeys[s].mTime;
@@ -227,7 +226,7 @@ std::vector<AnimationClip*> MeshLoader::loadAnimations(const aiScene* aScene, co
 				rotateTrack.resize(nodeAnim->mNumRotationKeys);
 				rotateTrack.m_preBehavior = QuaternionTrack::Behavior(nodeAnim->mPreState);
 				rotateTrack.m_postBehavior = QuaternionTrack::Behavior(nodeAnim->mPostState);
-				rotateTrack.m_defualtVal = skeleton->getBindPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).rotation;
+				rotateTrack.m_defualtVal = skeleton->getResPose().getJointTransformLocal(skeleton->getJointId(nodeAnim->mNodeName.C_Str())).rotation;
 
 				for (size_t r = 0; r < nodeAnim->mNumRotationKeys; r++) { // for every rotation key frame
 					float t = anim->mTicksPerSecond > 0 ? nodeAnim->mRotationKeys[r].mTime / anim->mTicksPerSecond : nodeAnim->mRotationKeys[r].mTime;
@@ -564,8 +563,10 @@ void MeshLoader::setVertexWeight(SkinVertex_t& vertex, int jointId, float weight
 	int idx = 0;
 	while (vertex.weights[idx] > 0) {
 		idx++;
-		if (idx >= 4)
+		if (idx >= 4) {
+			std::cerr << "[Mesh Load Warning] Ignore Bone: " << jointId << ", weight: " << weight << std::endl;
 			return;
+		}
 	}
 
 	vertex.weights[idx] = weight;

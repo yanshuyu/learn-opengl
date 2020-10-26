@@ -186,8 +186,8 @@ void DebugDrawer::drawPose(const Pose& pose, const glm::vec3& color, const glm::
 	for (size_t i = 0; i < pose.size(); i++) {
 		int parentId = pose.getJointParent(i);
 		if (parentId > 0) {
-			points.push_back(pose.getJointTransformGlobal(i).position);
-			points.push_back(pose.getJointTransformGlobal(parentId).position);
+			points.push_back(transform2Mat(pose.getJointTransformGlobal(i)) * glm::vec4(0.f, 0.f, 0.f, 1.f));
+			points.push_back(transform2Mat(pose.getJointTransformGlobal(parentId)) * glm::vec4(0.f, 0.f, 0.f, 1.f));
 		}
 	}
 

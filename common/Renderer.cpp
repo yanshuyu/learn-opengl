@@ -134,6 +134,9 @@ void Renderer::renderScene(Scene* s) {
 		// light passes
 		if (m_renderTechnique->shouldRunPass(RenderPass::LightPass)) {
 			for (const auto& l : m_sceneRenderInfo->lights) {
+				if (l.intensity <= 0)
+					continue;
+				
 				if (l.isCastShadow() && m_renderTechnique->shouldRunPass(RenderPass::ShadowPass)) {
 					m_renderContext.clearMatrix();
 					m_renderTechnique->beginShadowPass(l);

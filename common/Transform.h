@@ -13,6 +13,6 @@ struct Transform {
 
 Transform combine(const Transform& t1, const Transform& t2);
 Transform inverse(const Transform& t);
-glm::mat4 tranform2Mat(const Transform& t);
+glm::mat4 transform2Mat(const Transform& t);
 Transform mat2Transform(const glm::mat4& m);
 

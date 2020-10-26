@@ -8,8 +8,7 @@ COMPONENT_IDENTIFIER_IMP(MeshRenderComponent, "MeshRenderComponent");
 
 MeshRenderComponent::MeshRenderComponent(std::weak_ptr<Model> meshes, bool useEmbededMaterial):m_meshes(meshes)
 , m_materials() {
-	if (!meshes.expired() && useEmbededMaterial)
-		loadEmbededMaterials();
+	setMeshes(meshes, useEmbededMaterial);
 }
 
 

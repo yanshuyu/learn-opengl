@@ -10,11 +10,12 @@ Transform::Transform(const glm::vec3& p, const glm::vec3& s, const glm::quat& r)
 
 Transform combine(const Transform& t1, const Transform& t2) {
 	Transform result;
+
 	result.scale = t1.scale * t2.scale;
 	result.rotation = t2.rotation * t1.rotation;
 	result.position = t1.rotation * (t1.scale * t2.position);
 	result.position += t1.position;
-
+	
 	return result;
 }
 
@@ -29,7 +30,7 @@ Transform inverse(const Transform& t) {
 	return result;
 }
 
-glm::mat4 tranform2Mat(const Transform& t) {
+glm::mat4 transform2Mat(const Transform& t) {
 	// First, extract the rotation basis of the transform
 	glm::vec3 x = t.rotation * glm::vec3(1.f, 0.f, 0.f);
 	glm::vec3 y = t.rotation * glm::vec3(0.f, 1.f, 0.f);

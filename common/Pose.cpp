@@ -43,15 +43,37 @@ Transform Pose::getJointTransformGlobal(int jointId) const {
 }
 
 
-Pose Pose::resolvePose() const {
-	Pose resolvedPose;
-	resolvedPose.resize(m_joints.size());
+Pose Pose::getGlobalPose() const {
+	Pose result;
+	result.resize(m_joints.size());
 	
 	for (size_t i = 0; i < m_joints.size(); i++) {
-		resolvedPose[i] = getJointTransformGlobal(i);;
-		resolvedPose.m_parents[i] = m_parents[i];
+		result[i] = getJointTransformGlobal(i);
+		result.m_parents[i] = m_parents[i];
 	}
 	
+	return result;
+}
 
-	return resolvedPose;
+
+void Pose::getSkinMatrix(std::vector<glm::mat4>& skinMat) const {
+	if (skinMat.size() != size())
+		skinMat.resize(size());
+
+	int i = 0;
+	for (; i < size(); i++) {
+		int parentId = m_parents[i];
+		if (parentId > i)
+			break;
+
+		glm::mat4 m = transform2Mat(m_joints[i]);
+		if (parentId >= 0)
+			m = skinMat[parentId] * m;
+		
+		skinMat[i] = m;
+	}
+
+	for (; i < size(); i++) {
+		skinMat[i] = transform2Mat(getJointTransformGlobal(i));
+	}
 }

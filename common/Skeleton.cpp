@@ -1,10 +1,10 @@
 #include"Skeleton.h"
 
-void Skeleton::set(const Pose& resPose, const Pose& bindPose, const std::vector<std::string>& jointNames) {
+void Skeleton::set(const Pose& resPose, const Pose& invBindPose, const std::vector<std::string>& jointNames, const glm::mat4& invRoot) {
 	m_resPose = resPose;
-	m_bindPose = bindPose;
+	m_invBindPose = invBindPose;
 	m_jointsName = jointNames;
-	calcInvBindPose();
+	m_invRootTransform = invRoot;
 }
 
 
@@ -15,11 +15,4 @@ int Skeleton::getJointId(const std::string& jointName) const {
 	}
 
 	return -1;
-}
-
-void Skeleton::calcInvBindPose() {
-	m_resolvedInvBindPose = m_bindPose.resolvePose();
-	for (size_t i = 0; i < m_resolvedInvBindPose.size(); i++) {
-		m_resolvedInvBindPose[i] = inverse(m_resolvedInvBindPose[i]);
-	}
 }

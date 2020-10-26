@@ -5,17 +5,17 @@
 COMPONENT_IDENTIFIER_IMP(AnimatorComponent, "AnimatorComponent");
 
 
-template std::shared_ptr<TConditionVariable<int>> AnimatorComponent::addConditionVar<int>(const std::string& name, int val);
-template std::shared_ptr<TConditionVariable<float>> AnimatorComponent::addConditionVar<float>(const std::string& name, float val);
-template std::shared_ptr<TConditionVariable<bool>> AnimatorComponent::addConditionVar<bool>(const std::string& name, bool val);
+template std::weak_ptr<TConditionVariable<int>> AnimatorComponent::addConditionVar<int>(const std::string& name, int val);
+template std::weak_ptr<TConditionVariable<float>> AnimatorComponent::addConditionVar<float>(const std::string& name, float val);
+template std::weak_ptr<TConditionVariable<bool>> AnimatorComponent::addConditionVar<bool>(const std::string& name, bool val);
 
 template bool AnimatorComponent::setConditionVar<int>(const std::string& name, int val);
 template bool AnimatorComponent::setConditionVar<float>(const std::string& name, float val);
 template bool AnimatorComponent::setConditionVar<bool>(const std::string& name, bool val);
 
-template std::shared_ptr<TConditionVariable<int>> AnimatorComponent::getConditionVar(const std::string& name);
-template std::shared_ptr<TConditionVariable<float>> AnimatorComponent::getConditionVar(const std::string& name);
-template std::shared_ptr<TConditionVariable<bool>> AnimatorComponent::getConditionVar(const std::string& name);
+template std::weak_ptr<TConditionVariable<int>> AnimatorComponent::getConditionVar(const std::string& name);
+template std::weak_ptr<TConditionVariable<float>> AnimatorComponent::getConditionVar(const std::string& name);
+template std::weak_ptr<TConditionVariable<bool>> AnimatorComponent::getConditionVar(const std::string& name);
 
 
 AnimatorComponent::AnimatorComponent(): m_avatar()
@@ -167,15 +167,12 @@ bool AnimatorComponent::isInitState(AnimationState* state) {
 
 
 template<typename T>
-std::shared_ptr<TConditionVariable<T>> AnimatorComponent::addConditionVar(const std::string& name, T val) {
+std::weak_ptr<TConditionVariable<T>> AnimatorComponent::addConditionVar(const std::string& name, T val) {
 	if (m_condVars.find(name) == m_condVars.end()) {
 		m_condVars.insert({ name, std::shared_ptr<ConditionVariable>(new TConditionVariable<T>(name)) });
 	}
 
-
-#ifdef _DEBUG
-	ASSERT(setConditionVar<T>(name, val));
-#endif // _DEBUG
+	setConditionVar<T>(name, val);
 
 	return std::static_pointer_cast<TConditionVariable<T>>(m_condVars.at(name));
 }
@@ -195,9 +192,9 @@ bool AnimatorComponent::setConditionVar(const std::string& name, T val) {
 
 
 template<typename T>
-std::shared_ptr<TConditionVariable<T>> AnimatorComponent::getConditionVar(const std::string& name) {
+std::weak_ptr<TConditionVariable<T>> AnimatorComponent::getConditionVar(const std::string& name) {
 	if (m_condVars.find(name) == m_condVars.end())
-		return nullptr;
+		return std::weak_ptr<TConditionVariable<T>>();
 
 	return std::static_pointer_cast<TConditionVariable<T>>(m_condVars.at(name));
 }
@@ -211,4 +208,28 @@ bool AnimatorComponent::removeConditionVar(const std::string& name) {
 	m_condVars.erase(found);
 	
 	return true;
+}
+
+
+int AnimatorComponent::animationCount() const {
+	if (m_avatar.expired())
+		return 0;
+
+	return m_avatar.lock()->getAnimations().size();
+}
+
+
+AnimationClip* AnimatorComponent::animationAt(int idx) const {
+	if (m_avatar.expired())
+		return nullptr;
+
+	return m_avatar.lock()->getAnimations()[idx];
+}
+
+
+std::vector<AnimationClip*> AnimatorComponent::animationClips() const {
+	if (m_avatar.expired())
+		return {};
+
+	return std::move(m_avatar.lock()->getAnimations());
 }

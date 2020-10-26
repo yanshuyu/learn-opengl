@@ -38,16 +38,26 @@ public:
 
 	// condition variables management
 	template<typename T>
-	std::shared_ptr<TConditionVariable<T>> addConditionVar(const std::string& name, T val = T());
+	std::weak_ptr<TConditionVariable<T>> addConditionVar(const std::string& name, T val = T());
 
 	template<typename T>
 	bool setConditionVar(const std::string& name, T val);
 
 	template<typename T>
-	std::shared_ptr<TConditionVariable<T>> getConditionVar(const std::string& name);
+	std::weak_ptr<TConditionVariable<T>> getConditionVar(const std::string& name);
 	
 	bool removeConditionVar(const std::string& name);
 
+	// animations
+	int animationCount() const;
+
+	AnimationClip* animationAt(int idx) const;
+
+	std::vector<AnimationClip*> animationClips() const;
+
+	inline bool avatarIsValid() const {
+		return !m_avatar.expired();
+	}
 	//getter & setter
 	inline const AnimationState* currentState() const {
 		return m_curState;

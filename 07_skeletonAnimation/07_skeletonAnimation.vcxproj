@@ -196,6 +196,7 @@
     <ClCompile Include="..\common\ShaderProgamMgr.cpp" />
     <ClCompile Include="..\common\ShaderProgram.cpp" />
     <ClCompile Include="..\common\Skeleton.cpp" />
+    <ClCompile Include="..\common\SkinMeshRenderComponent.cpp" />
     <ClCompile Include="..\common\SpotLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Texture.cpp" />
     <ClCompile Include="..\common\TextureMgr.cpp" />
@@ -269,6 +270,7 @@
     <ClInclude Include="..\common\ShadowMapping.h" />
     <ClInclude Include="..\common\Singleton.h" />
     <ClInclude Include="..\common\Skeleton.h" />
+    <ClInclude Include="..\common\SkinMeshRenderComponent.h" />
     <ClInclude Include="..\common\SpotLightShadowMapping.h" />
     <ClInclude Include="..\common\Texture.h" />
     <ClInclude Include="..\common\TextureMgr.h" />
