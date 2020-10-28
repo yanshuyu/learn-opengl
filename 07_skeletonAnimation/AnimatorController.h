@@ -6,19 +6,16 @@ class AnimatorComponent;
 class Pose;
 
 class AnimatorController : public Component {
-public:
 
-	COMPONENT_IDENTIFIER_DEC;
+	RTTI_DECLARATION(AnimatorController)
+
+public:
 
 	bool initialize() override;
 
 	void setSpeed(float speed);
 	void setHp(float hp);
 	
-	inline std::string identifier() const override {
-		return s_identifier;
-	}
-
 	inline  Component* copy() const override {
 		return nullptr;
 	}

@@ -12,6 +12,8 @@ class TextureCubeApp;
 class CameraComponent : public Component {
 	friend class Scene;
 	
+	RTTI_DECLARATION(CameraComponent)
+
 public:
 	enum class ProjectionMode {
 		Perspective,
@@ -27,9 +29,6 @@ public:
 	CameraComponent& operator = (const CameraComponent& other) = delete;
 	CameraComponent& operator = (CameraComponent&& rv) = delete;
 
-	COMPONENT_IDENTIFIER_DEC;
-
-	std::string identifier() const override;
 	Component* copy() const override;
 
 	glm::mat4 viewMatrix() const;

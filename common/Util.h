@@ -29,9 +29,6 @@ void ConsoleLog(const char* file, const char* func, int line, const std::string&
 //
 typedef unsigned long ID;
 
-#define COMPONENT_IDENTIFIER_DEC static const std::string s_identifier
-#define COMPONENT_IDENTIFIER_IMP(type, str) const std::string type::s_identifier = str
-
 std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = true);
 
 std::string toStr(PrimitiveType pt);

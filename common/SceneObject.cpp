@@ -1,5 +1,6 @@
 #include"SceneObject.h"
 #include"Renderer.h"
+#include"RenderableComponent.h"
 #include<stack>
 #include<queue>
 
@@ -40,10 +41,15 @@ bool SceneObject::initialize() {
 	depthFirstTraverse([&](SceneObject* obj, bool& stop) {
 		for (size_t i = 0; i < obj->componentCount(); i++) {
 			auto c = obj->componentAt(i);
-			if (!c->initialize()) {
-				success = false;
-				stop = true;
-				return false;
+			if (c->m_isEnable ) {
+				bool ok = c->initialize();
+				if (!ok) {
+					success = false;
+					std::cerr << "Game object \"" << obj->getName() << "\" Failed to initailize Component \"" << c->typeName() << "\"" << std::endl;
+				}
+#ifdef _DEBUG
+				ASSERT(ok);
+#endif // _DEBUG
 			}
 		}
 		return true;
@@ -54,7 +60,7 @@ bool SceneObject::initialize() {
 
 void SceneObject::update(double dt) {
 	depthFirstTraverse([=](SceneObject* obj, bool& stop) {
-		if (!obj->m_isEnable || !obj->m_isVisible)
+		if (!obj->m_isEnable)
 			return false;
 		for (size_t i = 0; i < obj->componentCount(); i++) {
 			auto c = obj->componentAt(i);
@@ -68,8 +74,12 @@ void SceneObject::render(RenderContext* context) const {
 	if (!m_isVisible)
 		return;
 
-	for (auto c = m_components.begin(); c != m_components.end(); c++)
-		(*c)->render(context);
+	for (auto& c : m_components) {
+		if (auto drawable = c->asType<RenderableComponent>()) {
+			if (drawable->m_isEnable)
+				drawable->render(context);
+		}
+	}
 
 	context->pushMatrix(m_transform.getMatrix());
 	for (size_t i = 0; i < m_childs.size(); i++) {
@@ -79,15 +89,7 @@ void SceneObject::render(RenderContext* context) const {
 }
 
 bool SceneObject::addComponent(Component* c) {
-	if (!c)
-		return false;
-
-	if (findComponent(c->identifier()))
-		return false;
-
-	c->m_owner = this;
-	m_components.emplace_back(c);
-	return true;
+	return addComponent(std::shared_ptr<Component>(c));
 }
 
 bool SceneObject::addComponent(std::shared_ptr<Component> c) {
@@ -97,30 +99,43 @@ bool SceneObject::addComponent(std::shared_ptr<Component> c) {
 	if (c->m_owner)
 		return false;
 
-	if (findComponent(c->identifier()))
+	if (hasComponent(c->typeId()))
 		return false;
 	
 	c->m_owner = this;
 	m_components.push_back(c);
+
 	return true;
 }
 
-bool SceneObject::removeComponent(const std::string& identifier) {
-	auto pos = findComponent_if(identifier);
-	if (pos != m_components.end()) {
-		m_components.erase(pos);
-		return true;
+bool SceneObject::hasComponent(const ID id) const {
+	for (auto& c : m_components) {
+		if (c->typeId() == id)
+			return true;
 	}
 
 	return false;
 }
 
-Component* SceneObject::findComponent(const std::string& identifier) const {
-	auto pos = findComponent_if(identifier);
-	if (pos != m_components.cend())
-		return (*pos).get();
+std::weak_ptr<Component> SceneObject::getComponent(const ID id) const {
+	for (auto& c : m_components) {
+		if (c->typeId() == id)
+			return c;
+	}
 
-	return nullptr;
+	return std::weak_ptr<Component>();
+}
+
+
+bool SceneObject::removeComponent(const ID id) {
+	for (auto itr = m_components.begin(); itr != m_components.end(); itr++) {
+		if ((*itr)->typeId() == id) {
+			m_components.erase(itr);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SceneObject::addChild(SceneObject* c) {
@@ -329,27 +344,6 @@ void SceneObject::breadthFirstTraverse(std::function<bool(SceneObject*, bool&)> 
 			}
 		}
 	}
-}
-
-SceneObject::ComponentVector::iterator SceneObject::findComponent_if(const std::string& identifier) {
-	auto c = m_components.begin();
-	for (; c != m_components.end(); c++) {
-		if ((*c)->identifier() == identifier) 
-			break;
-	}
-
-	return c;
-}
-
-
-SceneObject::ComponentVector::const_iterator SceneObject::findComponent_if(const std::string& identifier) const {
-	auto c = m_components.cbegin();
-	for (; c != m_components.cend(); c++) {
-		if ((*c)->identifier() == identifier)
-			break;
-	}
-
-	return c;
 }
 
 

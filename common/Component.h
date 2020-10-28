@@ -1,12 +1,14 @@
 #pragma once
+#include"RTTI.h"
 #include<string>
 
 
 class SceneObject;
-class RenderContext;
 
-class Component {
+class Component: public RTTI {
 	friend class SceneObject;
+
+	RTTI_DECLARATION(Component)
 
 public:
 	Component();
@@ -14,12 +16,10 @@ public:
 	
 	virtual bool initialize() { return true; }
 	virtual void update(double dt) {}
-	virtual void render(RenderContext* context) {}
-
-	virtual std::string identifier() const = 0;
 	virtual Component* copy() const = 0;
 
 	void removeFromOwner() const;
+
 	SceneObject* owner() const {
 		return m_owner;
 	}

@@ -4,7 +4,7 @@
 #include"Renderer.h"
 
 
-COMPONENT_IDENTIFIER_IMP(MeshRenderComponent, "MeshRenderComponent");
+RTTI_IMPLEMENTATION(MeshRenderComponent)
 
 MeshRenderComponent::MeshRenderComponent(std::weak_ptr<Model> meshes, bool useEmbededMaterial):m_meshes(meshes)
 , m_materials() {

@@ -60,13 +60,13 @@ SceneRenderInfo_t* Scene::getSceneRenderInfo() const {
 			if (!comp->m_isEnable)
 				continue;
 
-			if (comp->identifier() == CameraComponent::s_identifier && !activeCamera) {
-				activeCamera = static_cast<CameraComponent*>(comp);
+			if (comp->isType(CameraComponent::s_typeId)) {
+				activeCamera = comp->asType<CameraComponent>();
 				sri.camera = activeCamera->makeCamera(m_windowSize.x, m_windowSize.y);
 			}
 
-			if (comp->identifier() == LightComponent::s_identifier)
-				sri.lights.push_back(static_cast<LightComponent*>(comp)->makeLight());
+			if (comp->isType(LightComponent::s_typeId))
+				sri.lights.push_back(comp->asType<LightComponent>()->makeLight());
 		}
 		
 		return true;

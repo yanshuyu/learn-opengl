@@ -14,14 +14,12 @@ class Pose;
 // animator contain collection of states and conditional variable that control
 // transition between states. any state should update avatar's animated pose.
 class AnimatorComponent: public Component {
+
+	RTTI_DECLARATION(AnimatorComponent)
+
 public:
 	AnimatorComponent();
 
-	COMPONENT_IDENTIFIER_DEC;
-
-	inline std::string identifier() const override {
-		return s_identifier;
-	}
 	virtual Component* copy() const override;
 	
 	void setAvater(std::weak_ptr<Model> avatar);

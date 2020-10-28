@@ -6,16 +6,16 @@
 class Notification;
 
 class ArcballCameraController : public Component {
+
+	RTTI_DECLARATION(ArcballCameraController)
+
 public:
 	ArcballCameraController();
 	~ArcballCameraController();
 
-	COMPONENT_IDENTIFIER_DEC;
-
 	static ArcballCameraController* create();
 	static void destory(ArcballCameraController* c);
 
-	std::string identifier() const override;
 	Component* copy() const override;
 	
 	void setPosition(const glm::vec3& pos);

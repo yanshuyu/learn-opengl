@@ -4,14 +4,14 @@
 
 
 class FirstPersonCameraController : public Component {
-public:
-	COMPONENT_IDENTIFIER_DEC;
 
+	RTTI_DECLARATION(FirstPersonCameraController)
+
+public:
 	static FirstPersonCameraController* create();
 	static void destory(FirstPersonCameraController* c);
 
 	void update(double dt) override;
-	std::string identifier() const override;
 	Component* copy() const override;
 
 	inline void setSpeed(float s) {

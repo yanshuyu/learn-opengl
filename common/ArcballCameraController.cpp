@@ -6,7 +6,7 @@
 #include<functional>
 
 
-COMPONENT_IDENTIFIER_IMP(ArcballCameraController, "ArcballCameraController");
+RTTI_IMPLEMENTATION(ArcballCameraController)
 
 ArcballCameraController::ArcballCameraController() {
 	NotificationCenter::getInstance()->addObserver(this, 
@@ -77,9 +77,6 @@ void ArcballCameraController::onMouseScrolling(const Notification* nc) {
 	m_owner->m_transform.setPosition(m_target + pos);
 }
 
-std::string ArcballCameraController::identifier() const {
-	return s_identifier;
-}
 
 Component* ArcballCameraController::copy() const {
 	return nullptr;

@@ -1,10 +1,13 @@
 #pragma once
-#include"Component.h"
+#include"RenderableComponent.h"
 #include"Material.h"
 #include"Model.h"
 #include"RendererCore.h"
 
-class MeshRenderComponent : public Component {
+class MeshRenderComponent : public RenderableComponent {
+
+	RTTI_DECLARATION(MeshRenderComponent)
+
 public:
 	MeshRenderComponent(std::weak_ptr<Model> meshes = std::weak_ptr<Model>(), bool useEmbededMaterial = true);
 	MeshRenderComponent(MeshRenderComponent&& rv) = default;
@@ -12,12 +15,6 @@ public:
 
 	MeshRenderComponent& operator = (const MeshRenderComponent& other) = delete;
 	MeshRenderComponent(const MeshRenderComponent& other) = delete;
-
-	COMPONENT_IDENTIFIER_DEC;
-
-	inline std::string identifier() const override {
-		return s_identifier;
-	}
 
 	Component* copy() const override;
 	static MeshRenderComponent* create();

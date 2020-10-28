@@ -2,8 +2,8 @@
 #include"Skeleton.h"
 #include"Model.h"
 
-COMPONENT_IDENTIFIER_IMP(AnimatorComponent, "AnimatorComponent");
 
+RTTI_IMPLEMENTATION(AnimatorComponent)
 
 template std::weak_ptr<TConditionVariable<int>> AnimatorComponent::addConditionVar<int>(const std::string& name, int val);
 template std::weak_ptr<TConditionVariable<float>> AnimatorComponent::addConditionVar<float>(const std::string& name, float val);

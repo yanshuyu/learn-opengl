@@ -2,7 +2,7 @@
 #include<common/SceneObject.h>
 #include<common/AnimatorComponent.h>
 
-COMPONENT_IDENTIFIER_IMP(AnimatorController, "AnimatorController");
+RTTI_IMPLEMENTATION(AnimatorController)
 
 bool AnimatorController::initialize() { 
 	m_animator = m_owner->getComponent<AnimatorComponent>();	

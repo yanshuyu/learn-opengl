@@ -222,6 +222,9 @@
     <ClCompile Include="..\common\SkinMeshRenderComponent.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\RenderableComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -441,6 +444,12 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\SkinMeshRenderComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RTTI.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\RenderableComponent.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

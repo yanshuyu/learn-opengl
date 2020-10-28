@@ -8,6 +8,9 @@ class Scene;
 
 class LightComponent : public Component {
 	friend class  Scene;
+
+	RTTI_DECLARATION(LightComponent)
+
 public:
 	LightComponent(LightType type = LightType::DirectioanalLight);
 	LightComponent(const LightComponent& other) = delete;
@@ -16,13 +19,11 @@ public:
 	LightComponent& operator = (const LightComponent& other) = delete;
 	LightComponent& operator = (LightComponent&& rv) = delete;
 
-	COMPONENT_IDENTIFIER_DEC;
 	static const float s_maxShadowBias;
 
 	static LightComponent* create();
 	static void destory(const LightComponent* l);
 
-	std::string identifier() const override;
 	Component* copy() const override;
 
 	glm::vec3 getPosition() const;

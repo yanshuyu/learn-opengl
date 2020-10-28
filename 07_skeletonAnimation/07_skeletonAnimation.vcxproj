@@ -185,6 +185,7 @@
     <ClCompile Include="..\common\Notification.cpp" />
     <ClCompile Include="..\common\PointLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Pose.cpp" />
+    <ClCompile Include="..\common\RenderableComponent.cpp" />
     <ClCompile Include="..\common\RenderBuffer.cpp" />
     <ClCompile Include="..\common\Renderer.cpp" />
     <ClCompile Include="..\common\RendererCore.cpp" />
@@ -257,11 +258,13 @@
     <ClInclude Include="..\common\pch.h" />
     <ClInclude Include="..\common\PointLightShadowMapping.h" />
     <ClInclude Include="..\common\Pose.h" />
+    <ClInclude Include="..\common\RenderableComponent.h" />
     <ClInclude Include="..\common\RenderBuffer.h" />
     <ClInclude Include="..\common\Renderer.h" />
     <ClInclude Include="..\common\RendererCore.h" />
     <ClInclude Include="..\common\RenderTaskExecutor.h" />
     <ClInclude Include="..\common\RenderTechnique.h" />
+    <ClInclude Include="..\common\RTTI.h" />
     <ClInclude Include="..\common\Scene.h" />
     <ClInclude Include="..\common\SceneObject.h" />
     <ClInclude Include="..\common\Shader.h" />

@@ -19,6 +19,8 @@ class TransformComponent : public Component {
 	friend class SceneObject;
 	friend class CameraComponent;
 
+	RTTI_DECLARATION(TransformComponent)
+
 protected:
 	TransformComponent(SceneObject* owner);
 	TransformComponent(SceneObject* owner, const glm::vec3& pos, const glm::vec3& rotate, const glm::vec3& scale);
@@ -30,16 +32,10 @@ public:
 	TransformComponent& operator = (TransformComponent&& rv) = delete;
 	TransformComponent& operator = (const TransformComponent& other);
 
-	COMPONENT_IDENTIFIER_DEC;
-
 	//
 	// inherit override
 	//
 	Component* copy() const override;
-
-	inline std::string identifier() const override {
-		return TransformComponent::s_identifier;
-	}
 
 	//
 	// transform operation

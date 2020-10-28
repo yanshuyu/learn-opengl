@@ -6,16 +6,13 @@ class Pose;
 
 
 class SkinMeshRenderComponent : public MeshRenderComponent {
+
+	RTTI_DECLARATION(SkinMeshRenderComponent)
+
 public:
 	SkinMeshRenderComponent(std::weak_ptr<Model> meshes = std::weak_ptr<Model>(),
 		std::weak_ptr<AnimatorComponent> animator = std::weak_ptr<AnimatorComponent>(),  
 		bool useEmbededMaterial = true);
-
-	COMPONENT_IDENTIFIER_DEC;
-
-	inline std::string identifier() const override {
-		return s_identifier;
-	}
 
 	void setMeshes(std::weak_ptr<Model> meshes, bool useEmbededMaterials = true) override;
 

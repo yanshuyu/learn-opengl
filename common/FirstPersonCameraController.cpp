@@ -4,7 +4,7 @@
 #include<glm/glm.hpp>
 
 
-COMPONENT_IDENTIFIER_IMP(FirstPersonCameraController, "FirstPersonCameraController");
+RTTI_IMPLEMENTATION(FirstPersonCameraController)
 
 FirstPersonCameraController* FirstPersonCameraController::create() {
 	return new FirstPersonCameraController();
@@ -86,9 +86,6 @@ void FirstPersonCameraController::update(double dt) {
 	}
 }
 
-std::string FirstPersonCameraController::identifier() const {
-	return s_identifier;
-}
 
 Component* FirstPersonCameraController::copy() const {
 	return nullptr;

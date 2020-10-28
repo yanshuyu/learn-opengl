@@ -5,7 +5,7 @@
 #include"Renderer.h"
 
 
-COMPONENT_IDENTIFIER_IMP(SkinMeshRenderComponent, "SkinMeshRenderComponent");
+RTTI_IMPLEMENTATION(SkinMeshRenderComponent)
 
 
 SkinMeshRenderComponent::SkinMeshRenderComponent(std::weak_ptr<Model> meshes, std::weak_ptr<AnimatorComponent> animator, bool useEmbededMaterial)

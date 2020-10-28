@@ -5,7 +5,7 @@
 #include"SceneObject.h"
 
 
-COMPONENT_IDENTIFIER_IMP(TransformComponent, "TransformComponent");
+RTTI_IMPLEMENTATION(TransformComponent)
 
 TransformComponent::TransformComponent(SceneObject* owner) :m_position(glm::vec3(0))
 , m_rotation(glm::vec3(0))

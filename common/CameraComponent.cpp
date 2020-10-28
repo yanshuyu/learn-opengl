@@ -3,7 +3,7 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glad/glad.h>
 
-COMPONENT_IDENTIFIER_IMP(CameraComponent, "CameraComponent");
+RTTI_IMPLEMENTATION(CameraComponent)
 
 CameraComponent::CameraComponent(float ar) : Component()
 , m_aspectRatio(ar)
@@ -25,9 +25,6 @@ CameraComponent::CameraComponent(float ar) : Component()
 CameraComponent::~CameraComponent() {
 }
 
-std::string CameraComponent::identifier() const {
-	return CameraComponent::s_identifier;
-}
 
 Component* CameraComponent::copy() const {
 	return nullptr;

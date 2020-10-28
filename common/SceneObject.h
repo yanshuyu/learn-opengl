@@ -36,26 +36,35 @@ public:
 	//
 	bool addComponent(Component* c);
 	bool addComponent(std::shared_ptr<Component> c);
-	bool removeComponent(const std::string& identifier);
-	Component* findComponent(const std::string& identifier) const;
+	template<typename T, typename... Args> T* addComponent(Args&& ... args) {
+		for (auto& c : m_components) {
+			if (c->typeId() == T::s_typeId)
+				return static_cast<T*>(c.get());
+		}
 
-	template<typename T, typename ... Args> T* addComponent(Args&& ... args) {
-		Component* c = findComponent(T::s_identifier);
-		if (c)
-			return static_cast<T*>(c);
-		
-		c = new T(std::forward<Args>(args)...);
+		auto c = new T(std::forward<Args>(args)...);
 		addComponent(c);
-		
-		return static_cast<T*>(c);
+
+		return c;
 	}
 
+	bool hasComponent(const ID id) const;
+	template<typename T> bool hasComponent() const {
+		return hasComponent(T::s_typeId);
+	}
+
+	std::weak_ptr<Component> getComponent(const ID id) const;
 	template<typename T> std::weak_ptr<T> getComponent() {
-		ComponentVector::iterator found = findComponent_if(T::s_identifier);
-		if (found == m_components.end())
+		auto weak_c = getComponent(T::s_typeId);
+		if (weak_c.expired())
 			return std::weak_ptr<T>();
 
-		return std::static_pointer_cast<T>(*found);
+		return std::static_pointer_cast<T>(weak_c.lock());
+	}
+
+	bool removeComponent(const ID id);
+	template<typename T> bool removeComponent() {
+		return removeComponent(T::s_typeId);
 	}
 
 	inline size_t componentCount() const {
@@ -134,10 +143,7 @@ public:
 		return m_tag;
 	}
 
-private:
-	ComponentVector::iterator findComponent_if(const std::string& identifier);
-	ComponentVector::const_iterator findComponent_if(const std::string& identifier) const;
-	
+private:	
 	ObjectVector::iterator findChild_if(std::function<bool(const SceneObject*)> pred);
 	ObjectVector::const_iterator findChild_if(std::function<bool(const SceneObject*)> pred) const;
 	std::pair<bool, ObjectVector::iterator> findChild_Recursive_if(std::function<bool(const SceneObject*)> pred);

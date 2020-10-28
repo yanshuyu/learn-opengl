@@ -4,7 +4,8 @@
 #include<glm/gtx/transform.hpp>
 
 
-COMPONENT_IDENTIFIER_IMP(LightComponent, "LightComponent");
+RTTI_IMPLEMENTATION(LightComponent)
+
 const float LightComponent::s_maxShadowBias = 0.01f;
 
 
@@ -37,11 +38,6 @@ void LightComponent::destory(const LightComponent* l) {
 		delete l;
 		l = nullptr;
 	}
-}
-
-
-std::string LightComponent::identifier() const {
-	return s_identifier;
 }
 
 
