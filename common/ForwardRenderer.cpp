@@ -158,7 +158,7 @@ void ForwardRenderer::beginDepthPass() {
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto preZShader = shaderMgr->getProgram("DepthPass");
 	if (preZShader.expired())
-		preZShader = shaderMgr->addProgram("res/shader/DepthPass.shader");
+		preZShader = shaderMgr->addProgram("DepthPass.shader");
 	ASSERT(!preZShader.expired());
 
 	m_activeShader = preZShader.lock();
@@ -196,7 +196,7 @@ void ForwardRenderer::endGeometryPass() {
 void ForwardRenderer::beginUnlitPass() {
 	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
 	if (unlitShader.expired())
-			unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/Unlit.shader");
+			unlitShader = ShaderProgramManager::getInstance()->addProgram("Unlit.shader");
 	ASSERT(!unlitShader.expired());
 
 	m_activeShader = unlitShader.lock();
@@ -284,7 +284,7 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 	case LightType::DirectioanalLight: {
 		auto directionalLightShader = ShaderProgramManager::getInstance()->getProgram("DirectionalLight");
 		if (directionalLightShader.expired())
-			directionalLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DirectionalLight.shader");
+			directionalLightShader = ShaderProgramManager::getInstance()->addProgram("DirectionalLight.shader");
 		ASSERT(!directionalLightShader.expired());
 
 		m_activeShader = directionalLightShader.lock();
@@ -309,7 +309,7 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 	case LightType::PointLight: {
 		auto pointLightShader = ShaderProgramManager::getInstance()->getProgram("PointLight");
 		if (pointLightShader.expired())
-			pointLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/PointLight.shader");
+			pointLightShader = ShaderProgramManager::getInstance()->addProgram("PointLight.shader");
 		ASSERT(!pointLightShader.expired());
 
 		m_activeShader = pointLightShader.lock();
@@ -334,7 +334,7 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 	case LightType::SpotLight: {
 		auto spotLightShader = ShaderProgramManager::getInstance()->getProgram("SpotLight");
 		if (spotLightShader.expired())
-			spotLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/SpotLight.shader");
+			spotLightShader = ShaderProgramManager::getInstance()->addProgram("SpotLight.shader");
 		ASSERT(!spotLightShader.expired());
 
 		m_activeShader = spotLightShader.lock();

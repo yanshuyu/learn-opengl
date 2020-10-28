@@ -4,7 +4,7 @@
 #include<iamgui/imgui_impl_glfw.h>
 #include<iamgui/imgui_impl_opengl3.h>
 #include"DebugDrawer.h"
-
+#include"FileSystem.h"
 
 GLApplication::GLApplication(const std::string& wndTitle, size_t wndWidth, size_t wndHeight, size_t major, size_t minor):m_wndName(wndTitle)
 , m_wndWidth(wndWidth)
@@ -76,6 +76,9 @@ bool GLApplication::initailize() {
 	DebugDrawer::setup();
 #endif // _DEBUG
 
+	fs::path lanchPath = FileSystem::Default.currentWorkingDirectory();
+	FileSystem::Default.setCurrentWorkingDirectory(lanchPath.parent_path());
+	FileSystem::Default.setHomeDirectory(FileSystem::Default.currentWorkingDirectory());
 
 	m_initailized = true;
 

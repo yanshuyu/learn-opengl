@@ -14,10 +14,10 @@ public:
 	MeshManager() = default;
 	~MeshManager() {};
 
-	std::weak_ptr<Model> addMesh(const std::string& file,
+	std::weak_ptr<Model> addMesh(const std::string& fileName,
 		int loadingOptions = MeshLoader::Option::LoadAnimations | MeshLoader::Option::LoadMaterials,
 		MeshLoader::Preset preset = MeshLoader::Preset::Quality, 
-		const std::string& name = "");
+		std::string name = "");
 	bool addMesh(Model* mesh);
 
 	std::weak_ptr<Model> createGrid(float width, float depth, float spacing = 1);
@@ -32,13 +32,9 @@ public:
 	
 	void removeAllMesh();
 
-	inline std::string getResourceAbsolutePath() const {
-		return "C:/Users/SY/Documents/learn-opengl/res/models/";
-	}
 
-	inline std::string getResourceRelativePath() const {
-		return "res/models/";
-	}
+protected:
+	inline std::string getResourcePath(const std::string& fileName) const;
 
 private:
 	std::unordered_map<std::string, std::shared_ptr<Model>> m_meshes;

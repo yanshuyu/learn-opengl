@@ -186,7 +186,7 @@ void DeferredRenderer::beginDepthPass() {
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto preZShader = shaderMgr->getProgram("DepthPass");
 	if (preZShader.expired())
-		preZShader = shaderMgr->addProgram("res/shader/DepthPass.shader");
+		preZShader = shaderMgr->addProgram("DepthPass.shader");
 	ASSERT(!preZShader.expired());
 
 	m_activeShader = preZShader.lock();
@@ -218,7 +218,7 @@ void DeferredRenderer::endDepthPass() {
 void DeferredRenderer::beginGeometryPass() {
 	auto geometryShader = ShaderProgramManager::getInstance()->getProgram("GeometryPass");
 	if (geometryShader.expired())
-		geometryShader = ShaderProgramManager::getInstance()->addProgram("res/shader/GeometryPass.shader");
+		geometryShader = ShaderProgramManager::getInstance()->addProgram("GeometryPass.shader");
 	ASSERT(!geometryShader.expired());
 
 	m_activeShader = geometryShader.lock();
@@ -249,7 +249,7 @@ void DeferredRenderer::endGeometryPass() {
 void DeferredRenderer::beginUnlitPass() {
 	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("UnlitDeferred");
 	if (unlitShader.expired())
-		unlitShader = ShaderProgramManager::getInstance()->addProgram("res/shader/UnlitDeferred.shader");
+		unlitShader = ShaderProgramManager::getInstance()->addProgram("UnlitDeferred.shader");
 	ASSERT(!unlitShader.expired());
 
 	m_activeShader = unlitShader.lock();
@@ -331,7 +331,7 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 	case LightType::DirectioanalLight: {
 			auto directionalLightShader = ShaderProgramManager::getInstance()->getProgram("DirectionalLightDeferred");
 			if (directionalLightShader.expired())
-				directionalLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DirectionalLightDeferred.shader");
+				directionalLightShader = ShaderProgramManager::getInstance()->addProgram("DirectionalLightDeferred.shader");
 			ASSERT(!directionalLightShader.expired());
 
 			m_activeShader = directionalLightShader.lock();
@@ -362,7 +362,7 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 	case LightType::PointLight: {
 			auto pointLightShader = ShaderProgramManager::getInstance()->getProgram("PointLightDeferred");
 			if (pointLightShader.expired())
-				pointLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/PointLightDeferred.shader");
+				pointLightShader = ShaderProgramManager::getInstance()->addProgram("PointLightDeferred.shader");
 			ASSERT(!pointLightShader.expired());
 
 			m_activeShader = pointLightShader.lock();
@@ -387,7 +387,7 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 	case LightType::SpotLight: {
 			auto spotLightShader = ShaderProgramManager::getInstance()->getProgram("SpotLightDeferred");
 			if (spotLightShader.expired())
-				spotLightShader = ShaderProgramManager::getInstance()->addProgram("res/shader/SpotLightDeferred.shader");
+				spotLightShader = ShaderProgramManager::getInstance()->addProgram("SpotLightDeferred.shader");
 			ASSERT(!spotLightShader.expired());
 
 			m_activeShader = spotLightShader.lock();

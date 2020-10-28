@@ -1,6 +1,7 @@
 #pragma once
 #include"ShaderProgram.h"
 #include"Singleton.h"
+#include"FileSystem.h"
 #include<unordered_map>
 #include<string>
 #include<memory>
@@ -12,7 +13,7 @@ class ShaderProgramManager: public Singleton<ShaderProgramManager> {
 public:
 	ShaderProgramManager() {};
 
-	std::weak_ptr<ShaderProgram> addProgram(const std::string& file, const std::string& name = "");
+	std::weak_ptr<ShaderProgram> addProgram(const std::string& fileName, std::string name = "");
 	std::weak_ptr<ShaderProgram> getProgram(const std::string name) const;
 	bool removeProgram(const std::string& name);
 	bool hasProgram(const std::string& name) const;
@@ -25,13 +26,8 @@ public:
 		return m_shaderPrograms.size();
 	}
 
-	inline std::string getResourceAbsolutePath() const {
-		return "C:/Users/SY/Documents/learn-opengl/res/shader/";
-	}
-
-	inline std::string getResourceRelativePath() const {
-		return "res/shader/";
-	}
+protected:
+	std::string getResourcePath(const std::string& fileName) const;
 
 private:
 	std::unordered_map<std::string, std::shared_ptr<ShaderProgram>> m_shaderPrograms;

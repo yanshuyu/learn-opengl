@@ -168,7 +168,7 @@ void DebugDrawer::drawVectorTrack(VectorTrack* track, float numCycle, float numS
 void DebugDrawer::drawPose(const Pose& pose, const glm::vec3& color, const glm::mat4& vp) {
 	auto shader = ShaderProgramManager::getInstance()->getProgram("KeyFrameDebugViewer");
 	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("res/shader/KeyFrameDebugViewer.shader");
+		shader = ShaderProgramManager::getInstance()->addProgram("KeyFrameDebugViewer.shader");
 	ASSERT(!shader.expired());
 
 	std::shared_ptr<ShaderProgram> strongShader = shader.lock();

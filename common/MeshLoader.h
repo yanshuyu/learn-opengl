@@ -28,7 +28,7 @@ public:
 		MaxQuality = aiProcessPreset_TargetRealtime_MaxQuality,
 	};
 
-	Model* load(const std::string& file, int options = Option::None, Preset preset = Preset::Quality ,const std::string& name = "");
+	Model* load(const std::string& file, int options = Option::None, Preset preset = Preset::Quality, std::string name = "");
 
 protected:
 	Skeleton* loadSkeletion(const aiScene* aScene);

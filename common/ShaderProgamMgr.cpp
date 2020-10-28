@@ -5,20 +5,17 @@
 
 
 
-std::weak_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& file, const std::string& name) {
-	std::string shaderName(name);
-	if (shaderName.empty())
-		shaderName = ExtractFileNameFromPath(file, false);
-	if (shaderName.empty())
-		shaderName = file;
-	
-	auto found = getProgram(shaderName);
+std::weak_ptr<ShaderProgram> ShaderProgramManager::addProgram(const std::string& fileName, std::string name) {
+	if (name.empty())
+		name = ExtractFileNameFromPath(fileName, false);
+
+	auto found = getProgram(name);
 	if (!found.expired())
 		return found;
 
-	auto program = std::make_shared<ShaderProgram>(shaderName, file);
+	auto program = std::make_shared<ShaderProgram>(name, getResourcePath(fileName));
 	if (program->compileAndLink()) {
-		m_shaderPrograms.insert(std::make_pair(shaderName, program));
+		m_shaderPrograms.insert(std::make_pair(name, program));
 		return std::weak_ptr<ShaderProgram>(program);
 	}
 
@@ -45,4 +42,24 @@ bool ShaderProgramManager::removeProgram(const std::string& name) {
 		return true;
 	}
 	return false;
+}
+
+
+std::string ShaderProgramManager::getResourcePath(const std::string& fileName) const {
+	auto res = FileSystem::Default.getHomeDirectory();
+	res /= "res/shader";
+	res /= fileName;
+	res = fs::canonical(res);
+
+	if (!res.has_extension())
+		res.concat(".shader");
+	
+	if (!fs::exists(res)) {
+		std::cerr << "Walling: file \"" << res.string() << "\" not exist!" << std::endl;
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // DEBUG
+	}
+
+	return res.string();
 }

@@ -12,12 +12,9 @@
 #include<unordered_set>
 
 
-Model* MeshLoader::load(const std::string& file, int options, Preset preset, const std::string& name) {
-	std::string modelName(name);
-	if (modelName.empty())
-		modelName = ExtractFileNameFromPath(file);
-	if (modelName.empty())
-		modelName = file;
+Model* MeshLoader::load(const std::string& file, int options, Preset preset,std::string name) {
+	if (name.empty())
+		name = ExtractFileNameFromPath(file);
 
 	Assimp::Importer importer;
 	auto aScene = importer.ReadFile(file, unsigned int (preset));
@@ -36,7 +33,7 @@ Model* MeshLoader::load(const std::string& file, int options, Preset preset, con
 	}
 
 	auto model = new Model();
-	model->setName(modelName);
+	model->setName(name);
 	model->setFilePath(file);
 	model->setSkeleton(skeleton);
 	for (auto anim : animations) {
@@ -555,7 +552,7 @@ std::weak_ptr<Texture> MeshLoader::loadTexture(const std::string& name) {
 	if (textureMgr->hasTexture(name))
 		return textureMgr->getTexture(name);
 
-	return textureMgr->addTexture(textureMgr->getResourceAbsolutePath() + name, name);
+	return textureMgr->addTexture(name);
 }
 
 

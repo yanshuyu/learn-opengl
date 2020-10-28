@@ -225,6 +225,9 @@
     <ClCompile Include="..\common\RenderableComponent.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\FileSystem.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -450,6 +453,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\RenderableComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FileSystem.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>

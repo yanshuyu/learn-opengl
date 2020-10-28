@@ -81,7 +81,7 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 
 	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
 	if (preZShader.expired())
-		preZShader = ShaderProgramManager::getInstance()->addProgram("res/shader/DepthPass.shader");
+		preZShader = ShaderProgramManager::getInstance()->addProgram("DepthPass.shader");
 	ASSERT(!preZShader.expired());
 
 	std::shared_ptr<ShaderProgram> strongShader = preZShader.lock();

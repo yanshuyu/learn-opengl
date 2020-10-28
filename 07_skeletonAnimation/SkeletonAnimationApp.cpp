@@ -1,5 +1,6 @@
 #include"SkeletonAnimationApp.h"
 #include"MainGuiWindow.h"
+#include<common/FileSystem.h>
 #include<stdarg.h>
 #include<glm/gtx/transform.hpp>
 
@@ -20,6 +21,7 @@ bool SkeletonAnimationApp::initailize() {
 	if (!__super::initailize())
 		return false;
 
+
 	RenderingSettings_t renderSettins;
 	renderSettins.renderSize = { m_wndWidth, m_wndHeight };
 	renderSettins.shadowMapResolution = { 1024.f, 1024.f };
@@ -35,7 +37,7 @@ bool SkeletonAnimationApp::initailize() {
 	auto texMgr = TextureManager::getInstance();
 
 	// cube
-	auto cubeTexture = texMgr->addTexture(texMgr->getResourceAbsolutePath() + "wall.jpg");
+	auto cubeTexture = texMgr->addTexture("wall.jpg");
 	auto cubeMat = matMgr->addMaterial("CubeMaterial").lock();
 	cubeMat->m_diffuseMap = cubeTexture;
 	cubeMat->m_shininess = 0.1f;
@@ -49,7 +51,7 @@ bool SkeletonAnimationApp::initailize() {
 	m_scene->addPlane(250, 250, planeMat);
 
 	// model
-	auto obj = m_scene->addModel(MeshManager::getInstance()->getResourceAbsolutePath() + "Alien_Animal.fbx");
+	auto obj = m_scene->addModel("Alien_Animal.fbx");
 	obj->m_transform.setScale({ 0.01f, 0.01f, 0.01f });
 	obj->m_transform.setPosition({ 0.f, 0.f, 0.f });
 	obj->setTag(100);

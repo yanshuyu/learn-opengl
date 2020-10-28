@@ -77,7 +77,7 @@ void PointLightShadowMapping::cleanUp() {
 void PointLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera_t& camera) {
 	auto shader = ShaderProgramManager::getInstance()->getProgram("PointLightShadowPass");
 	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("res/shader/PointLightShadowPass.shader");
+		shader = ShaderProgramManager::getInstance()->addProgram("PointLightShadowPass.shader");
 	ASSERT(!shader.expired());
 
 	std::shared_ptr<ShaderProgram> strongShader = shader.lock();

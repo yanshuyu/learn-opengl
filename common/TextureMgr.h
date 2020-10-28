@@ -1,6 +1,7 @@
 #pragma once
 #include"Singleton.h"
 #include"Texture.h"
+#include"FileSystem.h"
 #include<unordered_map>
 #include<string>
 #include<memory>
@@ -9,7 +10,7 @@
 class TextureManager : public Singleton<TextureManager> {
 public:
 
-	std::weak_ptr<Texture> addTexture(const std::string& file, const std::string& name = "");
+	std::weak_ptr<Texture> addTexture(const std::string& fileName, std::string name = "");
 	std::weak_ptr<Texture> getTexture(const std::string& name) const;
 	bool removeTexture(const std::string& name);
 	bool hasTexture(const std::string& name) const;
@@ -22,13 +23,9 @@ public:
 		return m_textures.size();
 	}
 
-	inline std::string getResourceAbsolutePath() const {
-		return "C:/Users/SY/Documents/learn-opengl/res/images/";
-	}
 
-	inline std::string getResourceRelativePath() const {
-		return "res/images/";
-	}
+protected:
+	std::string getResourcePath(const std::string& fileName) const;
 
 private:
 	std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;

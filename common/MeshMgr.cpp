@@ -1,5 +1,6 @@
 #include"MeshMgr.h"
 #include"Util.h"
+#include"FileSystem.h"
 #include<fstream>
 #include<sstream>
 #include<algorithm>
@@ -10,8 +11,15 @@
 
 
 
-std::weak_ptr<Model> MeshManager::addMesh(const std::string& file, int loadingOptions, MeshLoader::Preset preset, const std::string& name) {
-	Model* model = MeshLoader::getInstance()->load(file, loadingOptions, preset, name);
+std::weak_ptr<Model> MeshManager::addMesh(const std::string& fileName, int loadingOptions, MeshLoader::Preset preset, std::string name) {
+	if (name.empty())
+		name = ExtractFileNameFromPath(fileName);
+
+	auto found = getMesh(name);
+	if (!found.expired())
+		return found;
+	
+	Model* model = MeshLoader::getInstance()->load(getResourcePath(fileName), loadingOptions, preset, name);
 	if (!model)
 		return std::weak_ptr<Model>();
 
@@ -328,4 +336,28 @@ bool MeshManager::removeMesh(const std::string& name) {
 
 void MeshManager::removeAllMesh() {
 	m_meshes.clear();
+}
+
+
+inline std::string MeshManager::getResourcePath(const std::string& fileName) const {
+	auto res = FileSystem::Default.getHomeDirectory();
+	res /= "res/models";
+	res /= fileName;
+	res = fs::canonical(res);
+
+	if (!res.has_extension()) {
+		std::cerr << "Walling: file \"" << res.string() << "\" without extendsion!" << std::endl;
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // DEBUG
+	}
+
+	if (!fs::exists(res)) {
+		std::cerr << "Walling: file \"" << res.string() << "\" not exist!" << std::endl;
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // DEBUG
+	}
+
+	return res.string();
 }

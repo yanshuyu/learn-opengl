@@ -87,7 +87,7 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 	
 	auto shader = ShaderProgramManager::getInstance()->getProgram("DirectionalLightShadowPass");
 	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("res/shader/DirectionalLightShadowPass.shader");
+		shader = ShaderProgramManager::getInstance()->addProgram("DirectionalLightShadowPass.shader");
 	ASSERT(!shader.expired());
 
 	std::shared_ptr<ShaderProgram> strongShader = shader.lock();
