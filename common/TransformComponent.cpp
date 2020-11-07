@@ -13,7 +13,7 @@ TransformComponent::TransformComponent(SceneObject* owner) :m_position(glm::vec3
 , m_rightAxis(Local_Right_Axis)
 , m_upAxis(Local_Up_Axis)
 , m_forwardAxis(Local_Forward_Axis)
-, m_transform(glm::mat4(1.f)) {
+, m_matrix(glm::mat4(1.f)) {
 	m_owner = owner;
 }
 
@@ -32,7 +32,7 @@ TransformComponent& TransformComponent::operator = (const TransformComponent& ot
 	m_rightAxis = other.m_rightAxis;
 	m_upAxis = other.m_upAxis;
 	m_forwardAxis = other.m_forwardAxis;
-	m_transform = other.m_transform;
+	m_matrix = other.m_matrix;
 	
 	return *this;
 }
@@ -71,8 +71,7 @@ void TransformComponent::scaleBy(const glm::vec3& s) {
 
 void TransformComponent::lookAt(const glm::vec3& dir, const glm::vec3& up) {
 	glm::quat rotateQuat = glm::quatLookAt(glm::normalize(dir), up);
-	glm::vec3 angles = glm::eulerAngles(rotateQuat);
-	setRotation({ glm::degrees(angles.x), glm::degrees(angles.y), glm::degrees(angles.z) });
+	setRotation(glm::degrees(glm::eulerAngles(rotateQuat)));
 }
 
 
@@ -92,7 +91,7 @@ void TransformComponent::resetTransform() {
 	m_rightAxis = Local_Right_Axis;
 	m_upAxis = Local_Up_Axis;
 	m_forwardAxis = Local_Forward_Axis;
-	m_transform = glm::mat4(1.f);
+	m_matrix = glm::mat4(1.f);
 }
 
 
@@ -126,16 +125,16 @@ void TransformComponent::getCartesianAxesLocal(glm::vec3* origin, glm::vec3* xAx
 }
 
 void TransformComponent::getCartesianAxesWorld(glm::vec3* origin, glm::vec3* xAxis, glm::vec3* yAxis, glm::vec3* zAxis) const {
-	glm::mat4 transform = getParentMatrixRecursive();
+	glm::mat4 parentTransform = getParentMatrixRecursive();
 	if (origin)
-		*origin = transform * glm::vec4(m_position, 1.f);
+		*origin = parentTransform * glm::vec4(m_position, 1.f);
 
 	if (xAxis || yAxis || zAxis) {
 		glm::vec3 right(0);
 		glm::vec3 up(0);
 		glm::vec3 forward(0);
-		right = glm::normalize(transform * glm::vec4(m_rightAxis, 0.f));
-		up = glm::normalize(transform * glm::vec4(m_upAxis, 0.f));
+		right = glm::normalize(glm::mat3(parentTransform) * m_rightAxis);
+		up = glm::normalize(glm::mat3(parentTransform) * m_upAxis);
 		forward = glm::normalize(glm::cross(up, right));
 		up = glm::normalize(glm::cross(right, forward));
 
@@ -150,7 +149,7 @@ void TransformComponent::getCartesianAxesWorld(glm::vec3* origin, glm::vec3* xAx
 
 
 glm::mat4 TransformComponent::getMatrix() const {
-	return   m_transform;
+	return   m_matrix;
 }
 
 glm::mat4 TransformComponent::getMatrixWorld() const {
@@ -177,7 +176,7 @@ glm::mat4 TransformComponent::getParentMatrixRecursive() const {
 	glm::mat4 m(1);
 	SceneObject* parent = m_owner->getParent();
 	while (parent) {
-		m *= parent->m_transform.getMatrix();
+		m = parent->m_transform.getMatrix() * m;
 		parent = parent->getParent();
 	}
 	
@@ -185,8 +184,6 @@ glm::mat4 TransformComponent::getParentMatrixRecursive() const {
 }
 
 void TransformComponent::calcTransform() {
-	normalizeRotation();
-
 	glm::mat4 m(1);
 	m = glm::translate(m, m_position);
 	m = glm::rotate(m, glm::radians(m_rotation.z), World_Z_Axis);
@@ -194,29 +191,14 @@ void TransformComponent::calcTransform() {
 	m = glm::rotate(m, glm::radians(m_rotation.x), World_X_Axis);
 	//m = glm::yawPitchRoll(glm::radians(m_rotation.y), glm::radians(m_rotation.x), glm::radians(m_rotation.z)) * m;
 	m = glm::scale(m, m_scale);
-	m_transform = m;
+	m_matrix = m;
 
 	updateLocalAxes();
 }
 
 void TransformComponent::updateLocalAxes() {
-	glm::mat4 m = m_transform;
-	m_rightAxis = glm::normalize(m * glm::vec4(World_X_Axis, 0.f));
-	m_upAxis = glm::normalize(m * glm::vec4(World_Y_Axis, 0.f));
+	m_rightAxis = glm::normalize(glm::mat3(m_matrix) * World_X_Axis);
+	m_upAxis = glm::normalize(glm::mat3(m_matrix) * World_Y_Axis);
 	m_forwardAxis = glm::normalize(glm::cross(m_upAxis, m_rightAxis));
 	m_upAxis = glm::normalize(glm::cross(m_rightAxis, m_forwardAxis));
-}
-
-void TransformComponent::normalizeRotation() {
-	if (m_rotation.x > 360 || m_rotation.x < -360) {
-		m_rotation.x = fmodf(m_rotation.x, 360.f);
-	}
-
-	if (m_rotation.y > 360 || m_rotation.y < -360) {
-		m_rotation.y = fmodf(m_rotation.y, 360.f);
-	}
-
-	if (m_rotation.z > 360 || m_rotation.z < -360) {
-		m_rotation.z = fmodf(m_rotation.z, 360.f);
-	}
 }

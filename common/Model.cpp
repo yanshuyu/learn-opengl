@@ -108,13 +108,13 @@ std::weak_ptr<Material> Model::embededMaterialForMesh(ID meshId) {
 
 
 std::ostream& operator << (std::ostream& o, const Model& model) {
-	o << "{ name: " << model.getName() << "(" << model.id() << "),\n";
-	o << " filePath: " << model.getFilePath() << ",\n";
-	o << " meshes(cout:" << model.meshCount() << ")";
+	o << "Model name: " << model.getName() << "(" << model.id() << "),\n";
+	o << "filePath: " << model.getFilePath() << ",\n";
+	o << "meshes(cout:" << model.meshCount() << ")";
 	for (size_t i = 0; i < model.meshCount(); i++) {
 		o << " " << model.meshAt(i) << "\n";
 	}
-	o << "}";
+	o << "\n";
 	return o;
 }
 

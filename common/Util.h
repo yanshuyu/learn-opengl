@@ -40,6 +40,7 @@ std::string toStr(Shader::Type shaderType);
 //
 #define MAX(a, b) (a > b ? a : b)
 #define MIN(a, b) (a < b ? a : b)
+#define FLT_CMP(x, y)  (fabsf(x - y) <= FLT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))))
 
 template<typename T> T clamp(T x, T min, T max) {
 	x = MAX(x, min);
@@ -47,3 +48,10 @@ template<typename T> T clamp(T x, T min, T max) {
 	
 	return x;
 }
+
+
+//
+// Liner Algebra
+//
+bool IsOrthoNormal(const glm::mat3& m);
+void OrthoNormalize(glm::mat3& m);

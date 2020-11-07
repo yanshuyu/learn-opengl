@@ -89,7 +89,6 @@ public:
 private:
 	void calcTransform();
 	void updateLocalAxes();
-	void normalizeRotation();
 
 private:
 	glm::vec3 m_position;
@@ -100,6 +99,6 @@ private:
 	glm::vec3 m_upAxis;
 	glm::vec3 m_forwardAxis;
 	
-	glm::mat4 m_transform;
+	glm::mat4 m_matrix;
 	//glm::mat4 m_applyedTransform;
 };

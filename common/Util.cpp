@@ -77,3 +77,27 @@ std::string toStr(Shader::Type shaderType) {
 		return "Unknown";
 	}
 }
+
+
+bool IsOrthoNormal(const glm::mat3& m) {
+	if (!FLT_CMP(glm::dot(m[0], m[0]), 1.f) || !FLT_CMP(glm::dot(m[1], m[1]), 1.f) || !FLT_CMP(glm::dot(m[2], m[2]), 1.f))
+		return false;
+	if (!FLT_CMP(glm::dot(m[0], m[1]), 0.f) || !FLT_CMP(glm::dot(m[0], m[2]), 0.f) || !FLT_CMP(glm::dot(m[1], m[2]), 0.f))
+		return false;
+
+	return true;
+}
+
+
+void OrthoNormalize(glm::mat3& m) {
+	auto x = m[0];
+	auto y = m[1];
+	auto z = m[2];
+	x = glm::normalize(x);
+	z = glm::normalize(glm::cross(x, y));
+	y = glm::cross(z, x);
+	
+	m[0] = x;
+	m[1] = y;
+	m[2] = z;
+}

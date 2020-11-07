@@ -42,6 +42,10 @@ Model* MeshLoader::load(const std::string& file, int options, Preset preset,std:
 
 	loadMeshes(aScene, aScene->mRootNode, model, options, aiMatrix4x4());
 
+#ifdef _DEBUG
+	std::cout << *model << std::endl;
+#endif // _DEBUG
+
 	return model;
 }
 
@@ -307,7 +311,6 @@ void MeshLoader::loadMeshes(const aiScene* aScene, const aiNode* node, Model* mo
 
 		mesh->setTransform(glm::transpose(glm::make_mat4(&transform[0][0])));
 		model->addMesh(mesh);
-		std::cout << mesh << std::endl;
 		if (options & Option::LoadMaterials) {
 			Material* mat = loadMaterial(aScene, aMesh);
 			if (mat) {

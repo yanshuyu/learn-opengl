@@ -32,14 +32,25 @@ Component* CameraComponent::copy() const {
 
 
 glm::mat4 CameraComponent::viewMatrix() const {
+#ifdef _DEBUG
 	ASSERT(m_owner != nullptr);
-	glm::vec3 pos(0.f);
-	glm::vec3 right(0.f);
-	glm::vec3 forward(0.f, 0.f, -1.f);
-	glm::vec3 up(0.f, 1.f, 0.f);
-	m_owner->m_transform.getCartesianAxesWorld(&pos, &right, &up, &forward);
+#endif // _DEBUG
+	// camera view matrix is inverse of it's world matrix
+	// we must to make sure that view matrix is ortho normalize (not scale and perpendicular with each other)
+	auto matWorld = m_owner->m_transform.getMatrixWorld();
+	auto r = glm::mat3(matWorld);
+	auto p = glm::vec3(matWorld[3]);
+	if (!IsOrthoNormal(r))
+		OrthoNormalize(r);
 
-	return glm::lookAt(pos, pos + forward, up);
+	r = glm::transpose(r);
+	p = -(r * p);
+		
+	return glm::mat4(r[0].x, r[0].y, r[0].z, 0.f,
+		r[1].x, r[1].y, r[1].z, 0.f, 
+		r[2].x, r[2].y, r[2].z, 0.f, 
+		p.x, p.y, p.z, 1.f);
+
 }
 
 glm::mat4 CameraComponent::projectionMatrix() const {
