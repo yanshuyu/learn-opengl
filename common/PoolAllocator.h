@@ -16,8 +16,8 @@
  *							for each element, and therefore require more internal memory.
  * @tparam	Lock			If true the pool allocator will be made thread safe (at the cost of performance).
  */
-template <size_t  ElemSize, size_t ElemsPerBlock = 512, size_t Alignment = 4>
-class PoolAlloc {
+template <size_t  ElemSize, size_t ElemsPerBlock = 512, size_t Alignment = 1>
+class PoolAllocator {
 private:
 	/** A single block able to hold ElemsPerBlock elements. */
 	class MemBlock
@@ -37,8 +37,9 @@ private:
 
 		~MemBlock() {
 #ifdef _DEBUG
-			if (freeElems != ElemsPerBlock)
+			if (freeElems != ElemsPerBlock) {
 				throw AppException(AppException::Error::POOLALLOCATOR_LEAK_ELMENTS, "Not all elements were deallocated from a block.");
+			}
 #endif // _DEBUG
 		}
 
@@ -70,13 +71,13 @@ private:
 	};
 
 public:
-	PoolAlloc() {
+	PoolAllocator() {
 		static_assert(ElemSize >= 4, "Pool allocator minimum allowed element size is 4 bytes.");
 		static_assert(ElemsPerBlock > 0, "Number of elements per block must be at least 1.");
 		static_assert(ElemsPerBlock * ActualElemSize <= UINT_MAX, "Pool allocator block size too large.");
 	}
 
-	~PoolAlloc() {
+	~PoolAllocator() {
 		MemBlock* curBlock = mFreeBlock;
 		while (curBlock != nullptr) {
 			MemBlock* nextBlock = curBlock->nextBlock;
@@ -198,3 +199,96 @@ private:
 };
 
 
+
+/** Allocator for the standard library that internally uses a pool allocator. */
+template <typename T, size_t NumElementPerBlock = 128, size_t Align = 1>
+class StdPoolAlloc {
+public:
+	typedef T value_type;
+	typedef value_type* pointer;
+	typedef const value_type* const_pointer;
+	typedef value_type& reference;
+	typedef const value_type& const_reference;
+	typedef std::size_t size_type;
+	typedef std::ptrdiff_t difference_type;
+	
+	static PoolAllocator<sizeof(T), NumElementPerBlock, Align> s_pool;
+	
+	inline explicit StdPoolAlloc() noexcept {}
+	inline explicit	StdPoolAlloc(const StdPoolAlloc&) {}
+	template<typename U, size_t N, size_t A>
+	inline explicit StdPoolAlloc(const StdPoolAlloc<U, N, A>& ) noexcept { }
+	
+	template<typename U> 
+	class rebind { 
+		public: typedef StdPoolAlloc<U, NumElementPerBlock, Align> other;
+	};
+
+	/** Allocate but don't initialize number elements of type T.*/
+	T* allocate(size_t num)  {
+		if (num == 0)
+			return nullptr;
+
+		if (num > 1)
+			return nullptr; // Error
+
+		return static_cast<T*>((void*)s_pool.alloc());
+	}
+
+	/** Deallocate storage p of deleted elements. */
+	void deallocate(T* p, size_t num) noexcept {
+		s_pool.free(p);
+	}
+
+	size_t max_size() const { return std::numeric_limits<size_type>::max() / sizeof(T); }
+	
+	void construct(pointer p, const_reference t) { 
+		new (p) T(t);
+	}
+	
+	template<typename U, typename ... Args> 
+	void construct(U* p, Args&&... args) {
+		new(p) U(std::forward<Args>(args)...); 
+	}
+	
+	void destroy(pointer p) { 
+		p->~T();
+	}
+};
+
+
+template<typename T, size_t N, size_t A>
+PoolAllocator<sizeof(T), N, A> StdPoolAlloc<T, N, A>::s_pool;
+
+
+template <typename T, size_t N, size_t A>
+inline bool operator  == (const StdPoolAlloc<T, N, A>&, const StdPoolAlloc<T, N, A>&) {
+	return true;
+}
+
+template <typename T, size_t N, size_t A>
+inline bool operator  != (const StdPoolAlloc<T, N, A>&, const StdPoolAlloc<T, N, A>&) {
+	return  false;
+}
+
+
+template <typename T1, typename T2, size_t N1, size_t N2, size_t A1, size_t A2>
+bool operator == (const StdPoolAlloc<T1, N1, A1>&, const StdPoolAlloc<T2, N2, A2>&) throw() {
+	return false;
+}
+
+template <typename T1, typename T2, size_t N1, size_t N2, size_t A1, size_t A2>
+bool operator != (const StdPoolAlloc<T1, N1, A1>&, const StdPoolAlloc<T2, N2, A2>&) throw() {
+	return true;
+}
+
+
+template <typename T, size_t N, size_t A, typename OtherAlloc>
+inline bool operator  == (const StdPoolAlloc<T, N, A>&, const OtherAlloc&) {
+	return  false;
+}
+
+template <typename T, size_t N, size_t A, typename OtherAlloc>
+inline bool operator  != (const StdPoolAlloc<T, N, A>&, const OtherAlloc&) {
+	return  true;
+}

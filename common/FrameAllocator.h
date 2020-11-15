@@ -151,6 +151,75 @@ public:
 
 
 
+/** Allocator for the standard library that internally uses a frame allocator. */
+template <typename T>
+class StdFrameAlloc {
+public:
+	typedef T value_type;
+	typedef value_type* pointer;
+	typedef const value_type* const_pointer;
+	typedef value_type& reference;
+	typedef const value_type& const_reference;
+	typedef std::size_t size_type;
+	typedef std::ptrdiff_t difference_type;
+
+	FrameAllocator* mFrameAlloc = nullptr;
+
+	StdFrameAlloc() noexcept = default;
+
+	StdFrameAlloc(FrameAllocator* alloc) noexcept :mFrameAlloc(alloc) {}
+
+	template<typename U> StdFrameAlloc(const StdFrameAlloc<U>& alloc) noexcept :mFrameAlloc(alloc.mFrameAlloc) {}	
+
+	template<typename U> bool operator == (const StdFrameAlloc<U>&) const noexcept { return true; }
+	template<typename U> bool operator != (const StdFrameAlloc<U>&) const noexcept { return false; }
+	
+	template<typename U> class rebind { 
+		public: typedef StdFrameAlloc<U> other;
+	};
+
+	/** Allocate but don't initialize number elements of type T.*/
+	T* allocate(const size_t num) const {
+		if (num == 0)
+			return nullptr;
+
+		if (num > static_cast<size_t>(-1) / sizeof(T))
+			return nullptr; // Error
+
+		void* const pv = mFrameAlloc->alloc((UINT32)(num * sizeof(T)));
+		if (!pv)
+			return nullptr; // Error
+
+		return static_cast<T*>(pv);
+	}
+
+	/** Deallocate storage p of deleted elements. */
+	void deallocate(T* p, size_t num) const noexcept {
+		mFrameAlloc->free((UINT8*)p);
+	}
+
+
+	size_t max_size() const { return std::numeric_limits<size_type>::max() / sizeof(T); }
+	void construct(pointer p, const_reference t) { new (p) T(t); }
+	void destroy(pointer p) { p->~T(); }
+	template<class U, class... Args>
+	void construct(U* p, Args&&... args) { new(p) U(std::forward<Args>(args)...); }
+};
+
+
+
+/** Return that all specializations of this allocator are interchangeable. */
+template <typename T1, typename T2>
+bool operator == (const StdFrameAlloc<T1>&, const StdFrameAlloc<T2>&) throw() {
+	return true;
+}
+
+/** Return that all specializations of this allocator are interchangeable. */
+template <typename T1, typename T2>
+bool operator != (const StdFrameAlloc<T1>&, const StdFrameAlloc<T2>&) throw() {
+	return false;
+}
+
 
 extern TFrameAllocator<1024*1024> g_frameAlloc;
 

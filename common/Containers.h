@@ -1,6 +1,7 @@
 #pragma once
 #include"MemoryAllocator.h"
 #include"FrameAllocator.h"
+#include"PoolAllocator.h"
 
 // STL containers
 #include <vector>
@@ -133,3 +134,31 @@ using FrameUnorderedSet = std::unordered_set < T, H, C, A >;
 /** UnorderedMap allocated with a frame allocator. */
 template <typename K, typename V, typename H = std::hash<K>, typename C = std::equal_to<K>, typename A = StdAlloc<std::pair<const K, V>, FrameAllocator>>
 using FrameUnorderedMap = std::unordered_map < K, V, H, C, A >;
+
+
+
+
+// containers internal using pool allocator
+template<typename T, size_t N = 256, size_t A = 1>
+using PoolStack = std::stack<T, std::list<T, StdPoolAlloc<T, N, A>>>;
+
+template<typename T, size_t N = 256, size_t A = 1>
+using PoolQueue = std::queue<T, std::list<T, StdPoolAlloc<T, N, A>>>;
+
+template<typename T, size_t N = 256, size_t A = 1>
+using PoolList = std::list <T, StdPoolAlloc<T, N, A>>;
+
+template<typename T, size_t N = 256, size_t A = 1>
+using PoolForwardList = std::forward_list <T, StdPoolAlloc<T, N, A>>;
+
+template<typename K, typename V, typename Cmp = std::less<K>, size_t N = 256, size_t A = 1>
+using PoolMap = std::map<K, V, Cmp, StdPoolAlloc<std::pair<K, V>, N, A>>;
+
+template<typename K, typename V, typename H = std::hash<K>, typename KE = std::equal_to<K>, size_t N = 256, size_t A = 1>
+using PoolUnorderedMap = std::unordered_map < K, V, H, KE, StdPoolAlloc<std::pair<K, V>, N, A>>;
+
+template<typename T, typename Cmp = std::less<T>, size_t N = 256, size_t A = 1>
+using PoolSet = std::set<T, Cmp, StdPoolAlloc<T, N, A>>;
+
+template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, size_t N = 256, size_t A = 1>
+using PoolUnorderedSet = std::unordered_set<T, H, E, StdPoolAlloc<T, N, A>>;
