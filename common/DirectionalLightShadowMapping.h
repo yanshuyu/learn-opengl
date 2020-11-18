@@ -37,8 +37,10 @@ private:
 	Renderer* m_renderer;
 	std::unique_ptr<FrameBuffer> m_FBO;
 	std::unique_ptr<Texture> m_shadowMapArray;
+	std::shared_ptr<ShaderProgram> m_shader;
+
 	glm::vec2 m_shadowMapResolution;
-	Viewport_t m_rendererViewPort;
+	Viewport_t m_shadowViewport;
 
 	std::vector<float> m_cascadeSplitPercents;
 	std::vector<float> m_cascadeFarProjZ;

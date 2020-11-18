@@ -16,11 +16,17 @@
 
 Renderer::Renderer(const RenderingSettings_t& settings, Mode mode) : m_pipelineStates()
 , m_renderTargets()
+, m_shaders()
+, m_viewports()
 , m_renderingSettings(settings)
 , m_renderMode(Mode::None)
 , m_renderTechnique(nullptr)
 , m_renderContext()
+, m_clearColor({0.f, 0.f, 0.f, 1.f})
+, m_clearDepth(1.f)
+, m_clearStencil(0.f)
 , m_scene(nullptr)
+, m_sceneRenderInfo()
 , m_quadVAO(nullptr)
 , m_quadVBO(nullptr)
 , m_quadIBO(nullptr) {
@@ -57,6 +63,15 @@ void Renderer::clenUp() {
 		m_renderTargets.pop();
 	}
 
+	while (!m_shaders.empty()) {
+		m_shaders.pop();
+	}
+
+	while (!m_viewports.empty()) {
+		m_viewports.pop();
+	}
+
+	m_mainViewport = Viewport_t();
 }
 
 
@@ -151,6 +166,66 @@ void Renderer::popRenderTarget() {
 }
 
 
+void Renderer::pushShaderProgram(ShaderProgram* shader) {
+	if (shader) {
+		m_shaders.push(shader);
+	}
+
+	if (!m_shaders.empty()) {
+		m_shaders.top()->bind();
+	} else {
+		GLCALL(glUseProgram(0));
+	}
+}
+
+void Renderer::popShadrProgram() {
+	if (m_shaders.empty())
+		return;
+	
+	m_shaders.pop();
+
+	if (!m_shaders.empty()) {
+		m_shaders.top()->bind();
+	}
+	else {
+		GLCALL(glUseProgram(0));
+	}
+}
+
+ShaderProgram* Renderer::getActiveShaderProgram() const {
+	if (m_shaders.empty())
+		return nullptr;
+	
+	return m_shaders.top();
+}
+
+void Renderer::pushViewport(Viewport_t* viewport) {
+	if (viewport)
+		m_viewports.push(viewport);
+
+	if (!m_viewports.empty()) {
+		setViewPort(*m_viewports.top());
+	}
+}
+
+void Renderer::popViewport() {
+	if (m_viewports.empty())
+		return;
+
+	m_viewports.pop();
+	
+	if (!m_viewports.empty()) {
+		setViewPort(*m_viewports.top());
+	}
+}
+
+Viewport_t* Renderer::getActiveViewport() const {
+	if (m_viewports.empty())
+		return nullptr;
+
+	return m_viewports.top();
+}
+
 void Renderer::onWindowResize(float w, float h) {
 	m_renderingSettings.renderSize = { w, h };
 	m_renderTechnique->onWindowResize(w, h);
@@ -161,10 +236,14 @@ void Renderer::renderScene(Scene* s) {
 	m_scene = s;
 	m_sceneRenderInfo = s->getSceneRenderInfo();
 	
-	if (m_clearColor != m_sceneRenderInfo->camera.backgrounColor)
+	if (m_clearColor != m_sceneRenderInfo->camera.backgrounColor) {
 		setClearColor(m_sceneRenderInfo->camera.backgrounColor);
-	if (m_viewPort != m_sceneRenderInfo->camera.viewport)
-		setViewPort(m_sceneRenderInfo->camera.viewport);
+	}
+	if (m_mainViewport != m_sceneRenderInfo->camera.viewport) {
+		m_mainViewport = m_sceneRenderInfo->camera.viewport;
+		popViewport();
+		pushViewport(&m_mainViewport);
+	}
 
 	m_renderTechnique->beginFrame();
 
@@ -221,19 +300,11 @@ void Renderer::renderTask(const RenderTask_t& task) {
 	m_renderTechnique->performTask(task);
 }
 
-void Renderer::pullingRenderTask(std::weak_ptr<ShaderProgram> activeShader) {
+void Renderer::pullingRenderTask() {
 	if (m_scene) {
-		if (!activeShader.expired())
-			m_renderTechnique->setActiveShader(activeShader);
-
 		m_renderContext.clearMatrix();
 		m_scene->render(&m_renderContext);
 	}
-}
-
-void Renderer::setViewPort(const Viewport_t& vp) {
-	m_viewPort = vp;
-	GLCALL(glViewport(m_viewPort.x, m_viewPort.y, m_viewPort.width, m_viewPort.height));
 }
 
 

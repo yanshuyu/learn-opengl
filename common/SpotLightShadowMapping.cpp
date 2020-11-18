@@ -15,8 +15,9 @@ SpotLightShadowMapping::SpotLightShadowMapping(Renderer* renderer, const glm::ve
 , m_shadowMapFBO(nullptr) 
 , m_shadowMap(nullptr) 
 , m_shadowUBO(nullptr) 
+, m_shader()
 , m_lightCamera()
-, m_rendererViewPort()
+, m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
 , m_shadowMapResolution(shadowMapResolution) {
 }
 
@@ -84,36 +85,27 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 		preZShader = ShaderProgramManager::getInstance()->addProgram("DepthPass.shader");
 	ASSERT(!preZShader.expired());
 
-	std::shared_ptr<ShaderProgram> strongShader = preZShader.lock();
-	strongShader->bind();
-	//m_shadowMapFBO->bind();
-	//m_shadowMapFBO->setDrawBufferLocation({});
-	//m_shadowMapFBO->setReadBufferLocation(-1);
+	m_shader = preZShader.lock();
+	m_renderer->pushShaderProgram(m_shader.get());
 	m_renderer->pushRenderTarget(m_shadowMapFBO.get());
-
-	m_rendererViewPort = m_renderer->getViewport();
-	m_renderer->setViewPort(Viewport_t(0, 0, m_shadowMapResolution.x, m_shadowMapResolution.y));
-
-	//using cull back face mode to output back face depth
-	//m_renderer->setCullFaceMode(CullFaceMode::Front);
+	m_renderer->pushViewport(&m_shadowViewport);
 	m_renderer->clearScreen(ClearFlags::Depth);
 
 	// set view project matrix
-	if (strongShader->hasUniform("u_VPMat")) {
+	if (m_shader->hasUniform("u_VPMat")) {
 		glm::mat4 vp = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;
-		strongShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+		m_shader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 	
-	m_renderer->pullingRenderTask(preZShader);
+	m_renderer->pullingRenderTask();
 }
 
 
 void SpotLightShadowMapping::endShadowPhase(const Light_t& light) {
-	//m_shadowMapFBO->unbind();
-	//FrameBuffer::bindDefault();
 	m_renderer->popRenderTarget();
-	m_renderer->setViewPort(m_rendererViewPort);
-	//m_renderer->setCullFaceMode(CullFaceMode::Back);
+	m_renderer->popViewport();
+	m_renderer->popShadrProgram();
+	m_shader = nullptr;
 }
 
 
@@ -146,6 +138,7 @@ void SpotLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgr
 
 void SpotLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
+	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
 	initialize();
 }
 

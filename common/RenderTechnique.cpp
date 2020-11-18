@@ -5,6 +5,6 @@
 
 
 RenderTechnique::RenderTechnique(Renderer* invoker): m_invoker(invoker)
-, m_activeShader(nullptr) {
+, m_passShader(nullptr) {
 
 }

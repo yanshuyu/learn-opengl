@@ -13,8 +13,6 @@ public:
 	virtual bool intialize() = 0;
 	virtual void cleanUp() = 0;
 
-	virtual void clearScreen(int flags) = 0;
-
 	virtual void beginFrame() = 0;
 	virtual void endFrame() = 0;
 	
@@ -45,15 +43,7 @@ public:
 	virtual void performTask(const RenderTask_t& task) = 0;
 	virtual bool shouldRunPass(RenderPass pass) = 0;
 
-	inline void setActiveShader(std::weak_ptr<ShaderProgram> shader) {
-		m_activeShader = shader.lock();
-	}
-
-	inline std::shared_ptr<ShaderProgram> getActiveShader() const {
-		return m_activeShader;
-	}
-
 protected:
 	Renderer* m_invoker;
-	std::shared_ptr<ShaderProgram> m_activeShader;
+	std::shared_ptr<ShaderProgram> m_passShader; // current pass used shader
 };

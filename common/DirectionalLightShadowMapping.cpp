@@ -17,10 +17,12 @@ const int DirectionalLightShadowMapping::s_maxNumCascades = 4;
 DirectionalLightShadowMapping::DirectionalLightShadowMapping(Renderer* renderer,
 	const glm::vec2& shadowMapResolution,
 	const std::vector<float>& cascadeSplitPercentage) : m_renderer(renderer)
-	, m_cascadeSplitPercents(cascadeSplitPercentage)
-	, m_shadowMapResolution(shadowMapResolution)
-	, m_FBO(nullptr)
-	, m_shadowMapArray() {
+, m_cascadeSplitPercents(cascadeSplitPercentage)
+, m_shadowMapResolution(shadowMapResolution)
+, m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
+, m_FBO(nullptr)
+, m_shadowMapArray()
+, m_shader() {
 
 }
 	
@@ -90,32 +92,32 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 		shader = ShaderProgramManager::getInstance()->addProgram("DirectionalLightShadowPass.shader");
 	ASSERT(!shader.expired());
 
-	std::shared_ptr<ShaderProgram> strongShader = shader.lock();
-	strongShader->bind();
-
+	m_shader = shader.lock();
+	m_renderer->pushShaderProgram(m_shader.get());
 	m_renderer->pushRenderTarget(m_FBO.get());
+	m_renderer->pushViewport(&m_shadowViewport);
 	m_renderer->clearScreen(ClearFlags::Depth);
-	m_rendererViewPort = m_renderer->getViewport();
-	m_renderer->setViewPort(Viewport_t(0, 0, m_shadowMapResolution.x, m_shadowMapResolution.y));
-	
-	if (strongShader->hasUniform("u_numCascade"))
-		strongShader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
 
-	if (strongShader->hasUniform("u_lightVP[0]")) {
+	if (m_shader->hasUniform("u_numCascade"))
+		m_shader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
+
+	if (m_shader->hasUniform("u_lightVP[0]")) {
 		std::vector<glm::mat4> lightsVP;
 		std::for_each(m_cascadeCameras.begin(), m_cascadeCameras.end(), [&](const Camera_t& c) {
 			lightsVP.push_back(c.projMatrix * c.viewMatrix);
 		});
-		strongShader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
+		m_shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
 	}
 
-	m_renderer->pullingRenderTask(shader);
+	m_renderer->pullingRenderTask();
 }
 
 
 void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light) {
 	m_renderer->popRenderTarget();
-	m_renderer->setViewPort(m_rendererViewPort);
+	m_renderer->popViewport();
+	m_renderer->popShadrProgram();
+	m_shader = nullptr;
 }
 
 void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {
@@ -172,6 +174,7 @@ void DirectionalLightShadowMapping::endLighttingPhase(const Light_t& light, Shad
 
 void DirectionalLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
+	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
 	bool ok = initialize();
 #ifdef _DEBUG
 	ASSERT(ok);

@@ -29,7 +29,9 @@ private:
 	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
 	std::unique_ptr<Texture> m_shadowMap;
 	std::unique_ptr<Buffer> m_shadowUBO;
+	std::shared_ptr<ShaderProgram> m_shader;
+
 	Camera_t m_lightCamera;
-	Viewport_t m_rendererViewPort;
+	Viewport_t m_shadowViewport;;
 	glm::vec2 m_shadowMapResolution;
 };

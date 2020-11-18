@@ -32,8 +32,6 @@ public:
 
 	static const std::string s_identifier;
 
-	void clearScreen(int flags) override;
-
 	bool intialize() override;
 	void cleanUp() override;
 

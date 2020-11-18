@@ -116,8 +116,6 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, Sh
 
 	} else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
 		auto renderer = static_cast<DeferredRenderer*>(m_renderer);
-		auto shader = renderer->m_activeShader;
-
 		if (shader->hasUniform("u_diffuse")) {
 			renderer->m_diffuseBuffer->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_diffuse", int(Texture::Unit::DiffuseMap));

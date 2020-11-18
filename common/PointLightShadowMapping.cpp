@@ -11,9 +11,10 @@
 PointLightShadowMapping::PointLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution)
 : m_renderer(renderer)
 , m_shadowMapResolution(shadowMapResolution)
-, m_rendererViewPort()
+, m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
 , m_FBO(nullptr)
-, m_cubeShadowMap(nullptr){
+, m_cubeShadowMap(nullptr)
+, m_shader(nullptr) {
 	
 }
 
@@ -80,36 +81,31 @@ void PointLightShadowMapping::beginShadowPhase(const Light_t& light, const Camer
 		shader = ShaderProgramManager::getInstance()->addProgram("PointLightShadowPass.shader");
 	ASSERT(!shader.expired());
 
-	std::shared_ptr<ShaderProgram> strongShader = shader.lock();
-	strongShader->bind();
-	//m_FBO->bind();
+	m_shader = shader.lock();
+	m_renderer->pushShaderProgram(m_shader.get());
 	m_renderer->pushRenderTarget(m_FBO.get());
-	
-	m_rendererViewPort = m_renderer->getViewport();
+	m_renderer->pushViewport(&m_shadowViewport);
 	m_renderer->clearScreen(ClearFlags::Depth);
-	m_renderer->setViewPort(Viewport_t(0.f, 0.f, m_shadowMapResolution.x, m_shadowMapResolution.y));
-	//m_renderer->setCullFaceMode(CullFaceMode::Front);
 
-	if (strongShader->hasUniform("u_lightVP[0]")) {
+	if (m_shader->hasUniform("u_lightVP[0]")) {
 		auto transforms = calclightLightCameraMatrixs(light);
-		strongShader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(transforms.front()), transforms.size());
+		m_shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(transforms.front()), transforms.size());
 	}
 
-	if (strongShader->hasUniform("u_near"))
-		strongShader->setUniform1("u_near", 1.f);
+	if (m_shader->hasUniform("u_near"))
+		m_shader->setUniform1("u_near", 1.f);
 	
-	if (strongShader->hasUniform("u_far"))
-		strongShader->setUniform1("u_far", light.range);
+	if (m_shader->hasUniform("u_far"))
+		m_shader->setUniform1("u_far", light.range);
 
-	m_renderer->pullingRenderTask(shader);
+	m_renderer->pullingRenderTask();
 }
 
 void PointLightShadowMapping::endShadowPhase(const Light_t& light) {
-	//m_FBO->unbind();
-	//FrameBuffer::bindDefault();
 	m_renderer->popRenderTarget();
-	m_renderer->setViewPort(m_rendererViewPort);
-	//m_renderer->setCullFaceMode(CullFaceMode::Back);
+	m_renderer->popViewport();
+	m_renderer->popShadrProgram();
+	m_shader = nullptr;
 }
 
 void PointLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {		
@@ -145,6 +141,7 @@ void PointLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProg
 
 void PointLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
+	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
 	bool ok = initialize();
 #ifdef _DEBUG
 	ASSERT(ok);

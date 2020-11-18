@@ -24,9 +24,10 @@ private:
 
 private:
 	Renderer* m_renderer;
-	Viewport_t m_rendererViewPort;
 	glm::vec2 m_shadowMapResolution;
+	Viewport_t m_shadowViewport;
 
 	std::unique_ptr<FrameBuffer> m_FBO;
 	std::unique_ptr<Texture> m_cubeShadowMap;
+	std::shared_ptr<ShaderProgram> m_shader;
 };

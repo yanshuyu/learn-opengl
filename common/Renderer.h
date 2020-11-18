@@ -3,6 +3,7 @@
 #include"RendererCore.h"
 #include"ShaderProgram.h"
 #include"RenderTechnique.h"
+#include"Util.h"
 
 class Scene;
 class Texture;
@@ -40,14 +41,23 @@ public:
 	Renderer& operator = (const Renderer& other) = delete;
 	Renderer& operator = (Renderer&& rv) = delete;
 
+	bool initialize();
+	void clenUp();
+
 	void pushGPUPipelineState(GPUPipelineState* pipeLineState);
 	void popGPUPipelineState();
 
 	void pushRenderTarget(FrameBuffer* target);
 	void popRenderTarget();
 
-	bool initialize();
-	void clenUp();
+	void pushShaderProgram(ShaderProgram* shader);
+	void popShadrProgram();
+	ShaderProgram* getActiveShaderProgram() const;
+
+	void pushViewport(Viewport_t* viewport);
+	void popViewport();
+	Viewport_t* getActiveViewport() const;
+
 	bool setRenderMode(Mode mode);
 	Mode getRenderMode() const;
 	bool isValid() const;
@@ -57,7 +67,6 @@ public:
 	void setClearColor(const glm::vec4& color);
 	void setClearDepth(float d);
 	void setClearStencil(int m);
-	void setViewPort(const Viewport_t& vp);
 	void clearScreen(int flags);
 
 	void setColorMask(bool writteable);
@@ -68,7 +77,7 @@ public:
 	void drawFullScreenQuad();
 	void renderScene(Scene* s);
 	void renderTask(const RenderTask_t& task);
-	void pullingRenderTask(std::weak_ptr<ShaderProgram> activeShader = std::weak_ptr<ShaderProgram>());
+	void pullingRenderTask();
 
 
 	inline  glm::vec4 getClearColor() const {
@@ -84,7 +93,7 @@ public:
 	}
 
 	inline Viewport_t getViewport() const {
-		return m_viewPort;
+		return m_mainViewport;
 	}
 
 	inline const RenderingSettings_t* getRenderingSettings() const {
@@ -98,6 +107,9 @@ public:
 protected:
 	void setGPUPipelineState(const GPUPipelineState& pipelineState);
 	bool setupFullScreenQuad();
+	inline void setViewPort(const Viewport_t& vp) {
+		GLCALL(glViewport(vp.x, vp.y, vp.width, vp.height));
+	}
 
 	// clipping states
 	void setCullFaceMode(CullFaceMode mode);
@@ -129,6 +141,8 @@ protected:
 protected:
 	std::stack<GPUPipelineState*> m_pipelineStates;
 	std::stack<FrameBuffer*> m_renderTargets;
+	std::stack<ShaderProgram*> m_shaders;
+	std::stack<Viewport_t*> m_viewports;
 
 	RenderingSettings_t m_renderingSettings;
 	Mode m_renderMode;
@@ -137,10 +151,10 @@ protected:
 	SceneRenderInfo_t* m_sceneRenderInfo;
 	std::unique_ptr<RenderTechnique> m_renderTechnique;
 
+	Viewport_t m_mainViewport;
 	glm::vec4 m_clearColor;
 	float m_clearDepth;
 	int m_clearStencil;
-	Viewport_t m_viewPort;
 
 	// screen quad
 	std::unique_ptr<VertexArray> m_quadVAO;

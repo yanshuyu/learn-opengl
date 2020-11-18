@@ -37,8 +37,6 @@ public:
 
 	static const std::string s_identifier;
 
-	void clearScreen(int flags) override;
-
 	void beginFrame() override;
 	void endFrame() override;
 
