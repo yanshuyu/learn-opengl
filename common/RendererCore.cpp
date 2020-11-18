@@ -233,3 +233,26 @@ glm::mat4 RenderContext::getMatrix() const {
 	return m_transformStack.top();
 }
 
+
+GPUPipelineState::GPUPipelineState() :cullMode(CullFaceMode::Back)
+, cullFaceWindingOrder(FaceWindingOrder::CCW)
+, shadeMode(ShadeMode::Smooth)
+, fillMode(FillMode::Fill)
+, depthMode(DepthMode::Disable)
+, depthFunc(DepthFunc::Less)
+, depthMask(1)
+, stencilMode(StencilMode::Disable)
+, stencilPassOp(StencilOp::Zero)
+, stencilFailOp(StencilOp::Zero)
+, stencilDepthFailOp(StencilOp::Zero)
+, stencilMask(0xffffffff)
+, blendMode(BlendMode::Disable)
+, blendSrcFactor(BlendFactor::SrcAlpha)
+, blendDstFactor(BlendFactor::One_Minus_Src_Alpha)
+, blendFunc(BlendFunc::Add)
+, blendColor{ 1.f, 1.f, 1.f, 1.f } {
+
+}
+
+
+GPUPipelineState GPUPipelineState::s_defaultState;

@@ -23,7 +23,11 @@ ForwardRenderer::ForwardRenderer(Renderer* invoker, const RenderingSettings_t& s
 , m_spotLightUBO(nullptr)
 , m_spotLightShadow(nullptr)
 , m_dirLightShadow(nullptr)
-, m_pointLightShadow(nullptr) {
+, m_pointLightShadow(nullptr)
+, m_depthPassPipelineState()
+, m_shadowPassPipelineState()
+, m_lightPassPipelineState()
+, m_unlitPassPipelineState() {
 
 }
 
@@ -36,10 +40,27 @@ void ForwardRenderer::clearScreen(int flags) {
 }
 
 bool ForwardRenderer::intialize() {
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setDepthTestFunc(DepthFunc::Less);
-	m_invoker->setCullFaceMode(CullFaceMode::Back);
-	m_invoker->setFaceWindingOrder(FaceWindingOrder::CCW);
+	m_depthPassPipelineState.depthMode = DepthMode::Enable;
+	m_depthPassPipelineState.depthFunc = DepthFunc::Less;
+	m_depthPassPipelineState.depthMask = 1;
+
+	m_shadowPassPipelineState.depthMode = DepthMode::Enable;
+	m_shadowPassPipelineState.depthFunc = DepthFunc::Less;
+	m_shadowPassPipelineState.depthMask = 1;
+	m_shadowPassPipelineState.cullMode = CullFaceMode::Front;
+	m_shadowPassPipelineState.cullFaceWindingOrder = FaceWindingOrder::CCW;
+
+	m_lightPassPipelineState.depthMode = DepthMode::Enable;
+	m_lightPassPipelineState.depthFunc = DepthFunc::LEqual;
+	m_lightPassPipelineState.depthMask = 0;
+	m_lightPassPipelineState.blendMode = BlendMode::Enable;
+	m_lightPassPipelineState.blendSrcFactor = BlendFactor::One;
+	m_lightPassPipelineState.blendDstFactor = BlendFactor::One;
+	m_lightPassPipelineState.blendFunc = BlendFunc::Add;
+
+	m_unlitPassPipelineState.depthMode = DepthMode::Enable;
+	m_unlitPassPipelineState.depthFunc = DepthFunc::LEqual;
+	m_unlitPassPipelineState.depthMask = 0;
 	
 	const RenderingSettings_t* renderSetting = m_invoker->getRenderingSettings();
 	bool ok = true;
@@ -102,7 +123,10 @@ bool ForwardRenderer::intialize() {
 			break;
 		}
 	}
-	
+
+	m_invoker->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
+	m_invoker->setColorMask(true);
+
 	return ok;
 }
 
@@ -140,19 +164,16 @@ void ForwardRenderer::endFrame() {
 		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
 	}
 
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setColorMask(true);
-
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
 	}
+
 }
 
 
 void ForwardRenderer::beginDepthPass() {
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setDepthTestFunc(DepthFunc::Less);
+	m_invoker->pushGPUPipelineState(&m_depthPassPipelineState);
 	m_invoker->setColorMask(false);
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
@@ -177,8 +198,7 @@ void ForwardRenderer::beginDepthPass() {
 
 
 void ForwardRenderer::endDepthPass() {
-	m_invoker->setDepthTestMode(DepthTestMode::ReadOnly);
-	m_invoker->setDepthTestFunc(DepthFunc::LEqual);
+	m_invoker->popGPUPipelineState();
 	m_invoker->setColorMask(true);
 
 	m_activeShader->unbind();
@@ -194,6 +214,8 @@ void ForwardRenderer::endGeometryPass() {
 }
 
 void ForwardRenderer::beginUnlitPass() {
+	m_invoker->pushGPUPipelineState(&m_unlitPassPipelineState);
+
 	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
 	if (unlitShader.expired())
 			unlitShader = ShaderProgramManager::getInstance()->addProgram("Unlit.shader");
@@ -214,6 +236,7 @@ void ForwardRenderer::beginUnlitPass() {
 }
 
 void ForwardRenderer::endUnlitPass() {
+	m_invoker->popGPUPipelineState();
 	m_activeShader->unbind();
 	m_activeShader = nullptr;
 	m_currentPass = RenderPass::None;
@@ -221,8 +244,8 @@ void ForwardRenderer::endUnlitPass() {
 
 
 void ForwardRenderer::beginShadowPass(const Light_t& l) {
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setDepthTestFunc(DepthFunc::Less);
+	m_invoker->pushGPUPipelineState(&m_shadowPassPipelineState);
+	m_invoker->setColorMask(false);
 
 	m_currentPass = RenderPass::ShadowPass;
 	auto& camera = m_invoker->getSceneRenderInfo()->camera;
@@ -263,8 +286,8 @@ void ForwardRenderer::endShadowPass(const Light_t& l) {
 		break;
 	}
 
-	m_invoker->setDepthTestMode(DepthTestMode::ReadOnly);
-	m_invoker->setDepthTestFunc(DepthFunc::LEqual);
+	m_invoker->popGPUPipelineState();
+	m_invoker->setColorMask(true);
 
 	if (m_activeShader) {
 		m_activeShader->unbind();
@@ -274,10 +297,7 @@ void ForwardRenderer::endShadowPass(const Light_t& l) {
 }
 
 void ForwardRenderer::beginLightPass(const Light_t& l) {
-	m_invoker->setBlendMode(BlendMode::Enable);
-	m_invoker->setBlendFactor(BlendFactor::One, BlendFactor::One);
-	m_invoker->setBlendFunc(BlendFunc::Add);
-
+	m_invoker->pushGPUPipelineState(&m_lightPassPipelineState);
 	m_currentPass = RenderPass::LightPass;
 
 	switch (l.type) {
@@ -407,7 +427,8 @@ void ForwardRenderer::endLightPass(const Light_t& l) {
 	m_activeShader->unbind();
 	m_activeShader = nullptr;
 	m_currentPass = RenderPass::None;
-	m_invoker->setBlendMode(BlendMode::Disable);
+	//m_invoker->setBlendMode(BlendMode::Disable);
+	m_invoker->popGPUPipelineState();
 }
 
 void ForwardRenderer::beginTransparencyPass() {

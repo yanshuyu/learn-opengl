@@ -122,7 +122,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;MEMORY_DEBUG_MODE;PROFILING_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -159,6 +159,8 @@
     <ClCompile Include="..\common\ConditionVariable.cpp" />
     <ClCompile Include="..\common\AnimationState.cpp" />
     <ClCompile Include="..\common\FileSystem.cpp" />
+    <ClCompile Include="..\common\FrameAllocator.cpp" />
+    <ClCompile Include="..\common\Geometry3D.cpp" />
     <ClCompile Include="..\common\IMesh.cpp" />
     <ClCompile Include="..\common\KeyFrameTrack.cpp" />
     <ClCompile Include="..\common\ArcballCameraController.cpp" />
@@ -179,6 +181,7 @@
     <ClCompile Include="..\common\LightComponent.cpp" />
     <ClCompile Include="..\common\Material.cpp" />
     <ClCompile Include="..\common\MaterialMgr.cpp" />
+    <ClCompile Include="..\common\MemoryAllocator.cpp" />
     <ClCompile Include="..\common\Mesh.cpp" />
     <ClCompile Include="..\common\MeshLoader.cpp" />
     <ClCompile Include="..\common\MeshMgr.cpp" />
@@ -187,6 +190,7 @@
     <ClCompile Include="..\common\NoticificationCenter.cpp" />
     <ClCompile Include="..\common\Notification.cpp" />
     <ClCompile Include="..\common\PointLightShadowMapping.cpp" />
+    <ClCompile Include="..\common\PoolAllocator.cpp" />
     <ClCompile Include="..\common\Pose.cpp" />
     <ClCompile Include="..\common\RenderableComponent.cpp" />
     <ClCompile Include="..\common\RenderBuffer.cpp" />
@@ -202,6 +206,7 @@
     <ClCompile Include="..\common\Skeleton.cpp" />
     <ClCompile Include="..\common\SkinMeshRenderComponent.cpp" />
     <ClCompile Include="..\common\SpotLightShadowMapping.cpp" />
+    <ClCompile Include="..\common\StackAllocator.cpp" />
     <ClCompile Include="..\common\Texture.cpp" />
     <ClCompile Include="..\common\TextureMgr.cpp" />
     <ClCompile Include="..\common\Transform.cpp" />
@@ -225,12 +230,15 @@
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h" />
     <ClInclude Include="..\common\AnimationPlayer.h" />
+    <ClInclude Include="..\common\Containers.h" />
     <ClInclude Include="..\common\DebugDrawer.h" />
     <ClInclude Include="..\common\AnimatorComponent.h" />
     <ClInclude Include="..\common\ConditionVariable.h" />
     <ClInclude Include="..\common\AnimationState.h" />
     <ClInclude Include="..\common\AnimationTransition.h" />
     <ClInclude Include="..\common\FileSystem.h" />
+    <ClInclude Include="..\common\FrameAllocator.h" />
+    <ClInclude Include="..\common\Geometry3D.h" />
     <ClInclude Include="..\common\IMesh.h" />
     <ClInclude Include="..\common\KeyFrameTrack.h" />
     <ClInclude Include="..\common\ArcballCameraController.h" />
@@ -252,6 +260,7 @@
     <ClInclude Include="..\common\LightComponent.h" />
     <ClInclude Include="..\common\Material.h" />
     <ClInclude Include="..\common\MaterialMgr.h" />
+    <ClInclude Include="..\common\MemoryAllocator.h" />
     <ClInclude Include="..\common\Mesh.h" />
     <ClInclude Include="..\common\MeshLoader.h" />
     <ClInclude Include="..\common\MeshMgr.h" />
@@ -261,6 +270,7 @@
     <ClInclude Include="..\common\NotificationCenter.h" />
     <ClInclude Include="..\common\pch.h" />
     <ClInclude Include="..\common\PointLightShadowMapping.h" />
+    <ClInclude Include="..\common\PoolAllocator.h" />
     <ClInclude Include="..\common\Pose.h" />
     <ClInclude Include="..\common\RenderableComponent.h" />
     <ClInclude Include="..\common\RenderBuffer.h" />
@@ -279,6 +289,7 @@
     <ClInclude Include="..\common\Skeleton.h" />
     <ClInclude Include="..\common\SkinMeshRenderComponent.h" />
     <ClInclude Include="..\common\SpotLightShadowMapping.h" />
+    <ClInclude Include="..\common\StackAllocator.h" />
     <ClInclude Include="..\common\Texture.h" />
     <ClInclude Include="..\common\TextureMgr.h" />
     <ClInclude Include="..\common\Transform.h" />

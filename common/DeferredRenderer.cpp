@@ -25,16 +25,18 @@ DeferredRenderer::DeferredRenderer(Renderer* invoker, const RenderingSettings_t&
 , m_specularBuffer(nullptr)
 , m_emissiveBuffer(nullptr)
 , m_depthStencilBuffer(nullptr)
-, m_quadVAO(nullptr)
-, m_quadVBO(nullptr)
-, m_quadIBO(nullptr)
 , m_currentPass(RenderPass::None)
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
 , m_spotLightShadow(nullptr)
 , m_dirLightShadow(nullptr)
-, m_pointLightShadow(nullptr) {
+, m_pointLightShadow(nullptr)
+, m_depthPassPipelineState()
+, m_geometryPassPipelineState()
+, m_shadowPassPipelineState()
+, m_lightPassPipelineState()
+, m_unlitPassPipelineState() {
 
 }
 
@@ -44,6 +46,28 @@ DeferredRenderer::~DeferredRenderer() {
 
 
 bool DeferredRenderer::intialize() {
+	m_depthPassPipelineState.depthMode = DepthMode::Enable;
+	m_depthPassPipelineState.depthFunc = DepthFunc::Less;
+	m_depthPassPipelineState.depthMask = 1;
+
+	m_geometryPassPipelineState.depthMode = DepthMode::Enable;
+	m_geometryPassPipelineState.depthFunc = DepthFunc::LEqual;
+	m_geometryPassPipelineState.depthMask = 0;
+
+	m_shadowPassPipelineState.depthMode = DepthMode::Enable;
+	m_shadowPassPipelineState.depthFunc = DepthFunc::Less;
+	m_shadowPassPipelineState.depthMask = 1;
+	m_shadowPassPipelineState.cullMode = CullFaceMode::Front;
+	m_shadowPassPipelineState.cullFaceWindingOrder = FaceWindingOrder::CCW;
+
+	m_unlitPassPipelineState.depthMode = DepthMode::Disable;
+
+	m_lightPassPipelineState.depthMode = DepthMode::Disable;
+	m_lightPassPipelineState.blendMode = BlendMode::Enable;
+	m_lightPassPipelineState.blendSrcFactor = BlendFactor::One;
+	m_lightPassPipelineState.blendDstFactor = BlendFactor::One;
+	m_lightPassPipelineState.blendFunc = BlendFunc::Add;
+
 	bool ok = true;
 
 	// g-buffers
@@ -82,8 +106,6 @@ bool DeferredRenderer::intialize() {
 		return false;
 	}
 
-	setupFullScreenQuad();
-
 	// light ubo
 	m_directionalLightUBO.reset(new Buffer());
 	m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
@@ -116,9 +138,9 @@ bool DeferredRenderer::intialize() {
 			break;
 		}
 	}
-
-	m_invoker->setCullFaceMode(CullFaceMode::Back);
-	m_invoker->setFaceWindingOrder(FaceWindingOrder::CCW);
+	
+	m_invoker->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
+	m_invoker->setColorMask(true);
 
 	return ok;
 }
@@ -131,10 +153,6 @@ void DeferredRenderer::cleanUp() {
 	m_specularBuffer.release();
 	m_emissiveBuffer.release();
 	m_gBuffersFBO.release();
-
-	m_quadVAO.release();
-	m_quadVBO.release();
-	m_quadIBO.release();
 
 	m_directionalLightUBO.release();
 	m_pointLightUBO.release();
@@ -154,11 +172,11 @@ void DeferredRenderer::clearScreen(int flags) {
 }
 
 void DeferredRenderer::beginFrame() {
-	FrameBuffer::bindDefault();
-	clearScreen(ClearFlags::Color | ClearFlags::Depth);
+	//FrameBuffer::bindDefault();
+	m_invoker->clearScreen(ClearFlags::Color | ClearFlags::Depth);
 
-	m_gBuffersFBO->bind();
-	clearScreen(ClearFlags::Color | ClearFlags::Depth);
+	m_invoker->pushRenderTarget(m_gBuffersFBO.get());
+	m_invoker->clearScreen(ClearFlags::Color | ClearFlags::Depth);
 }
 
 void DeferredRenderer::endFrame() {
@@ -169,9 +187,6 @@ void DeferredRenderer::endFrame() {
 
 	GLCALL(glBindVertexArray(0));
 
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setColorMask(true);
-
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
@@ -179,8 +194,7 @@ void DeferredRenderer::endFrame() {
 }
 
 void DeferredRenderer::beginDepthPass() {
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setDepthTestFunc(DepthFunc::Less);
+	m_invoker->pushGPUPipelineState(&m_depthPassPipelineState);
 	m_invoker->setColorMask(false);
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
@@ -204,8 +218,7 @@ void DeferredRenderer::beginDepthPass() {
 }
 
 void DeferredRenderer::endDepthPass() {
-	m_invoker->setDepthTestMode(DepthTestMode::ReadOnly);
-	m_invoker->setDepthTestFunc(DepthFunc::LEqual);
+	m_invoker->popGPUPipelineState();
 	m_invoker->setColorMask(true);
 
 	if (m_activeShader) {
@@ -216,6 +229,8 @@ void DeferredRenderer::endDepthPass() {
 }
 
 void DeferredRenderer::beginGeometryPass() {
+	m_invoker->pushGPUPipelineState(&m_geometryPassPipelineState);
+
 	auto geometryShader = ShaderProgramManager::getInstance()->getProgram("GeometryPass");
 	if (geometryShader.expired())
 		geometryShader = ShaderProgramManager::getInstance()->addProgram("GeometryPass.shader");
@@ -236,9 +251,9 @@ void DeferredRenderer::beginGeometryPass() {
 }
 
 void DeferredRenderer::endGeometryPass() {
-	m_gBuffersFBO->unbind();
-	FrameBuffer::bindDefault();
-	
+	m_invoker->popGPUPipelineState();
+	m_invoker->popRenderTarget();
+
 	if (m_activeShader) {
 		m_activeShader->unbind();
 		m_activeShader = nullptr;
@@ -247,6 +262,8 @@ void DeferredRenderer::endGeometryPass() {
 }
 
 void DeferredRenderer::beginUnlitPass() {
+	m_invoker->pushGPUPipelineState(&m_unlitPassPipelineState);
+
 	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("UnlitDeferred");
 	if (unlitShader.expired())
 		unlitShader = ShaderProgramManager::getInstance()->addProgram("UnlitDeferred.shader");
@@ -257,10 +274,11 @@ void DeferredRenderer::beginUnlitPass() {
 	m_currentPass = RenderPass::UnlitPass;
 
 	// manually sumit render task, draw a full screen quad
-	drawFullScreenQuad();
+	m_invoker->drawFullScreenQuad();
 }
 
 void DeferredRenderer::endUnlitPass() {
+	m_invoker->popGPUPipelineState();
 	m_diffuseBuffer->unbind();
 	m_emissiveBuffer->unbind();
 	if (m_activeShader) {
@@ -271,9 +289,8 @@ void DeferredRenderer::endUnlitPass() {
 }
 
 void DeferredRenderer::beginShadowPass(const Light_t& l) {
-	m_invoker->setDepthTestMode(DepthTestMode::Enable);
-	m_invoker->setDepthTestFunc(DepthFunc::Less);
-	
+	m_invoker->pushGPUPipelineState(&m_shadowPassPipelineState);
+	m_invoker->setColorMask(false);
 	m_currentPass = RenderPass::ShadowPass;
 	auto sceneInfo = m_invoker->getSceneRenderInfo();
 
@@ -314,9 +331,8 @@ void DeferredRenderer::endShadowPass(const Light_t& l) {
 		break;
 	}
 
-	m_invoker->setDepthTestMode(DepthTestMode::ReadOnly);
-	m_invoker->setDepthTestFunc(DepthFunc::LEqual);
-	FrameBuffer::bindDefault();
+	m_invoker->popGPUPipelineState();
+	m_invoker->setColorMask(true);
 
 	if (m_activeShader) {
 		m_activeShader->unbind();
@@ -326,6 +342,7 @@ void DeferredRenderer::endShadowPass(const Light_t& l) {
 }
 
 void DeferredRenderer::beginLightPass(const Light_t& l) {
+	m_invoker->pushGPUPipelineState(&m_lightPassPipelineState);
 	switch (l.type)
 	{
 	case LightType::DirectioanalLight: {
@@ -418,10 +435,6 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 		return;
 	}
 	
-	m_invoker->setBlendMode(BlendMode::Enable);
-	m_invoker->setBlendFactor(BlendFactor::One, BlendFactor::One);
-	m_invoker->setBlendFunc(BlendFunc::Add);
-
 	m_currentPass = RenderPass::LightPass;
 
 	// set camera position
@@ -434,7 +447,6 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 	if (m_activeShader->hasUniform("u_maxShininess")) {
 		m_activeShader->setUniform1("u_maxShininess", float(Material::s_maxShininess));
 	}
-
 
 	// set g-buffers
 	if (m_activeShader->hasUniform("u_posW")) {
@@ -463,7 +475,7 @@ void DeferredRenderer::beginLightPass(const Light_t& l) {
 	}
 
 	// manully submit render task
-	drawFullScreenQuad();
+	m_invoker->drawFullScreenQuad();
 }
 
 void DeferredRenderer::endLightPass(const Light_t& l) {
@@ -487,7 +499,7 @@ void DeferredRenderer::endLightPass(const Light_t& l) {
 	m_emissiveBuffer->unbind();
 
 	m_currentPass = RenderPass::None;
-	m_invoker->setBlendMode(BlendMode::Disable);
+	m_invoker->popGPUPipelineState();
 
 	if (m_activeShader) {
 		m_activeShader->unbindUniformBlock("LightBlock");
@@ -643,45 +655,3 @@ bool DeferredRenderer::setupGBuffers() {
 	return  status == FrameBuffer::Status::Ok;
 }
 
-void DeferredRenderer::setupFullScreenQuad() {
-	Vertex quadVertices[] = {
-		Vertex({-1.f, -1.f, 0.f}, {0.f, 0.f}),
-		Vertex({1.f, -1.f, 0.f}, {1.f, 0.f}),
-		Vertex({1.f, 1.f, 0.f}, {1.f, 1.f}),
-		Vertex({-1.f, 1.f, 0.f}, {0.f, 1.f}),
-	};
-
-	unsigned int quadIndices[] = {
-		0,1,2,
-		2,3,0
-	};
-
-	VertexLayoutDescription vertLayoutDesc;
-	m_quadVAO.reset(new VertexArray());
-	m_quadVBO.reset(new Buffer());
-	m_quadIBO.reset(new Buffer());
-
-	m_quadVAO->bind();
-	m_quadVBO->bind(Buffer::Target::VertexBuffer);
-	m_quadIBO->bind(Buffer::Target::IndexBuffer);
-	m_quadVBO->loadData(&quadVertices[0], sizeof(Vertex) * 4, Buffer::Usage::StaticDraw, 4);
-	m_quadIBO->loadData(&quadIndices[0], sizeof(unsigned int) * 6, Buffer::Usage::StaticDraw, 6);
-
-	vertLayoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3, 0);
-	vertLayoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 2, 1);
-
-	m_quadVAO->storeVertexLayout(vertLayoutDesc);
-	
-	m_quadVAO->unbind();
-	m_quadVBO->unbind();
-	m_quadIBO->unbind();
-}
-
-
-void DeferredRenderer::drawFullScreenQuad() {
-	RenderTask_t task;
-	task.vao = m_quadVAO.get();
-	task.indexCount = m_quadIBO->getElementCount();
-	task.primitive = PrimitiveType::Triangle;
-	performTask(task);
-}

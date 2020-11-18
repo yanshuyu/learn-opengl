@@ -16,16 +16,6 @@ class PointLightShadowMapping;
 
 
 class DeferredRenderer : public RenderTechnique {
-	struct Vertex {
-		glm::vec3 position;
-		glm::vec2 uv;
-
-		Vertex(const glm::vec3& _position, const glm::vec2& _uv) {
-			position = _position;
-			uv = _uv;
-		}
-	};
-
 	friend class DepthPassRenderTaskExecutor;
 	friend class GeometryPassRenderTaskExecutor;
 	friend class UlitPassRenderTaskExecutror;
@@ -87,12 +77,16 @@ public:
 private:
 	bool setupGBuffers();
 	//bool setupShadowMap();
-	void setupFullScreenQuad();
-	void drawFullScreenQuad();
 
 private:
 	RenderPass m_currentPass;
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
+
+	GPUPipelineState m_depthPassPipelineState;
+	GPUPipelineState m_geometryPassPipelineState;
+	GPUPipelineState m_shadowPassPipelineState;
+	GPUPipelineState m_lightPassPipelineState;
+	GPUPipelineState m_unlitPassPipelineState;
 
 	// geometry buffers
 	std::unique_ptr<FrameBuffer> m_gBuffersFBO;
@@ -102,11 +96,6 @@ private:
 	std::unique_ptr<Texture> m_specularBuffer;
 	std::unique_ptr<Texture> m_emissiveBuffer;
 	std::unique_ptr<Texture> m_depthStencilBuffer;
-
-	// screen quad
-	std::unique_ptr<VertexArray> m_quadVAO;
-	std::unique_ptr<Buffer> m_quadVBO;
-	std::unique_ptr<Buffer> m_quadIBO;
 
 	// light ubo
 	std::unique_ptr<Buffer> m_directionalLightUBO;

@@ -92,14 +92,11 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 
 	std::shared_ptr<ShaderProgram> strongShader = shader.lock();
 	strongShader->bind();
-	m_FBO->bind();
 
+	m_renderer->pushRenderTarget(m_FBO.get());
 	m_renderer->clearScreen(ClearFlags::Depth);
 	m_rendererViewPort = m_renderer->getViewport();
 	m_renderer->setViewPort(Viewport_t(0, 0, m_shadowMapResolution.x, m_shadowMapResolution.y));
-
-	//using cull back face mode to output back face depth
-	m_renderer->setCullFaceMode(CullFaceMode::Front);
 	
 	if (strongShader->hasUniform("u_numCascade"))
 		strongShader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
@@ -117,10 +114,8 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 
 
 void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light) {
-	m_FBO->unbind();
-	FrameBuffer::bindDefault();
+	m_renderer->popRenderTarget();
 	m_renderer->setViewPort(m_rendererViewPort);
-	m_renderer->setCullFaceMode(CullFaceMode::Back);
 }
 
 void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {

@@ -233,10 +233,27 @@ enum class FaceWindingOrder {
 	CCW = GL_CCW,
 };
 
-enum class DepthTestMode {
-	Enable,
+enum class ShadeMode {
+	Smooth = GL_SMOOTH,
+	Flat = GL_FLAT,
+};
+
+
+enum class FillMode {
+	Fill = GL_FILL,
+	Line = GL_LINE,
+	Point = GL_POINT,
+};
+
+
+enum class DepthMode {
 	Disable,
-	ReadOnly,
+	Enable,
+};
+
+enum class StencilMode {
+	Disable,
+	Enable,
 };
 
 enum class  DepthFunc {
@@ -251,9 +268,25 @@ enum class  DepthFunc {
 };
 
 
+typedef DepthFunc StencilFunc;
+
+
+enum class StencilOp {
+	Zero = GL_ZERO,
+	Keep = GL_KEEP,
+	Replace = GL_REPLACE,
+	Increment = GL_INCR,
+	IncrementWrap = GL_INCR_WRAP,
+	Decrement = GL_DECR,
+	DecrementWrap = GL_DECR_WRAP,
+	Invert = GL_INVERT,
+};
+
+
+
 enum class BlendMode {
-	Enable,
 	Disable,
+	Enable,
 };
 
 enum class BlendFactor {
@@ -284,6 +317,41 @@ enum class BlendFunc {
 	ReverseSubtract = GL_FUNC_REVERSE_SUBTRACT,
 	Min = GL_MIN,
 	Max = GL_MAX,
+};
+
+
+struct GPUPipelineState {
+	GPUPipelineState();
+	GPUPipelineState(const GPUPipelineState& other) = default;
+	GPUPipelineState& operator = (const GPUPipelineState& other) = default;
+	
+	static GPUPipelineState s_defaultState;
+
+	// clipping state
+	CullFaceMode cullMode;
+	FaceWindingOrder cullFaceWindingOrder;
+
+	// rasterization state
+	ShadeMode shadeMode;
+	FillMode fillMode;
+
+	// depth/stancil state
+	DepthMode depthMode;
+	DepthFunc depthFunc;
+	int depthMask;
+	StencilMode stencilMode;
+	StencilOp stencilPassOp;
+	StencilOp stencilFailOp;
+	StencilOp stencilDepthFailOp;
+	int stencilMask;
+	
+
+	// blend state
+	BlendMode blendMode;
+	BlendFactor blendSrcFactor;
+	BlendFactor blendDstFactor;
+	BlendFunc blendFunc;
+	float blendColor[4];
 };
 
 //

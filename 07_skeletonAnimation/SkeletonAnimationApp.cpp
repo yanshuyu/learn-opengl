@@ -21,12 +21,12 @@ bool SkeletonAnimationApp::initailize() {
 	if (!__super::initailize())
 		return false;
 
-
 	RenderingSettings_t renderSettins;
 	renderSettins.renderSize = { m_wndWidth, m_wndHeight };
 	renderSettins.shadowMapResolution = { 1024.f, 1024.f };
 	m_scene = std::make_unique<Scene>(glm::vec2(m_wndWidth, m_wndHeight), "deferred_rendering_scene");
 	m_renderer = std::unique_ptr<Renderer>(new Renderer(renderSettins));
+
 
 	m_renderer->setRenderMode(Renderer::Mode::Forward);
 	ASSERT(m_renderer->isValid());
@@ -60,10 +60,11 @@ bool SkeletonAnimationApp::initailize() {
 
 	// camera
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
-	camera->addComponent(ArcballCameraController::create());
-	//camera->addComponent(FirstPersonCameraController::create());
-	auto cameraController = camera->getComponent<ArcballCameraController>();
-	cameraController.lock()->setPosition({ 0.f, 4.f, 16.f });
+	camera->addComponent(FirstPersonCameraController::create());
+
+	//camera->addComponent(ArcballCameraController::create());
+	//auto cameraController = camera->getComponent<ArcballCameraController>();
+	//cameraController.lock()->setPosition({ 0.f, 4.f, 16.f });
 
 	// light
 	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
@@ -92,6 +93,7 @@ bool SkeletonAnimationApp::initailize() {
 
 void SkeletonAnimationApp::update(double dt) {
 	if (!m_scene->isInitialize()) {
+		ASSERT(m_renderer->initialize());
 		ASSERT(m_scene->initialize());
 		ASSERT(GuiManager::getInstance()->initialize());
 	}
@@ -144,6 +146,8 @@ void SkeletonAnimationApp::debugDraw(double dt) {
 	mvp = vp * model;
 	DebugDrawer::drawScalarTrack(m_scalarTrackCubic.get(), 2.5, 100, LoopType::PingPong, 900, 10, 4, { 1, 0, 0 }, mvp);
 	*/
+
+	/*
 	if (m_animator.expired())
 		return;
 
@@ -171,6 +175,7 @@ void SkeletonAnimationApp::debugDraw(double dt) {
 		mvp = vp * model;
 		DebugDrawer::drawPose(animator->animatedPose() , { 1.f, 0.f, 0.f }, mvp);
 	}
+	*/
 }
 
 void SkeletonAnimationApp::onWindowResized(int width, int height) {

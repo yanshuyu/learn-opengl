@@ -76,6 +76,11 @@ public:
 private:
 	RenderPass m_currentPass;
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
+	
+	GPUPipelineState m_depthPassPipelineState;
+	GPUPipelineState m_shadowPassPipelineState;
+	GPUPipelineState m_lightPassPipelineState;
+	GPUPipelineState m_unlitPassPipelineState;
 
 	// light uniform blocks
 	std::unique_ptr<Buffer> m_directionalLightUBO;
@@ -86,4 +91,5 @@ private:
 	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
 	std::unique_ptr<DirectionalLightShadowMapping> m_dirLightShadow;
 	std::unique_ptr<PointLightShadowMapping> m_pointLightShadow;
+
 };

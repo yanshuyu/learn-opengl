@@ -1,6 +1,7 @@
 #include <iostream>
 #include"SkeletonAnimationApp.h"
 
+
 int main()
 {
 	auto app = std::unique_ptr<SkeletonAnimationApp>(new SkeletonAnimationApp("Skeleton Animation"));

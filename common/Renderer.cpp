@@ -4,17 +4,26 @@
 #include"ShaderProgamMgr.h"
 #include"ForwardRenderer.h"
 #include"DeferredRenderer.h"
+#include"VertexArray.h"
+#include"Buffer.h"
 #include"Texture.h"
+#include"FrameBuffer.h"
+#include"VertexLayoutDescription.h"
 #include"GuiMgr.h"
 #include<glm/gtx/transform.hpp>
 #include<functional>
 
 
-Renderer::Renderer(const RenderingSettings_t& settings, Mode mode) : m_renderingSettings(settings)
+Renderer::Renderer(const RenderingSettings_t& settings, Mode mode) : m_pipelineStates()
+, m_renderTargets()
+, m_renderingSettings(settings)
 , m_renderMode(Mode::None)
 , m_renderTechnique(nullptr)
 , m_renderContext()
-, m_scene(nullptr) {
+, m_scene(nullptr)
+, m_quadVAO(nullptr)
+, m_quadVBO(nullptr)
+, m_quadIBO(nullptr) {
 	if (mode != Mode::None)
 		setRenderMode(mode);
 	m_renderContext.setRenderer(this);
@@ -22,12 +31,15 @@ Renderer::Renderer(const RenderingSettings_t& settings, Mode mode) : m_rendering
 
 Renderer::~Renderer() {
 	clenUp();
+	m_quadVAO.release();
+	m_quadVBO.release();
+	m_quadIBO.release();
 }
 
 
-//bool Renderer::initialize() {
-//	return __setRenderMode(m_renderMode);
-//}
+bool Renderer::initialize() {
+	return setupFullScreenQuad();
+}
 
 
 void Renderer::clenUp() {
@@ -36,6 +48,15 @@ void Renderer::clenUp() {
 		m_renderTechnique.release();
 		m_renderMode = Mode::None;
 	}
+
+	while (!m_pipelineStates.empty()){
+		m_pipelineStates.pop();
+	}
+
+	while (!m_renderTargets.empty()) {
+		m_renderTargets.pop();
+	}
+
 }
 
 
@@ -89,6 +110,44 @@ bool Renderer::isValid() const {
 		return false;
 
 	return m_renderTechnique != nullptr;
+}
+
+
+void Renderer::pushGPUPipelineState(GPUPipelineState* pipeLineState) {
+	if (pipeLineState)
+		m_pipelineStates.push(pipeLineState);
+	
+	const GPUPipelineState& s = m_pipelineStates.empty() ? GPUPipelineState::s_defaultState : *m_pipelineStates.top();
+	setGPUPipelineState(s);
+}
+
+void Renderer::popGPUPipelineState() {
+	if (m_pipelineStates.empty())
+		return;
+
+	m_pipelineStates.pop();
+	
+	const GPUPipelineState& s = m_pipelineStates.empty() ? GPUPipelineState::s_defaultState : *m_pipelineStates.top();
+	setGPUPipelineState(s);
+}
+
+void Renderer::pushRenderTarget(FrameBuffer* target) {
+	if (target) {
+		m_renderTargets.push(target);
+		target->bind();
+	}
+}
+
+void Renderer::popRenderTarget() {
+	if (m_renderTargets.empty())
+		return;
+	
+	m_renderTargets.pop();
+	if (m_renderTargets.empty()) {
+		GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+	} else {
+		m_renderTargets.top()->bind();
+	}
 }
 
 
@@ -197,7 +256,7 @@ void Renderer::setClearStencil(int m) {
 
 
 void Renderer::clearScreen(int flags) {
-	m_renderTechnique->clearScreen(flags);
+	GLCALL(glClear(flags));
 }
 
 void Renderer::setCullFaceMode(CullFaceMode mode) {
@@ -223,29 +282,48 @@ void Renderer::setFaceWindingOrder(FaceWindingOrder order) {
 	GLCALL(glFrontFace(int(order)));
 }
 
-void Renderer::setDepthTestMode(DepthTestMode mode) {
-	switch (mode)
-	{
-	case DepthTestMode::Enable:
-		GLCALL(glEnable(GL_DEPTH_TEST));
-		GLCALL(glDepthMask(GL_TRUE));
-		break;
+void Renderer::setShadeMode(ShadeMode mode) {
+	GLCALL(glShadeModel(int(mode)));
+}
 
-	case DepthTestMode::Disable:
+void Renderer::setFillMode(FillMode mode) {
+	GLCALL(glPolygonMode(GL_FRONT_AND_BACK, int(mode)));
+}
+
+void Renderer::setDepthMode(DepthMode mode) {
+	if (mode == DepthMode::Enable) {
+		GLCALL(glEnable(GL_DEPTH_TEST));
+	} else {
 		GLCALL(glDisable(GL_DEPTH_TEST));
-		break;
-	case DepthTestMode::ReadOnly:
-		GLCALL(glEnable(GL_DEPTH_TEST));
-		GLCALL(glDepthMask(GL_FALSE));
-		break;
-
-	default:
-		break;
 	}
 }
 
-void Renderer::setDepthTestFunc(DepthFunc func) {
+void Renderer::setDepthFunc(DepthFunc func) {
 	GLCALL(glDepthFunc(int(func)));
+}
+
+void Renderer::setDepthMask(bool writable) {
+	GLCALL(glDepthMask(writable));
+}
+
+void Renderer::setStencilMode(StencilMode mode) {
+	if (mode == StencilMode::Enable) {
+		GLCALL(glEnable(GL_STENCIL_TEST));
+	} else {
+		GLCALL(glDisable(GL_STENCIL_TEST));
+	}
+}
+
+void Renderer::setStencilMask(int mask) {
+	GLCALL(glStencilMask(mask));
+}
+
+void Renderer::setStencil(StencilFunc func, int refVal, int mask) {
+	GLCALL(glStencilFunc(int(func), refVal, mask));
+}
+
+void Renderer::setStencilOp(StencilOp passOp, StencilOp sFailOp, StencilOp dFailOp) {
+	GLCALL(glStencilOp(int(sFailOp), int(dFailOp), int(passOp)));
 }
 
 void Renderer::setColorMask(bool writteable) {
@@ -301,3 +379,68 @@ void Renderer::setBlendColor(const glm::vec4& c) {
 }
 
 
+void Renderer::setGPUPipelineState(const GPUPipelineState& pipelineState) {
+	setCullFaceMode(pipelineState.cullMode);
+	setFaceWindingOrder(pipelineState.cullFaceWindingOrder);
+
+	setShadeMode(pipelineState.shadeMode);
+	setFillMode(pipelineState.fillMode);
+
+	setDepthMode(pipelineState.depthMode);
+	setDepthFunc(pipelineState.depthFunc);
+	setDepthMask(pipelineState.depthMask > 0 ? true : false);
+	setStencilMode(pipelineState.stencilMode);
+	setStencilMask(pipelineState.stencilMask);
+	setStencilOp(pipelineState.stencilPassOp, pipelineState.stencilFailOp, pipelineState.stencilDepthFailOp);
+
+	setBlendMode(pipelineState.blendMode);
+	setBlendFactor(pipelineState.blendSrcFactor, pipelineState.blendDstFactor);
+	setBlendFunc(pipelineState.blendFunc);
+	setBlendColor({ pipelineState.blendColor[0], pipelineState.blendColor[1], pipelineState.blendColor[2], pipelineState.blendColor[3] });
+}
+
+
+bool Renderer::setupFullScreenQuad() {
+	Vertex quadVertices[] = {
+		Vertex({-1.f, -1.f, 0.f}, {0.f, 0.f}),
+		Vertex({1.f, -1.f, 0.f}, {1.f, 0.f}),
+		Vertex({1.f, 1.f, 0.f}, {1.f, 1.f}),
+		Vertex({-1.f, 1.f, 0.f}, {0.f, 1.f}),
+	};
+
+	unsigned int quadIndices[] = {
+		0,1,2,
+		2,3,0
+	};
+
+	VertexLayoutDescription vertLayoutDesc;
+	m_quadVAO.reset(new VertexArray());
+	m_quadVBO.reset(new Buffer());
+	m_quadIBO.reset(new Buffer());
+
+	m_quadVAO->bind();
+	m_quadVBO->bind(Buffer::Target::VertexBuffer);
+	m_quadIBO->bind(Buffer::Target::IndexBuffer);
+	m_quadVBO->loadData(&quadVertices[0], sizeof(Vertex) * 4, Buffer::Usage::StaticDraw, 4);
+	m_quadIBO->loadData(&quadIndices[0], sizeof(unsigned int) * 6, Buffer::Usage::StaticDraw, 6);
+
+	vertLayoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 3, 0);
+	vertLayoutDesc.pushAttribute(VertexLayoutDescription::AttributeElementType::FLOAT, 2, 1);
+
+	m_quadVAO->storeVertexLayout(vertLayoutDesc);
+
+	m_quadVAO->unbind();
+	m_quadVBO->unbind();
+	m_quadIBO->unbind();
+
+	return true;
+}
+
+
+void Renderer::drawFullScreenQuad() {
+	RenderTask_t task;
+	task.vao = m_quadVAO.get();
+	task.indexCount = m_quadIBO->getElementCount();
+	task.primitive = PrimitiveType::Triangle;
+	m_renderTechnique->performTask(task);
+}

@@ -8,7 +8,7 @@ class SkeletonAnimationApp : public GLApplication {
 	friend class MainGuiWindow;
 public:
 	SkeletonAnimationApp(const std::string& wndTitle, int wndWidth = 1920, int wndHeight = 1080);
-
+	
 private:
 	bool initailize() override;
 	void update(double dt) override;

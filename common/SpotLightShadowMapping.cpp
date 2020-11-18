@@ -86,15 +86,16 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 
 	std::shared_ptr<ShaderProgram> strongShader = preZShader.lock();
 	strongShader->bind();
-	m_shadowMapFBO->bind();
-	m_shadowMapFBO->setDrawBufferLocation({});
-	m_shadowMapFBO->setReadBufferLocation(-1);
+	//m_shadowMapFBO->bind();
+	//m_shadowMapFBO->setDrawBufferLocation({});
+	//m_shadowMapFBO->setReadBufferLocation(-1);
+	m_renderer->pushRenderTarget(m_shadowMapFBO.get());
 
 	m_rendererViewPort = m_renderer->getViewport();
 	m_renderer->setViewPort(Viewport_t(0, 0, m_shadowMapResolution.x, m_shadowMapResolution.y));
 
 	//using cull back face mode to output back face depth
-	m_renderer->setCullFaceMode(CullFaceMode::Front);
+	//m_renderer->setCullFaceMode(CullFaceMode::Front);
 	m_renderer->clearScreen(ClearFlags::Depth);
 
 	// set view project matrix
@@ -108,10 +109,11 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 
 
 void SpotLightShadowMapping::endShadowPhase(const Light_t& light) {
-	m_shadowMapFBO->unbind();
-	FrameBuffer::bindDefault();
+	//m_shadowMapFBO->unbind();
+	//FrameBuffer::bindDefault();
+	m_renderer->popRenderTarget();
 	m_renderer->setViewPort(m_rendererViewPort);
-	m_renderer->setCullFaceMode(CullFaceMode::Back);
+	//m_renderer->setCullFaceMode(CullFaceMode::Back);
 }
 
 

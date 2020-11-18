@@ -228,6 +228,21 @@
     <ClCompile Include="..\common\FileSystem.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\Geometry3D.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\StackAllocator.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\FrameAllocator.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\MemoryAllocator.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\PoolAllocator.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\ArcballCameraController.h">
@@ -456,6 +471,24 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\FileSystem.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Geometry3D.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\StackAllocator.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FrameAllocator.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MemoryAllocator.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Containers.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\PoolAllocator.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>
