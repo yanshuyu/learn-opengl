@@ -1,28 +1,42 @@
 #pragma once
 #include<glad/glad.h>
 #define GLFW_INCLUDE_NONE
-#include<GLFW/glfw3.h>
-#include"Exceptions.h"
+
+// application
+#include"Containers.h"
 #include"Util.h"
-#include"Buffer.h"
-#include"FrameBuffer.h"
-#include"RenderBuffer.h"
-#include"VertexLayoutDescription.h"
-#include"VertexArray.h"
-#include"Model.h"
-#include"Skeleton.h"
-#include"AnimationClip.h"
+#include"Exceptions.h"
+#include"NotificationCenter.h"
 #include"ShaderProgamMgr.h"
 #include"TextureMgr.h"
 #include"MeshMgr.h"
 #include"MaterialMgr.h"
 #include"InputMgr.h"
 #include"GuiMgr.h"
-#include"NotificationCenter.h"
+#include"MeshLoader.h"
+#include"FileSystem.h"
+
+// opengl wrapper
+#include<GLFW/glfw3.h>
+#include"Buffer.h"
+#include"FrameBuffer.h"
+#include"RenderBuffer.h"
+#include"VertexLayoutDescription.h"
+#include"VertexArray.h"
+#include"RenderBuffer.h"
+
+// renderring & animation
+#include"Transform.h"
+#include"Model.h"
 #include"Scene.h"
 #include"SceneObject.h"
-#include"ForwardRenderer.h"
-#include"DeferredRenderer.h"
+#include"Interpolation.h"
+#include"Skeleton.h"
+#include"AnimationClip.h"
+#include"Renderer.h"
+#include"DebugDrawer.h"
+
+// components
 #include"TransformComponent.h"
 #include"MeshRenderComponent.h"
 #include"SkinMeshRenderComponent.h"
@@ -31,7 +45,3 @@
 #include"AnimatorComponent.h"
 #include"FirstPersonCameraController.h"
 #include"ArcballCameraController.h"
-#include"DebugDrawer.h"
-#include"MeshLoader.h"
-#include"FileSystem.h"
-#include"Containers.h"

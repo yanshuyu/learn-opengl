@@ -1,6 +1,7 @@
 #include"MeshRenderComponent.h"
 #include"SceneObject.h"
 #include"MaterialMgr.h"
+#include"RendererCore.h"
 #include"Renderer.h"
 
 
@@ -88,7 +89,7 @@ void MeshRenderComponent::render(RenderContext* context) {
 		return;
 
 	for (size_t i = 0; i < model->meshCount(); i++) {
-		RenderTask_t task;
+		MeshRenderItem_t task;
 		std::shared_ptr<Material> strongMat = materialAt(i).expired() ? nullptr : materialAt(i).lock();
 		auto mesh = model->meshAt(i);
 		auto mat = strongMat ? strongMat.get() : MaterialManager::getInstance()->defaultMaterial();
@@ -99,7 +100,7 @@ void MeshRenderComponent::render(RenderContext* context) {
 		task.primitive = mesh->getPrimitiveType();
 		task.material = mat;
 		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform(); 
-		context->renderer()->renderTask(task);
+		context->getRenderer()->submitOpaqueItem(task);
 	}
 }
 

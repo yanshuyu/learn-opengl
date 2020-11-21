@@ -14,25 +14,35 @@
 #include<functional>
 
 
-Renderer::Renderer(const RenderingSettings_t& settings, Mode mode) : m_pipelineStates()
+
+Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_renderTargets()
 , m_shaders()
 , m_viewports()
-, m_renderingSettings(settings)
 , m_renderMode(Mode::None)
 , m_renderTechnique(nullptr)
-, m_renderContext()
 , m_clearColor({0.f, 0.f, 0.f, 1.f})
 , m_clearDepth(1.f)
 , m_clearStencil(0.f)
-, m_scene(nullptr)
-, m_sceneRenderInfo()
 , m_quadVAO(nullptr)
 , m_quadVBO(nullptr)
-, m_quadIBO(nullptr) {
+, m_quadIBO(nullptr)
+, m_renderSize(renderSz)
+, m_shadowMapResolution(1024, 1024)
+, _frameAlloc()
+, m_opaqueItems(&_frameAlloc)
+, m_transparentItems(&_frameAlloc)
+, m_lights(&_frameAlloc)
+, m_assistCameras(&_frameAlloc)
+, m_mainCamera() {
 	if (mode != Mode::None)
 		setRenderMode(mode);
-	m_renderContext.setRenderer(this);
+
+	_frameAlloc.markFrame();
+	m_opaqueItems.reserve(1024);
+	m_transparentItems.reserve(256);
+	m_lights.reserve(128);
+	m_assistCameras.reserve(8);
 }
 
 Renderer::~Renderer() {
@@ -40,6 +50,8 @@ Renderer::~Renderer() {
 	m_quadVAO.release();
 	m_quadVBO.release();
 	m_quadIBO.release();
+	
+	_frameAlloc.clearFrame();
 }
 
 
@@ -54,24 +66,12 @@ void Renderer::clenUp() {
 		m_renderTechnique.release();
 		m_renderMode = Mode::None;
 	}
-
-	while (!m_pipelineStates.empty()){
-		m_pipelineStates.pop();
-	}
-
-	while (!m_renderTargets.empty()) {
-		m_renderTargets.pop();
-	}
-
-	while (!m_shaders.empty()) {
-		m_shaders.pop();
-	}
-
-	while (!m_viewports.empty()) {
-		m_viewports.pop();
-	}
-
-	m_mainViewport = Viewport_t();
+	
+	clearGPUPiepelineStates();
+	clearRenerTargets();
+	clearShaderPrograms();
+	clearViewports();
+	m_mainCamera = Camera_t();
 }
 
 
@@ -82,7 +82,7 @@ bool Renderer::setRenderMode(Mode mode) {
 	clenUp();
 
 	if (mode == Mode::Forward) {
-		m_renderTechnique.reset(new ForwardRenderer(this, m_renderingSettings));
+		m_renderTechnique.reset(new ForwardRenderer(this));
 		if (!m_renderTechnique->intialize()) {
 			m_renderTechnique.release();
 			m_renderMode = Mode::None;
@@ -93,7 +93,7 @@ bool Renderer::setRenderMode(Mode mode) {
 		return true;
 
 	} else if (mode == Mode::Deferred) {	
-		m_renderTechnique.reset(new DeferredRenderer(this, m_renderingSettings));
+		m_renderTechnique.reset(new DeferredRenderer(this));
 		if (!m_renderTechnique->intialize()) {
 			m_renderTechnique.release();
 			m_renderMode = mode;
@@ -106,12 +106,6 @@ bool Renderer::setRenderMode(Mode mode) {
 	
 	m_renderMode = Mode::None;
 	return true;
-}
-
-
-void Renderer::setShadowMapResolution(float w, float h) {
-	m_renderingSettings.shadowMapResolution = { w, h };
-	m_renderTechnique->onShadowMapResolutionChange(w, h);
 }
 
 
@@ -219,92 +213,57 @@ void Renderer::popViewport() {
 	}
 }
 
-Viewport_t* Renderer::getActiveViewport() const {
+const Viewport_t* Renderer::getActiveViewport() const {
 	if (m_viewports.empty())
-		return nullptr;
+		return &(m_mainCamera.viewport);
 
 	return m_viewports.top();
 }
 
 void Renderer::onWindowResize(float w, float h) {
-	m_renderingSettings.renderSize = { w, h };
+	m_renderSize = glm::vec2(w, h);
 	m_renderTechnique->onWindowResize(w, h);
 }
 
+Scene_t& Renderer::makeScene() {
+	static Scene_t scene;
+	scene.clear();
+	scene.opaqueItems = m_opaqueItems.data();
+	scene.numOpaqueItems = m_opaqueItems.size();
+	scene.transparentItems = m_transparentItems.data();
+	scene.numTransparentItems = m_transparentItems.size();
+	scene.lights = m_lights.data();
+	scene.numLights = m_lights.size();
+	scene.assistCameras = m_assistCameras.data();
+	scene.numAssistCameras = m_assistCameras.size();
+	scene.mainCamera = &m_mainCamera;
 
-void Renderer::renderScene(Scene* s) {
-	m_scene = s;
-	m_sceneRenderInfo = s->getSceneRenderInfo();
+	return scene;
+}
+
+
+void Renderer::flush() {
+	auto& scene = makeScene();
+	m_renderTechnique->render(scene);
 	
-	if (m_clearColor != m_sceneRenderInfo->camera.backgrounColor) {
-		setClearColor(m_sceneRenderInfo->camera.backgrounColor);
-	}
-	if (m_mainViewport != m_sceneRenderInfo->camera.viewport) {
-		m_mainViewport = m_sceneRenderInfo->camera.viewport;
-		popViewport();
-		pushViewport(&m_mainViewport);
-	}
+	// clen up flushed renderables
+	m_opaqueItems.clear();
+	m_transparentItems.clear();
+	m_lights.clear();
+	m_assistCameras.clear();
 
-	m_renderTechnique->beginFrame();
-
-	// pre-z pass
-	if (m_renderTechnique->shouldRunPass(RenderPass::DepthPass)) {
-		m_renderContext.clearMatrix();
-		m_renderTechnique->beginDepthPass();
-		m_renderTechnique->endDepthPass();
-	}
-
-	// G pass
-	if (m_renderTechnique->shouldRunPass(RenderPass::GeometryPass)) {
-		m_renderContext.clearMatrix();
-		m_renderTechnique->beginGeometryPass();
-		m_renderTechnique->endGeometryPass();
-	}
-
-	// ulit pass
-	if (m_sceneRenderInfo->lights.empty()) {
-		if (m_renderTechnique->shouldRunPass(RenderPass::UnlitPass)) {
-			m_renderContext.clearMatrix();
-			m_renderTechnique->beginUnlitPass();
-			m_renderTechnique->endUnlitPass();
-		}
-	} else {
-		// light passes
-		if (m_renderTechnique->shouldRunPass(RenderPass::LightPass)) {
-			for (const auto& l : m_sceneRenderInfo->lights) {
-				if (l.intensity <= 0)
-					continue;
-				
-				if (l.isCastShadow() && m_renderTechnique->shouldRunPass(RenderPass::ShadowPass)) {
-					m_renderContext.clearMatrix();
-					m_renderTechnique->beginShadowPass(l);
-					m_renderTechnique->endShadowPass(l);
-				}
-
-				m_renderContext.clearMatrix();
-				m_renderTechnique->beginLightPass(l);
-				m_renderTechnique->endLightPass(l);
-			}
-		}
-	}
-
-	// transparency pass
-
-	m_renderTechnique->endFrame();
-
-	// Gui
-	GuiManager::getInstance()->render();
+	// release allocated frame memory, remake a new frame
+	_frameAlloc.clearFrame();
+	_frameAlloc.markFrame();
 }
 
-void Renderer::renderTask(const RenderTask_t& task) {
-	m_renderTechnique->performTask(task);
-}
 
-void Renderer::pullingRenderTask() {
-	if (m_scene) {
-		m_renderContext.clearMatrix();
-		m_scene->render(&m_renderContext);
-	}
+void Renderer::drawFullScreenQuad() {
+	MeshRenderItem_t task;
+	task.vao = m_quadVAO.get();
+	task.indexCount = m_quadIBO->getElementCount();
+	task.primitive = PrimitiveType::Triangle;
+	m_renderTechnique->render(task);
 }
 
 
@@ -471,6 +430,17 @@ void Renderer::setGPUPipelineState(const GPUPipelineState& pipelineState) {
 }
 
 
+void Renderer::submitCamera(const Camera_t& camera, bool isMain) {
+	if (isMain) {
+		m_mainCamera = camera;
+		clearViewports();
+		pushViewport(&m_mainCamera.viewport);
+	}
+	else {
+		m_assistCameras.push_back(camera);
+	}
+}
+
 bool Renderer::setupFullScreenQuad() {
 	Vertex quadVertices[] = {
 		Vertex({-1.f, -1.f, 0.f}, {0.f, 0.f}),
@@ -507,11 +477,3 @@ bool Renderer::setupFullScreenQuad() {
 	return true;
 }
 
-
-void Renderer::drawFullScreenQuad() {
-	RenderTask_t task;
-	task.vao = m_quadVAO.get();
-	task.indexCount = m_quadIBO->getElementCount();
-	task.primitive = PrimitiveType::Triangle;
-	m_renderTechnique->performTask(task);
-}

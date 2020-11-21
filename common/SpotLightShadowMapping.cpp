@@ -10,8 +10,8 @@
 #include"Util.h"
 
 
-SpotLightShadowMapping::SpotLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution)
-: m_renderer(renderer)
+SpotLightShadowMapping::SpotLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution)
+: IShadowMapping(rt)
 , m_shadowMapFBO(nullptr) 
 , m_shadowMap(nullptr) 
 , m_shadowUBO(nullptr) 
@@ -77,7 +77,7 @@ void SpotLightShadowMapping::cleanUp() {
 	m_lightCamera = Camera_t();
 }
 
-void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera_t& camera) {
+void SpotLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
 	m_lightCamera = makeLightCamera(light);
 
 	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
@@ -86,10 +86,11 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 	ASSERT(!preZShader.expired());
 
 	m_shader = preZShader.lock();
-	m_renderer->pushShaderProgram(m_shader.get());
-	m_renderer->pushRenderTarget(m_shadowMapFBO.get());
-	m_renderer->pushViewport(&m_shadowViewport);
-	m_renderer->clearScreen(ClearFlags::Depth);
+	auto renderer = m_renderTech->getRenderer();
+	renderer->pushShaderProgram(m_shader.get());
+	renderer->pushRenderTarget(m_shadowMapFBO.get());
+	renderer->pushViewport(&m_shadowViewport);
+	renderer->clearScreen(ClearFlags::Depth);
 
 	// set view project matrix
 	if (m_shader->hasUniform("u_VPMat")) {
@@ -97,14 +98,17 @@ void SpotLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera
 		m_shader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 	
-	m_renderer->pullingRenderTask();
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		m_renderTech->render(scene.opaqueItems[i]);
+	}
 }
 
 
-void SpotLightShadowMapping::endShadowPhase(const Light_t& light) {
-	m_renderer->popRenderTarget();
-	m_renderer->popViewport();
-	m_renderer->popShadrProgram();
+void SpotLightShadowMapping::endShadowPhase() {
+	auto renderer = m_renderTech->getRenderer();
+	renderer->popRenderTarget();
+	renderer->popViewport();
+	renderer->popShadrProgram();
 	m_shader = nullptr;
 }
 

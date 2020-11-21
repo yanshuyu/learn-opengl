@@ -33,3 +33,6 @@ protected:
 	bool m_compiled;
 	std::string m_src;
 };
+
+
+std::string ShaderType2Str(Shader::Type shaderType);

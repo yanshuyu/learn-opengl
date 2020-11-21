@@ -20,16 +20,12 @@ SkeletonAnimationApp::SkeletonAnimationApp(const std::string& t, int w, int h) :
 bool SkeletonAnimationApp::initailize() {
 	if (!__super::initailize())
 		return false;
-
-	RenderingSettings_t renderSettins;
-	renderSettins.renderSize = { m_wndWidth, m_wndHeight };
-	renderSettins.shadowMapResolution = { 1024.f, 1024.f };
-	m_scene = std::make_unique<Scene>(glm::vec2(m_wndWidth, m_wndHeight), "deferred_rendering_scene");
-	m_renderer = std::unique_ptr<Renderer>(new Renderer(renderSettins));
-
-
+	
+	m_scene = std::unique_ptr<Scene>(new Scene("skeleton_animation_secene"));
+	m_renderer = std::unique_ptr<Renderer>(new Renderer(glm::vec2(m_wndWidth, m_wndHeight)));
 	m_renderer->setRenderMode(Renderer::Mode::Forward);
 	ASSERT(m_renderer->isValid());
+	m_scene->setRenderer(m_renderer.get());
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto meshMgr = MeshManager::getInstance();
@@ -67,8 +63,8 @@ bool SkeletonAnimationApp::initailize() {
 	//cameraController.lock()->setPosition({ 0.f, 4.f, 16.f });
 
 	// light
-	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
-	dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
+	//auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
+	//dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
 
 	//auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 0.8f }, 80.f, 1.f, ShadowType::SoftShadow);
 	//pointLight->m_transform.setPosition({-20.f, 40.f, -10.f});
@@ -103,7 +99,7 @@ void SkeletonAnimationApp::update(double dt) {
 
 
 void SkeletonAnimationApp::render() {
-	m_renderer->renderScene(m_scene.get());
+	m_scene->render();
 }
 
 
@@ -179,8 +175,7 @@ void SkeletonAnimationApp::debugDraw(double dt) {
 }
 
 void SkeletonAnimationApp::onWindowResized(int width, int height) {
-	__super::onWindowResized(width, height);
-	m_scene->onWindowReSize(width, height);
+	__super::onWindowResized(width, height); 
 	m_renderer->onWindowResize(width, height);
 }
 

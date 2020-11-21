@@ -148,7 +148,6 @@ Camera_t::Camera_t(): viewMatrix(1.f)
 }
 
 
-
 Light_t::Light_t(): type(LightType::Unknown)
 , direction(0.f)
 , color(0.f)
@@ -169,13 +168,7 @@ bool Light_t::isCastShadow() const {
 }
 
 
-RenderingSettings_t::RenderingSettings_t(): renderSize(0.f)
-, shadowMapResolution(0.f) {
-
-}
-
-
-RenderTask_t::RenderTask_t(): vao(nullptr)
+MeshRenderItem_t::MeshRenderItem_t(): vao(nullptr)
 , material(nullptr)
 , bonesTransform(nullptr)
 , indexCount(0)
@@ -186,51 +179,43 @@ RenderTask_t::RenderTask_t(): vao(nullptr)
 }
 
 
-SceneRenderInfo_t::SceneRenderInfo_t(): camera()
-, lights() {
-
+Scene_t::Scene_t() {
+	reset();
 }
 
-
-RenderContext::RenderContext(Renderer* renderer) :m_renderer(renderer)
-, m_transformStack() {
-
+void Scene_t::clear() {
+	reset();
 }
 
-bool operator == (const Viewport_t& lhs, const Viewport_t& rhs) {
-	return lhs.x == rhs.x
-		&& lhs.y == rhs.y
-		&& lhs.width == rhs.width
-		&& lhs.height == rhs.height;
-}
+void Scene_t::reset() {
+	opaqueItems = nullptr;
+	numOpaqueItems - 0;
+	
+	transparentItems = nullptr;
+	numTransparentItems = 0;
+		
+	lights = nullptr;
+	numLights = 0;
+	
+	assistCameras = nullptr;
+	numAssistCameras = 0;
 
-bool operator != (const Viewport_t& lhs, const Viewport_t& rhs) {
-	return !(lhs == rhs);
+	mainCamera = nullptr;
 }
 
 
 void RenderContext::pushMatrix(const glm::mat4& m) {
-	if (!m_transformStack.empty()) {
-		m_transformStack.push(m_transformStack.top() * m);
+	if (!m_transforms.empty()) {
+		m_transforms.push(m_transforms.top() * m);
 		return;
 	}
-	m_transformStack.push(m);
-}
-
-
-void RenderContext::popMatrix() {
-	m_transformStack.pop();
+	m_transforms.push(m);
 }
 
 
 void RenderContext::clearMatrix() {
-	while (!m_transformStack.empty()) {
-		m_transformStack.pop();
-	}
-}
-
-glm::mat4 RenderContext::getMatrix() const {
-	return m_transformStack.top();
+	while (!m_transforms.empty())
+		m_transforms.pop();
 }
 
 
@@ -256,3 +241,25 @@ GPUPipelineState::GPUPipelineState() :cullMode(CullFaceMode::Back)
 
 
 GPUPipelineState GPUPipelineState::s_defaultState;
+
+
+
+std::string PrimitiveType2Str(PrimitiveType pt) {
+	switch (pt)
+	{
+	case PrimitiveType::Point:
+		return "Point";
+
+	case PrimitiveType::Line:
+		return "Line";
+
+	case PrimitiveType::Triangle:
+		return "Triangle";
+
+	case PrimitiveType::Polygon:
+		return "Polygon";
+
+	default:
+		return "Unknown";
+	}
+}

@@ -843,12 +843,12 @@ std::ostream& operator << (std::ostream& o, const ShaderProgram::UniformBlock& u
 
 
 std::ostream& operator << (std::ostream& o, const ShaderProgram::Subroutine& st) {
-	o << "{ name: " << st.name << ", index: " << st.index << ", stage: " << toStr(st.shaderStage) << " }";
+	o << "{ name: " << st.name << ", index: " << st.index << ", stage: " << ShaderType2Str(st.shaderStage) << " }";
 	return o;
 }
 
 std::ostream& operator << (std::ostream& o, const ShaderProgram::SubroutineUniform& su) {
-	o << "{ name: " << su.name << ", location: " << su.location << ", stage: " << toStr(su.shaderStage) << ", compatible suroutines: [";
+	o << "{ name: " << su.name << ", location: " << su.location << ", stage: " << ShaderType2Str(su.shaderStage) << ", compatible suroutines: [";
 	std::ostream_iterator<int> ositr(o, ", ");
 	std::copy(su.compatibleSubroutineIndices.begin(), su.compatibleSubroutineIndices.end(), ositr);
 	o << " ]";

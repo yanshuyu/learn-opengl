@@ -1,21 +1,22 @@
 #pragma once
 #include"SceneObject.h"
-#include"Renderer.h"
-#include"CameraComponent.h"
+#include"RendererCore.h"
 #include<functional>
+
 
 
 class Notification;
 class LightComponent;
+class CameraComponent;
+class Renderer;
+
 
 
 class Scene {
-	friend class Renderer;
 	typedef std::vector<std::unique_ptr<SceneObject>> ObjectVector;
-
 public:
 	enum Tag {
-		UnKnown,
+		Defalut,
 		Camera,
 		DirectionalLight,
 		PointLight,
@@ -23,7 +24,7 @@ public:
 	};
 
 public:
-	Scene(const glm::vec2& wndSz, const std::string& name = "");
+	Scene(const std::string& name = "");
 	virtual ~Scene();
 
 	Scene(const Scene& other) = delete;
@@ -46,7 +47,7 @@ public:
 	SceneObject* addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addPlane(float w, float d, std::shared_ptr<Material> mat = nullptr);
 	SceneObject* addCube(std::shared_ptr<Material> mat = nullptr);
-	SceneObject* addCamera(const glm::vec3& p = glm::vec3(0.f), const glm::vec3& r = glm::vec3(0.f), const glm::vec3& bgColor = glm::vec3(0.f));
+	SceneObject* addCamera(const glm::vec3& pos = glm::vec3(0.f), const glm::vec3& rot = glm::vec3(0.f), const glm::vec3& bgColor = glm::vec3(0.f));
 
 	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f, ShadowType shadowType = ShadowType::HardShadow);
 	SceneObject* addPointLight(const glm::vec3& color, float range = 50, float intensity = 1.f, ShadowType shadowType = ShadowType::NoShadow);
@@ -75,9 +76,29 @@ public:
 	//
 	// rendering
 	//
-	SceneRenderInfo_t* getSceneRenderInfo() const;
-	void render(RenderContext* context);
-	
+	inline void setRenderer(Renderer* renderer) {
+		m_renderContext.setRenderer(renderer);
+		m_renderContext.clearMatrix();
+	}
+
+	inline Renderer* getRenderer() const {
+		return m_renderContext.getRenderer();
+	}
+
+	glm::vec2 getRenderSize() const;
+
+	void render();
+
+	//
+	// events
+	//
+	void onComponentAttach(SceneObject* obj, Component* c) {};
+	void onComponentDetach(SceneObject* obj, Component* c) {};
+	void onCameraAdded(SceneObject* obj, CameraComponent* camera);
+	void onCameraRemoved(SceneObject* obj, CameraComponent* camera);
+	void onLightAdded(SceneObject* obj, LightComponent* light);
+	void onLightRemoved(SceneObject* obj, LightComponent* light);
+
 	//
 	// public getter setter
 	//
@@ -97,13 +118,22 @@ public:
 		return m_id;
 	}
 
-	inline void onWindowReSize(float w, float h) {
-		m_windowSize = glm::vec2(w, h);
+	inline size_t cameraCount() const {
+		return m_cameras.size();
 	}
 
-	inline Camera_t* getActiveCamera() const {
-		return m_activeCamera;
+	inline CameraComponent* cameraAt(size_t idx) {
+		return m_cameras[idx];
 	}
+
+	inline size_t lightCount() const {
+		return m_lights.size();
+	}
+
+	LightComponent* lightAt(size_t idx) {
+		return m_lights[idx];
+	}
+
 
 private:
 	ID m_id;
@@ -111,8 +141,10 @@ private:
 	bool m_isInitialize;
 
 	std::unique_ptr<SceneObject> m_rootObject;
-	glm::vec2 m_windowSize;
 
-	CameraComponent m_defaultCamera;
-	mutable Camera_t* m_activeCamera;
+	std::vector<LightComponent*> m_lights;
+	std::vector<CameraComponent*> m_cameras;
+	CameraComponent* m_mainCamera;
+	
+	RenderContext m_renderContext;
 };

@@ -1,10 +1,7 @@
 #pragma once
 #include<glm/glm.hpp>
 #include<glad/glad.h>
-#include<stack>
-#include<vector>
-#include<array>
-
+#include"Containers.h"
 
 class VertexArray;
 class Material;
@@ -41,6 +38,8 @@ enum class PrimitiveType {
 	Unknown,
 };
 
+std::string PrimitiveType2Str(PrimitiveType pt);
+
 
 enum class LightType {
 	Unknown,
@@ -65,11 +64,17 @@ struct Viewport_t {
 
 	Viewport_t();
 	Viewport_t(float _x, float _y, float _w, float _h);
+	Viewport_t(const Viewport_t& other) = default;
+	Viewport_t& operator = (const Viewport_t& other) = default;
+
+	inline bool operator == (const Viewport_t& other) {
+		return  FLT_CMP(x, other.x) && FLT_CMP(y, other.y) && FLT_CMP(width, other.width) && FLT_CMP(height, other.height);
+	}
+
+	inline bool operator != (const Viewport_t& other) {
+		return !(*this == other);
+	}
 };
-
-bool operator == (const Viewport_t& lhs, const Viewport_t& rhs);
-bool operator != (const Viewport_t& lhs, const Viewport_t& rhs);
-
 
 struct AABB_t;
 
@@ -145,15 +150,7 @@ struct Light_t {
 };
 
 
-struct RenderingSettings_t {
-	glm::vec2 renderSize;
-	glm::vec2 shadowMapResolution;
-
-	RenderingSettings_t();
-};
-
-
-struct RenderTask_t {
+struct MeshRenderItem_t {
 	const VertexArray* vao;
 	const Material* material;
 	const glm::mat4* bonesTransform;
@@ -164,19 +161,31 @@ struct RenderTask_t {
 	PrimitiveType primitive;
 	glm::mat4 modelMatrix;
 
-	RenderTask_t();
+	MeshRenderItem_t();
 };
 
 
+struct Scene_t {
+	MeshRenderItem_t* opaqueItems;
+	size_t numOpaqueItems;
+	
+	MeshRenderItem_t* transparentItems;
+	size_t numTransparentItems;
+	
+	Light_t* lights;
+	size_t numLights;
+	
+	Camera_t* assistCameras;
+	size_t numAssistCameras;
 
-struct SceneRenderInfo_t {
-	Camera_t camera;
-	std::vector<Light_t> lights;
-	// maybe will add enviroment setting, ect.
+	Camera_t* mainCamera;
 
-	SceneRenderInfo_t();
+	Scene_t();
+	void clear();
+
+private:
+	void reset();
 };
-
 
 
 enum class RenderPass {
@@ -190,29 +199,38 @@ enum class RenderPass {
 };
 
 
-
 class RenderContext {
 public:
-	RenderContext(Renderer* renderer = nullptr);
+	RenderContext() = default;
 
 	void pushMatrix(const glm::mat4& m);
-	void popMatrix();
 	void clearMatrix();
-	glm::mat4 getMatrix() const;
 
+	inline void popMatrix() {
+		m_transforms.pop();
+	}
 
+	inline const glm::mat4& getMatrix() const {
+		return m_transforms.top();
+	}
+
+	inline size_t matrixSize() const {
+		return m_transforms.size();
+	}
+
+	inline Renderer* getRenderer() const {
+		return m_renderer;
+	}
+	
 	inline void setRenderer(Renderer* renderer) {
 		m_renderer = renderer;
 	}
-	
-	inline Renderer* renderer() const {
-		return m_renderer;
-	}
 
-private:
+protected:
+	PoolStack<glm::mat4> m_transforms;
 	Renderer* m_renderer;
-	std::stack<glm::mat4> m_transformStack;
 };
+
 
 
 enum ClearFlags {

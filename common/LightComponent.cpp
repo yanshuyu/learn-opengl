@@ -1,6 +1,7 @@
 #include"LightComponent.h"
 #include"Util.h"
 #include"SceneObject.h"
+#include"Scene.h"
 #include<glm/gtx/transform.hpp>
 
 
@@ -53,6 +54,18 @@ Component* LightComponent::copy() const {
 
 	return copy;
 }
+
+
+void LightComponent::onAttached() {
+	__super::onAttached();
+	m_owner->getParentScene()->onLightAdded(m_owner, this);
+}
+
+
+void LightComponent::onDetached() {
+	__super::onDetached();
+	m_owner->getParentScene()->onLightRemoved(m_owner, this);
+ }
 
 
 glm::vec3 LightComponent::getPosition() const {

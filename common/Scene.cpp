@@ -3,21 +3,25 @@
 #include"MeshMgr.h"
 #include"NotificationCenter.h"
 #include"LightComponent.h"
+#include"CameraComponent.h"
 #include"AnimatorComponent.h"
 #include"SkinMeshRenderComponent.h"
+#include"Renderer.h"
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<algorithm>
 
 
-Scene::Scene(const glm::vec2& wndSz, const std::string& name): m_name(name)
+Scene::Scene(const std::string& name): m_name(name)
 , m_isInitialize(false)
 , m_id(0)
-, m_windowSize(wndSz)
-, m_defaultCamera(wndSz.x/wndSz.y) 
-, m_activeCamera(nullptr) {
+, m_lights()
+, m_cameras()
+, m_mainCamera()
+, m_renderContext() {
 	m_id = reinterpret_cast<unsigned long>(this);
 	m_rootObject = std::make_unique<SceneObject>("root");
+	m_rootObject->m_parentScene = this;
 }
 
 
@@ -48,43 +52,35 @@ void Scene::update(double dt) {
 }
 
 
-SceneRenderInfo_t* Scene::getSceneRenderInfo() const {
-	static SceneRenderInfo_t sri;
-	CameraComponent* activeCamera = nullptr;
-	sri.lights.clear();
+glm::vec2 Scene::getRenderSize() const {
+	if (auto renderer = getRenderer())
+		return renderer->getRenderSize();
 
-	depthFirstVisit([&](SceneObject* obj, bool& stop) -> bool {
-		for (size_t i = 0; i < obj->componentCount(); i++) {
-			Component* comp = obj->componentAt(i);
-			
-			if (!comp->m_isEnable)
-				continue;
-
-			if (comp->isType(CameraComponent::s_typeId)) {
-				activeCamera = comp->asType<CameraComponent>();
-				sri.camera = activeCamera->makeCamera(m_windowSize.x, m_windowSize.y);
-			}
-
-			if (comp->isType(LightComponent::s_typeId))
-				sri.lights.push_back(comp->asType<LightComponent>()->makeLight());
-		}
-		
-		return true;
-	});
-
-	if (activeCamera) 
-		activeCamera->m_aspectRatio = m_windowSize.x / m_windowSize.y;
-	
-	if (!activeCamera)
-		sri.camera = m_defaultCamera.makeCamera(m_windowSize.x, m_windowSize.y);
-	
-	m_activeCamera = &sri.camera;
-
-	return &sri;
+	return glm::vec2(0.f);
 }
 
-void Scene::render(RenderContext* context) {
-	m_rootObject->render(context);
+void Scene::render() {
+	Renderer* renderer = m_renderContext.getRenderer();
+	if (!renderer) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+		return;
+	}
+
+	for (auto& camera : m_cameras) {
+		renderer->submitCamera(camera->makeCamera(renderer->getRenderSize()), camera == m_mainCamera);
+	}
+
+	for (auto& light : m_lights) {
+		renderer->submitLight(light->makeLight());
+	}
+
+	m_renderContext.clearMatrix();
+	m_renderContext.pushMatrix(glm::mat4(1.f));
+	m_rootObject->render(&m_renderContext);
+
+	renderer->flush();
 }
 
 
@@ -102,14 +98,17 @@ void Scene::addObject(std::unique_ptr<SceneObject>&& object) {
 	m_rootObject->addChild(std::move(object));
 }
 
-SceneObject* Scene::addCamera(const glm::vec3& p, const glm::vec3& r, const glm::vec3& bgColor) {
+SceneObject* Scene::addCamera(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& bgColor) {
+	auto renderSize = getRenderSize();
+	ASSERT(renderSize.y != 0);
+
 	SceneObject* camera = addObject("Camera");
-	CameraComponent* cameraComp = new CameraComponent(m_windowSize.x / m_windowSize.y);
-	camera->addComponent(cameraComp);
-	camera->m_transform.setPosition(p);
-	camera->m_transform.setRotation(r);
+	CameraComponent* cameraComp = new CameraComponent(renderSize.x / renderSize.y);
+	camera->m_transform.setPosition(pos);
+	camera->m_transform.setRotation(rot);
 	cameraComp->m_backGroundColor = glm::vec4(bgColor, 1.f);
 	camera->setTag(Tag::Camera);
+	camera->addComponent(cameraComp);
 
 	return camera;
 }
@@ -258,7 +257,7 @@ std::unique_ptr<SceneObject> Scene::removeObjectWithName(const std::string& name
 
 
 void Scene::clearObjects() {
-	m_rootObject->clearChilds();
+	m_rootObject->removeAllChildren();
 }
 
 
@@ -271,6 +270,35 @@ size_t Scene::objectCountRecursive() const {
 }
 
 
+void Scene::onCameraAdded(SceneObject* obj, CameraComponent* camera) {
+	m_cameras.push_back(camera);
+	if (!m_mainCamera)
+		m_mainCamera = camera;
+}
+
+void Scene::onCameraRemoved(SceneObject* obj, CameraComponent* camera) {
+	auto pos = std::remove(m_cameras.begin(), m_cameras.end(), camera);
+	if (pos != m_cameras.end()) {
+		m_cameras.erase(pos);
+		if (camera == m_mainCamera) {
+			m_mainCamera = nullptr;
+			if (m_cameras.size() > 0)
+				m_mainCamera = m_cameras.back();
+		}
+	}
+}
+
+void Scene::onLightAdded(SceneObject* obj, LightComponent* light) {
+	m_lights.push_back(light);
+}
+
+void Scene::onLightRemoved(SceneObject* obj, LightComponent* light) {
+	auto pos = std::remove(m_lights.begin(), m_lights.end(), light);
+	if (pos != m_lights.end())
+		m_lights.erase(pos);
+}
+
+
 void Scene::depthFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 	m_rootObject->depthFirstTraverse(op);
 }
@@ -279,3 +307,5 @@ void Scene::depthFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 void Scene::breathFirstVisit(std::function<bool(SceneObject*, bool&)> op) const {
 	m_rootObject->breadthFirstTraverse(op);
 }
+
+

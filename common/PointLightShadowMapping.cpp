@@ -8,8 +8,8 @@
 #include<glm/gtx/transform.hpp>
 
 
-PointLightShadowMapping::PointLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution)
-: m_renderer(renderer)
+PointLightShadowMapping::PointLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution)
+: IShadowMapping(rt)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
 , m_FBO(nullptr)
@@ -75,17 +75,18 @@ void PointLightShadowMapping::cleanUp() {
 	m_cubeShadowMap.release();
 }
 
-void PointLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera_t& camera) {
+void PointLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
 	auto shader = ShaderProgramManager::getInstance()->getProgram("PointLightShadowPass");
 	if (shader.expired())
 		shader = ShaderProgramManager::getInstance()->addProgram("PointLightShadowPass.shader");
 	ASSERT(!shader.expired());
 
 	m_shader = shader.lock();
-	m_renderer->pushShaderProgram(m_shader.get());
-	m_renderer->pushRenderTarget(m_FBO.get());
-	m_renderer->pushViewport(&m_shadowViewport);
-	m_renderer->clearScreen(ClearFlags::Depth);
+	auto renderer = m_renderTech->getRenderer();
+	renderer->pushShaderProgram(m_shader.get());
+	renderer->pushRenderTarget(m_FBO.get());
+	renderer->pushViewport(&m_shadowViewport);
+	renderer->clearScreen(ClearFlags::Depth);
 
 	if (m_shader->hasUniform("u_lightVP[0]")) {
 		auto transforms = calclightLightCameraMatrixs(light);
@@ -98,13 +99,16 @@ void PointLightShadowMapping::beginShadowPhase(const Light_t& light, const Camer
 	if (m_shader->hasUniform("u_far"))
 		m_shader->setUniform1("u_far", light.range);
 
-	m_renderer->pullingRenderTask();
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		m_renderTech->render(scene.opaqueItems[i]);
+	}
 }
 
-void PointLightShadowMapping::endShadowPhase(const Light_t& light) {
-	m_renderer->popRenderTarget();
-	m_renderer->popViewport();
-	m_renderer->popShadrProgram();
+void PointLightShadowMapping::endShadowPhase() {
+	auto renderer = m_renderTech->getRenderer();
+	renderer->popRenderTarget();
+	renderer->popViewport();
+	renderer->popShadrProgram();
 	m_shader = nullptr;
 }
 

@@ -6,7 +6,7 @@
 
 class Buffer;
 class ShaderProgram;
-class RenderTechnique;
+class IRenderTechnique;
 
 
 struct  MaterialBlock {
@@ -17,41 +17,40 @@ struct  MaterialBlock {
 
 
 class RenderTaskExecutor {
-
 public:
-	RenderTaskExecutor(RenderTechnique* rt);
+	RenderTaskExecutor(IRenderTechnique* rt);
 	virtual ~RenderTaskExecutor();
 
 	virtual bool initialize() { return true; }
-	virtual void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) = 0;
+	virtual void executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) = 0;
 	virtual void release() {};
 
 
 protected:
-	RenderTechnique* m_renderer;
+	IRenderTechnique* m_renderer;
 };
 
 
 class DepthPassRenderTaskExecutor: public RenderTaskExecutor {
 public:
-	DepthPassRenderTaskExecutor(RenderTechnique* rt);
-	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
+	DepthPassRenderTaskExecutor(IRenderTechnique* rt);
+	void executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) override;
 };
 
 
 
 class UlitPassRenderTaskExecutror : public RenderTaskExecutor {
 public:
-	UlitPassRenderTaskExecutror(RenderTechnique* rt);
-	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
+	UlitPassRenderTaskExecutror(IRenderTechnique* rt);
+	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
 };
 
 
 class LightPassRenderTaskExecuter : public RenderTaskExecutor {
 public:
-	LightPassRenderTaskExecuter(RenderTechnique* rt);
+	LightPassRenderTaskExecuter(IRenderTechnique* rt);
 	bool initialize() override;
-	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
+	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
 	void release() override;
 
 private:
@@ -61,10 +60,10 @@ private:
 
 class GeometryPassRenderTaskExecutor : public RenderTaskExecutor {
 public:
-	GeometryPassRenderTaskExecutor(RenderTechnique* rt);
+	GeometryPassRenderTaskExecutor(IRenderTechnique* rt);
 
 	bool initialize() override;
-	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
+	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
 	void release() override;
 
 private:
@@ -74,7 +73,7 @@ private:
 
 class ShadowPassRenderTaskExecutor : public RenderTaskExecutor {
 public:
-	ShadowPassRenderTaskExecutor(RenderTechnique* rt);
+	ShadowPassRenderTaskExecutor(IRenderTechnique* rt);
 
-	void executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) override;
+	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
 };

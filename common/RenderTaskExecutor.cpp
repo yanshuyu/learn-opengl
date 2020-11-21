@@ -13,7 +13,7 @@
 
 static MaterialBlock s_materialBlock;
 
-RenderTaskExecutor::RenderTaskExecutor(RenderTechnique* rt) :m_renderer(rt) {
+RenderTaskExecutor::RenderTaskExecutor(IRenderTechnique* rt) :m_renderer(rt) {
 
 }
 
@@ -24,11 +24,11 @@ RenderTaskExecutor::~RenderTaskExecutor() {
 
 
 
-DepthPassRenderTaskExecutor::DepthPassRenderTaskExecutor(RenderTechnique* rt) :RenderTaskExecutor(rt) {
+DepthPassRenderTaskExecutor::DepthPassRenderTaskExecutor(IRenderTechnique* rt) :RenderTaskExecutor(rt) {
 
 }
 
-void DepthPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
+void DepthPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	renderTask.vao->bind();
 	
 	if (shader->hasUniform("u_ModelMat")) {
@@ -68,11 +68,11 @@ void DepthPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask, Sh
 }
 
 
-UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(RenderTechnique* rt) :RenderTaskExecutor(rt) {
+UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(IRenderTechnique* rt) :RenderTaskExecutor(rt) {
 
 }
 
-void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
+void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	std::shared_ptr<Texture> strongDiffuseMap;
 
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
@@ -114,21 +114,7 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, Sh
 			}
 		}
 
-	} else if (m_renderer->identifier() == DeferredRenderer::s_identifier) {
-		auto renderer = static_cast<DeferredRenderer*>(m_renderer);
-		if (shader->hasUniform("u_diffuse")) {
-			renderer->m_diffuseBuffer->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
-			shader->setUniform1("u_diffuse", int(Texture::Unit::DiffuseMap));
-		}
-
-		if (shader->hasUniform("u_emissive")) {
-			renderer->m_emissiveBuffer->bind(Texture::Unit::EmissiveMap, Texture::Target::Texture_2D);
-			shader->setUniform1("u_emissive", int(Texture::Unit::EmissiveMap));
-		}
-
-	} else {
-		ASSERT(false);
-	}
+	} 
 
 	renderTask.vao->bind();
 
@@ -154,7 +140,7 @@ void UlitPassRenderTaskExecutror::executeTask(const RenderTask_t& renderTask, Sh
 
 
 
-LightPassRenderTaskExecuter::LightPassRenderTaskExecuter(RenderTechnique* rt) : RenderTaskExecutor(rt) {
+LightPassRenderTaskExecuter::LightPassRenderTaskExecuter(IRenderTechnique* rt) : RenderTaskExecutor(rt) {
 
 }
 
@@ -171,7 +157,7 @@ bool LightPassRenderTaskExecuter::initialize() {
 }
 
 
-void LightPassRenderTaskExecuter::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
+void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	renderTask.vao->bind();
 	std::shared_ptr<Texture> strongDiffuseMap;
 	std::shared_ptr<Texture> strongNormalMap;
@@ -280,7 +266,7 @@ void LightPassRenderTaskExecuter::release() {
 
 
 
-GeometryPassRenderTaskExecutor::GeometryPassRenderTaskExecutor(RenderTechnique* rt) :RenderTaskExecutor(rt)
+GeometryPassRenderTaskExecutor::GeometryPassRenderTaskExecutor(IRenderTechnique* rt) :RenderTaskExecutor(rt)
 , m_materialUBO(nullptr) {
 
 }
@@ -294,7 +280,7 @@ bool GeometryPassRenderTaskExecutor::initialize() {
 	return ok;
 }
 
-void GeometryPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
+void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	auto renderer = static_cast<DeferredRenderer*>(m_renderer);
 	std::shared_ptr<Texture> strongDiffuseMap;
 	std::shared_ptr<Texture> strongNormalMap;
@@ -401,11 +387,11 @@ void GeometryPassRenderTaskExecutor::release() {
 }
 
 
-ShadowPassRenderTaskExecutor::ShadowPassRenderTaskExecutor(RenderTechnique* rt) : RenderTaskExecutor(rt) {
+ShadowPassRenderTaskExecutor::ShadowPassRenderTaskExecutor(IRenderTechnique* rt) : RenderTaskExecutor(rt) {
 
 }
 
-void ShadowPassRenderTaskExecutor::executeTask(const RenderTask_t& renderTask, ShaderProgram* shader) {
+void ShadowPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	renderTask.vao->bind();
 	
 	// set model matrix

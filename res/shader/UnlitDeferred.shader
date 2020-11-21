@@ -20,8 +20,8 @@ void main() {
 
 in vec2 f_uv;
 
-layout(location = 0) uniform sampler2D u_diffuse;
-layout(location = 1) uniform sampler2D u_emissive;
+uniform sampler2D u_diffuse;
+uniform sampler2D u_emissive;
 
 out vec4 frag_color;
 

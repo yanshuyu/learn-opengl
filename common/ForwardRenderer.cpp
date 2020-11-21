@@ -16,14 +16,11 @@
 const std::string ForwardRenderer::s_identifier = "ForwardRenderer";
 
 
-ForwardRenderer::ForwardRenderer(Renderer* invoker, const RenderingSettings_t& settings): RenderTechnique(invoker)
-, m_currentPass(RenderPass::None)
+ForwardRenderer::ForwardRenderer(Renderer* renderer): RenderTechniqueBase(renderer)
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
-, m_spotLightShadow(nullptr)
-, m_dirLightShadow(nullptr)
-, m_pointLightShadow(nullptr)
+, m_shadowMappings()
 , m_depthPassPipelineState()
 , m_shadowPassPipelineState()
 , m_lightPassPipelineState()
@@ -58,36 +55,8 @@ bool ForwardRenderer::intialize() {
 	m_unlitPassPipelineState.depthFunc = DepthFunc::LEqual;
 	m_unlitPassPipelineState.depthMask = 0;
 	
-	const RenderingSettings_t* renderSetting = m_invoker->getRenderingSettings();
+
 	bool ok = true;
-	// shadow mapping
-	m_spotLightShadow.reset(new SpotLightShadowMapping(m_invoker,
-		{ renderSetting->shadowMapResolution.x, renderSetting->shadowMapResolution.y }));
-	ok = m_spotLightShadow->initialize();
-	if (!ok) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	m_dirLightShadow.reset(new DirectionalLightShadowMapping(m_invoker, renderSetting->shadowMapResolution, {0.2f, 0.4f, 0.6f}));
-	ok = m_dirLightShadow->initialize();
-	if (!ok) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	m_pointLightShadow.reset(new PointLightShadowMapping(m_invoker, renderSetting->shadowMapResolution));
-	ok = m_pointLightShadow->initialize();
-	if (!ok) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
 
 	m_directionalLightUBO.reset(new Buffer());
 	m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
@@ -120,8 +89,8 @@ bool ForwardRenderer::intialize() {
 		}
 	}
 
-	m_invoker->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
-	m_invoker->setColorMask(true);
+	m_renderer->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
+	m_renderer->setColorMask(true);
 
 	return ok;
 }
@@ -132,23 +101,13 @@ void ForwardRenderer::cleanUp() {
 	m_pointLightUBO.release();
 	m_spotLightUBO.release();
 	m_taskExecutors.clear();
-
-	m_spotLightShadow.release();
-	m_dirLightShadow.release();
-	m_pointLightShadow.release();
+	m_shadowMappings.clear();
 }
 
-
-bool ForwardRenderer::shouldRunPass(RenderPass pass) {
-	if (pass == RenderPass::GeometryPass)
-		return false;
-
-	return true;
-}
 
 
 void ForwardRenderer::beginFrame() {
-	m_invoker->clearScreen(ClearFlags::Color | ClearFlags::Depth);
+	m_renderer->clearScreen(ClearFlags::Color | ClearFlags::Depth);
 }
 
 
@@ -164,10 +123,10 @@ void ForwardRenderer::endFrame() {
 }
 
 
-void ForwardRenderer::beginDepthPass() {
-	m_currentPass = RenderPass::DepthPass;
-	m_invoker->pushGPUPipelineState(&m_depthPassPipelineState);
-	m_invoker->setColorMask(false);
+void ForwardRenderer::drawDepthPass(const Scene_t& scene) {
+	m_pass = RenderPass::DepthPass;
+	m_renderer->pushGPUPipelineState(&m_depthPassPipelineState);
+	m_renderer->setColorMask(false);
 
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto preZShader = shaderMgr->getProgram("DepthPass");
@@ -176,38 +135,48 @@ void ForwardRenderer::beginDepthPass() {
 	ASSERT(!preZShader.expired());
 
 	m_passShader = preZShader.lock();
-	m_invoker->pushShaderProgram(m_passShader.get());
+	m_renderer->pushShaderProgram(m_passShader.get());
 
 	// set view project matrix
 	if (m_passShader->hasUniform("u_VPMat")) {
-		auto& camera = m_invoker->getSceneRenderInfo()->camera;
+		auto& camera = *scene.mainCamera;
 		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
 		m_passShader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 
-	m_invoker->pullingRenderTask();
-}
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		render(scene.opaqueItems[i]);
+	}
 
-
-void ForwardRenderer::endDepthPass() {
-	m_invoker->popGPUPipelineState();
-	m_invoker->popShadrProgram();
-	m_invoker->setColorMask(true);
-
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
+	m_renderer->setColorMask(true);
 	m_passShader = nullptr;
-	m_currentPass = RenderPass::None;
+	m_pass = RenderPass::None;
 }
 
 
-void ForwardRenderer::beginGeometryPass() {
+void ForwardRenderer::drawGeometryPass(const Scene_t& scene) {
+
 }
 
-void ForwardRenderer::endGeometryPass() {
+
+void ForwardRenderer::drawOpaquePass(const Scene_t& scene) {
+	if (scene.numLights <= 0) {
+		drawUnlitScene(scene);
+	}
+	else {
+		for (size_t i = 0; i < scene.numLights; i++) {
+			drawLightScene(scene, scene.lights[i]);
+		}
+	}
+
 }
 
-void ForwardRenderer::beginUnlitPass() {
-	m_currentPass = RenderPass::UnlitPass;
-	m_invoker->pushGPUPipelineState(&m_unlitPassPipelineState);
+
+void ForwardRenderer::drawUnlitScene(const Scene_t& scene) {
+	m_pass = RenderPass::UnlitPass;
+	m_renderer->pushGPUPipelineState(&m_unlitPassPipelineState);
 
 	auto unlitShader = ShaderProgramManager::getInstance()->getProgram("Unlit");
 	if (unlitShader.expired())
@@ -215,79 +184,36 @@ void ForwardRenderer::beginUnlitPass() {
 	ASSERT(!unlitShader.expired());
 
 	m_passShader = unlitShader.lock();
-	m_invoker->pushShaderProgram(m_passShader.get());
+	m_renderer->pushShaderProgram(m_passShader.get());
 	
 	// set view project matrix
 	if (m_passShader->hasUniform("u_VPMat")) {
-		auto& camera = m_invoker->getSceneRenderInfo()->camera;
+		auto& camera = *scene.mainCamera;
 		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
 		m_passShader->setUniformMat4v("u_VPMat", &vp[0][0]);
 	}
 
-	m_invoker->pullingRenderTask();
-}
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		render(scene.opaqueItems[i]);
+	}  
 
-void ForwardRenderer::endUnlitPass() {
-	m_invoker->popGPUPipelineState();
-	m_invoker->popShadrProgram();
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
 	m_passShader = nullptr;
-	m_currentPass = RenderPass::None;
+	m_pass = RenderPass::None;
 }
 
 
-void ForwardRenderer::beginShadowPass(const Light_t& l) {
-	m_currentPass = RenderPass::ShadowPass;
-	m_invoker->pushGPUPipelineState(&m_shadowPassPipelineState);
-	m_invoker->setColorMask(false);
-	auto& camera = m_invoker->getSceneRenderInfo()->camera;
-
-	switch (l.type)
-	{
-	case LightType::SpotLight:
-		m_spotLightShadow->beginShadowPhase(l, camera);
-		break;
-
-	case LightType::DirectioanalLight:
-		m_dirLightShadow->beginShadowPhase(l, camera);
-		break;
-	case LightType::PointLight:
-		m_pointLightShadow->beginShadowPhase(l, camera);
-		break;
-
-	default:
-		break;
-	}
-}
-
-void ForwardRenderer::endShadowPass(const Light_t& l) {
-	auto& camera = m_invoker->getSceneRenderInfo()->camera;
-	switch (l.type)
-	{
-	case LightType::SpotLight:
-		m_spotLightShadow->endShadowPhase(l);
-		break;
-
-	case LightType::DirectioanalLight:
-		m_dirLightShadow->endShadowPhase(l);
-		break;
-	case LightType::PointLight:
-		m_pointLightShadow->endShadowPhase(l);
-
-	default:
-		break;
+void ForwardRenderer::drawLightScene(const Scene_t& scene, const Light_t& light) {
+	if (light.isCastShadow()) {
+		drawLightShadow(scene, light);
 	}
 
-	m_invoker->popGPUPipelineState();
-	m_invoker->setColorMask(true);
-	m_currentPass = RenderPass::None;
-	m_passShader = nullptr;
-}
+	m_pass = RenderPass::LightPass;
+	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
+	Buffer* lightUBO = nullptr;
 
-void ForwardRenderer::beginLightPass(const Light_t& l) {
-	m_currentPass = RenderPass::LightPass;
-	m_invoker->pushGPUPipelineState(&m_lightPassPipelineState);
-
-	switch (l.type) {
+	switch (light.type) {
 	case LightType::DirectioanalLight: {
 		auto directionalLightShader = ShaderProgramManager::getInstance()->getProgram("DirectionalLight");
 		if (directionalLightShader.expired())
@@ -295,22 +221,21 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		ASSERT(!directionalLightShader.expired());
 
 		m_passShader = directionalLightShader.lock();
-		m_invoker->pushShaderProgram(m_passShader.get());
+		m_renderer->pushShaderProgram(m_passShader.get());
 	
 		// set directional light block
 		if (m_passShader->hasUniformBlock("LightBlock")) {
 			static DirectionalLightBlock dlb;
-			dlb.color = glm::vec4(glm::vec3(l.color), l.intensity);
-			dlb.inverseDiretion = -l.direction;
+			dlb.color = glm::vec4(glm::vec3(light.color), light.intensity);
+			dlb.inverseDiretion = -light.direction;
 			m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
 			m_directionalLightUBO->loadSubData(&dlb, 0, sizeof(dlb));
 
 			m_directionalLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
 			m_passShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+
+			lightUBO = m_directionalLightUBO.get();
 		}
-
-		m_dirLightShadow->beginLighttingPhase(l, m_passShader.get());
-
 	}break;
 
 	case LightType::PointLight: {
@@ -320,21 +245,21 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		ASSERT(!pointLightShader.expired());
 
 		m_passShader = pointLightShader.lock();
-		m_invoker->pushShaderProgram(m_passShader.get());
+		m_renderer->pushShaderProgram(m_passShader.get());
 		
 		// set point light block
 		if (m_passShader->hasUniformBlock("LightBlock")) {
 			static PointLightBlock plb;
-			plb.position = glm::vec4(l.position, l.range);
-			plb.color = glm::vec4(l.color, l.intensity);
+			plb.position = glm::vec4(light.position, light.range);
+			plb.color = glm::vec4(light.color, light.intensity);
 
 			m_pointLightUBO->bind(Buffer::Target::UniformBuffer);
 			m_pointLightUBO->loadSubData(&plb, 0, sizeof(plb));
 			m_pointLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
 			m_passShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
-		}
 
-		m_pointLightShadow->beginLighttingPhase(l, m_passShader.get());
+			lightUBO = m_pointLightUBO.get();
+		}
 
 	}break;
 
@@ -345,24 +270,23 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		ASSERT(!spotLightShader.expired());
 
 		m_passShader = spotLightShader.lock();
-		m_invoker->pushShaderProgram(m_passShader.get());
+		m_renderer->pushShaderProgram(m_passShader.get());
 		
 		// set spot light block
 		if (m_passShader->hasUniformBlock("LightBlock")) {
 			static SpotLightBlock slb;
-			slb.position = glm::vec4(l.position, l.range);
-			slb.color = glm::vec4(l.color, l.intensity);
-			slb.inverseDirection = -l.direction;
-			slb.angles = glm::vec2(l.innerCone, l.outterCone);
+			slb.position = glm::vec4(light.position, light.range);
+			slb.color = glm::vec4(light.color, light.intensity);
+			slb.inverseDirection = -light.direction;
+			slb.angles = glm::vec2(light.innerCone, light.outterCone);
 
 			m_spotLightUBO->bind(Buffer::Target::UniformBuffer);
 			m_spotLightUBO->loadSubData(&slb, 0, sizeof(slb));
 			m_spotLightUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::LightBlock));
 			m_passShader->bindUniformBlock("LightBlock", ShaderProgram::UniformBlockBindingPoint::LightBlock);
+
+			lightUBO = m_spotLightUBO.get();
 		}
-
-		m_spotLightShadow->beginLighttingPhase(l, m_passShader.get());
-
 	}break;
 
 	default:
@@ -372,7 +296,9 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		break;
 	}
 
-	auto& camera = m_invoker->getSceneRenderInfo()->camera;
+	m_shadowMappings[light.type]->beginLighttingPhase(light, m_passShader.get());
+
+	auto& camera = *scene.mainCamera;
 	// set view project matrix
 	if (m_passShader->hasUniform("u_VPMat")) {
 		glm::mat4 vp = camera.projMatrix * camera.viewMatrix;
@@ -384,66 +310,76 @@ void ForwardRenderer::beginLightPass(const Light_t& l) {
 		m_passShader->setUniform3v("u_cameraPosW", const_cast<float*>(glm::value_ptr(camera.position)));
 	}
 
-	m_invoker->pullingRenderTask();
-}
-
-void ForwardRenderer::endLightPass(const Light_t& l) {
-	switch (l.type) {
-	case LightType::DirectioanalLight:
-		m_directionalLightUBO->unbind();
-		m_dirLightShadow->endLighttingPhase(l, m_passShader.get());
-		break;
-
-	case LightType::PointLight:
-		m_pointLightUBO->unbind();;
-		m_pointLightShadow->endLighttingPhase(l, m_passShader.get());
-		break;
-	
-	case LightType::SpotLight:
-		m_spotLightUBO->unbind();
-		m_spotLightShadow->endLighttingPhase(l, m_passShader.get());
-		break;
-
-	default:
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		break;
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		render(scene.opaqueItems[i]);
 	}
 
+	m_shadowMappings[light.type]->endLighttingPhase(light, m_passShader.get());
+
+	if (lightUBO)
+		lightUBO->unbind();
+
 	m_passShader->unbindUniformBlock("LightBlock");
-	m_invoker->popGPUPipelineState();
-	m_invoker->popShadrProgram();
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
 	m_passShader = nullptr;
-	m_currentPass = RenderPass::None;
-}
-
-void ForwardRenderer::beginTransparencyPass() {
-
-}
-
-void ForwardRenderer::endTransparencyPass() {
-
+	m_pass = RenderPass::None;
 }
 
 
-void ForwardRenderer::performTask(const RenderTask_t& task) {
+void ForwardRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light) {
+	m_pass = RenderPass::ShadowPass;
+	m_renderer->pushGPUPipelineState(&m_shadowPassPipelineState);
+	m_renderer->setColorMask(false);
+
+	if (m_shadowMappings.find(light.type) == m_shadowMappings.end()) {
+		IShadowMapping* shadowMapping = nullptr;
+		if (light.type == LightType::DirectioanalLight) {
+			shadowMapping = new DirectionalLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());
+		}
+		else if (light.type == LightType::PointLight) {
+			shadowMapping = new PointLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());
+		}
+		else if (light.type == LightType::SpotLight) {
+			shadowMapping = new SpotLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());
+		}
+		else {
+			ASSERT(false);
+		}
+		ASSERT(shadowMapping->initialize());
+
+		m_shadowMappings.insert(std::make_pair(light.type, std::unique_ptr<IShadowMapping>(shadowMapping)));
+	}
+
+	m_shadowMappings[light.type]->beginShadowPhase(scene, light);
+	m_shadowMappings[light.type]->endShadowPhase();
+
+	m_renderer->popGPUPipelineState();
+	m_renderer->setColorMask(true);
+	m_pass = RenderPass::None;
+	m_passShader = nullptr;
+}
+
+
+
+
+void ForwardRenderer::render(const MeshRenderItem_t& task) {
 #ifdef _DEBUG
-	ASSERT(m_currentPass != RenderPass::None && m_currentPass != RenderPass::GeometryPass)
+	ASSERT(m_pass != RenderPass::None && m_pass != RenderPass::GeometryPass)
 #endif // _DEBUG
 
-	auto taskExecutor = m_taskExecutors.find(m_currentPass);
+	auto taskExecutor = m_taskExecutors.find(m_pass);
 	if (taskExecutor == m_taskExecutors.end()) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
 		std::stringstream msg;
-		msg << "renderer no task executor for pass: " << int(m_currentPass) << "\n";
+		msg << "renderer no task executor for pass: " << int(m_pass) << "\n";
 		CONSOLELOG(msg.str());
 		return;
 	}
 
-	taskExecutor->second->executeTask(task, m_invoker->getActiveShaderProgram());
+	taskExecutor->second->executeMeshTask(task, m_renderer->getActiveShaderProgram());
 }
 
 
@@ -452,7 +388,7 @@ void ForwardRenderer::onWindowResize(float w, float h) {
 }
 
 void ForwardRenderer::onShadowMapResolutionChange(float w, float h) {
-	m_spotLightShadow->onShadowMapResolutionChange(w, h);
-	m_dirLightShadow->onShadowMapResolutionChange(w, h);
-	m_pointLightShadow->onShadowMapResolutionChange(w, h);
+	for (auto& shadowMapping : m_shadowMappings) {
+		shadowMapping.second->onShadowMapResolutionChange(w, h);
+	}
 }

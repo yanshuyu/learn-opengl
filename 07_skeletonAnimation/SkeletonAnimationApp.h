@@ -1,6 +1,5 @@
 #pragma once
 #include<common/GLApplication.h>
-#include<common/KeyFrameTrack.h>
 #include"AnimatorController.h"
 
 
@@ -12,7 +11,7 @@ public:
 private:
 	bool initailize() override;
 	void update(double dt) override;
-	void render() override;
+	void render() override;      
 	void debugDraw(double dt) override;
 	void onWindowResized(int width, int height) override;
 

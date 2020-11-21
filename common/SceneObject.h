@@ -8,14 +8,21 @@
 #include<functional>
 
 class Renderer;
+class Scene;
+
+enum class Layer {
+	Default,
+	Transparency,
+};
 
 class SceneObject {
+	friend class Scene;
 	typedef std::vector<std::shared_ptr<Component>> ComponentVector;
 	typedef std::vector<std::unique_ptr<SceneObject>> ObjectVector;
 
 public:
 	SceneObject(const std::string& name = "");
-	virtual ~SceneObject() {}
+	virtual ~SceneObject();
 
 	SceneObject(const SceneObject& other) = delete;
 	SceneObject(SceneObject&& rv) = delete;
@@ -67,6 +74,8 @@ public:
 		return removeComponent(T::s_typeId);
 	}
 
+	void removeAllComponent();
+
 	inline size_t componentCount() const {
 		return m_components.size();
 	}
@@ -96,7 +105,7 @@ public:
 	std::unique_ptr<SceneObject> removeChildWithName(const std::string& name);
 	std::unique_ptr<SceneObject> removeChild(SceneObject* c);
 	
-	void clearChilds();
+	void removeAllChildren();
 	void removeFromParent();
 
 	inline SceneObject* getParent() const {
@@ -143,6 +152,19 @@ public:
 		return m_tag;
 	}
 
+	inline Layer getLayer() const {
+		return m_layer;
+	}
+
+	inline void setLayer(Layer layer) {
+		m_layer = layer;
+	}
+
+
+	inline Scene* getParentScene() const {
+		return m_parentScene;
+	}
+
 private:	
 	ObjectVector::iterator findChild_if(std::function<bool(const SceneObject*)> pred);
 	ObjectVector::const_iterator findChild_if(std::function<bool(const SceneObject*)> pred) const;
@@ -155,10 +177,12 @@ public:
 	bool m_isEnable;
 
 private:
-	std::vector<std::unique_ptr<SceneObject>> m_childs;
-	std::vector<std::shared_ptr<Component>> m_components; // for components have refrence to other components using a weak ptr
-	std::string m_name;
 	ID m_id;
 	ID m_tag;
+	Layer m_layer;
+	std::string m_name;
 	SceneObject* m_parent;
+	Scene* m_parentScene;
+	std::vector<std::unique_ptr<SceneObject>> m_childs;
+	std::vector<std::shared_ptr<Component>> m_components; // for components have refrence to other components using a weak ptr
 };

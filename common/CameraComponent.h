@@ -30,6 +30,8 @@ public:
 	CameraComponent& operator = (CameraComponent&& rv) = delete;
 
 	Component* copy() const override;
+	virtual void onAttached() override;
+	virtual void onDetached() override;
 
 	glm::mat4 viewMatrix() const;
 	glm::mat4 projectionMatrix() const;
@@ -37,11 +39,11 @@ public:
 
 	glm::vec3 getPosition() const;
 	glm::vec3 getLookDirection() const;
-	Viewport_t getViewPort(float renderWidth, float renderHeight) const; // screen space view port
+	Viewport_t getViewPort(const glm::vec2& renderSize) const; // screen space view port
 	ViewFrustum_t getViewFrustum() const; // view space view frumstum
 	
 protected:
-	Camera_t makeCamera(float wndWidth, float wndHeight) const;
+	Camera_t makeCamera(const glm::vec2& renderSize) const;
 
 public:	
 	// persp
@@ -57,10 +59,10 @@ public:
 	float m_bottom;
 
 	// normalized viewport
-	float m_viewPortX;
-	float m_viewPortY;
-	float m_viewPortW;
-	float m_viewPortH;
+	mutable float m_viewPortMinX;
+	mutable float m_viewPortMinY;
+	mutable float m_viewPortMaxX;
+	mutable float m_viewPortMaxY;
 	
 	glm::vec4 m_backGroundColor;
 	ProjectionMode m_projMode;

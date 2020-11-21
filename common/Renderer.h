@@ -1,9 +1,11 @@
 #pragma once
 #include<glad/glad.h>
+#include"Util.h"
 #include"RendererCore.h"
 #include"ShaderProgram.h"
 #include"RenderTechnique.h"
-#include"Util.h"
+
+#include"FrameAllocator.h"
 
 class Scene;
 class Texture;
@@ -14,6 +16,9 @@ class VertexArray;
 
 class Renderer {
 protected:
+	template<typename T>
+	using FrameVector = std::vector<T, StdFrameAlloc<T>>;
+
 	struct Vertex {
 		glm::vec3 position;
 		glm::vec2 uv;
@@ -24,6 +29,7 @@ protected:
 		}
 	};
 
+
 public:
 	enum class Mode {
 		None,
@@ -33,7 +39,7 @@ public:
 
 
 public:
-	Renderer(const RenderingSettings_t& settings, Mode mode = Mode::None);
+	Renderer(const glm::vec2& renderSz, Mode mode = Mode::None);
 	virtual ~Renderer();
 
 	Renderer(const Renderer& other) = delete;
@@ -41,29 +47,53 @@ public:
 	Renderer& operator = (const Renderer& other) = delete;
 	Renderer& operator = (Renderer&& rv) = delete;
 
+	//
+	// life cycle
+	//
 	bool initialize();
 	void clenUp();
+	bool setRenderMode(Mode mode);
+	Mode getRenderMode() const;
+	bool isValid() const;
 
+	//
+	// gpu pipeline state management
+	//
 	void pushGPUPipelineState(GPUPipelineState* pipeLineState);
 	void popGPUPipelineState();
+	inline void clearGPUPiepelineStates() {
+		while (!m_pipelineStates.empty()) {
+			m_pipelineStates.pop();
+		}
+	}
 
 	void pushRenderTarget(FrameBuffer* target);
 	void popRenderTarget();
+	inline void clearRenerTargets() {
+		while (!m_renderTargets.empty()) {
+			m_renderTargets.pop();
+		}
+	}
 
 	void pushShaderProgram(ShaderProgram* shader);
 	void popShadrProgram();
+	inline void clearShaderPrograms() {
+		while (!m_shaders.empty()) {
+			m_shaders.pop();
+		}
+	}
 	ShaderProgram* getActiveShaderProgram() const;
 
 	void pushViewport(Viewport_t* viewport);
 	void popViewport();
-	Viewport_t* getActiveViewport() const;
+	void clearViewports() {
+		while (!m_viewports.empty()) {
+			m_viewports.pop();
+		}
+	}
+	const Viewport_t* getActiveViewport() const;
 
-	bool setRenderMode(Mode mode);
-	Mode getRenderMode() const;
-	bool isValid() const;
-	void onWindowResize(float w, float h);
-
-	void setShadowMapResolution(float w, float h);
+	
 	void setClearColor(const glm::vec4& color);
 	void setClearDepth(float d);
 	void setClearStencil(int m);
@@ -74,12 +104,36 @@ public:
 	void setColorMask(int buffer, bool writteable);
 	void setColorMask(int buffer, bool r, bool g, bool b, bool a);
 
+	//
+	// render taskes
+	//
 	void drawFullScreenQuad();
-	void renderScene(Scene* s);
-	void renderTask(const RenderTask_t& task);
-	void pullingRenderTask();
+	
+	void submitCamera(const Camera_t& camera, bool isMain = false);
+
+	inline void submitLight(const Light_t& light) {
+		m_lights.push_back(light);
+	}
+
+	inline void submitOpaqueItem(const MeshRenderItem_t& item) {
+		m_opaqueItems.push_back(item);
+	}
+
+	inline void submitTransparentItem(const MeshRenderItem_t& item) {
+		m_transparentItems.push_back(item);
+	}
+
+	void flush(); // render all submited tasks
 
 
+	//
+	// events
+	//
+	void onWindowResize(float w, float h);
+
+	//
+	// public setter/getter
+	//
 	inline  glm::vec4 getClearColor() const {
 		return m_clearColor;
 	}
@@ -92,24 +146,32 @@ public:
 		return m_clearStencil;
 	}
 
-	inline Viewport_t getViewport() const {
-		return m_mainViewport;
+	inline void setShadowMapResolution(const glm::vec2& dimensions) {
+		m_shadowMapResolution = dimensions;
+		m_renderTechnique->onShadowMapResolutionChange(dimensions.x, dimensions.y);
 	}
 
-	inline const RenderingSettings_t* getRenderingSettings() const {
-		return &m_renderingSettings;
+	inline glm::vec2 getShadowMapResolution() const {
+		return m_shadowMapResolution;
 	}
 
-	inline const SceneRenderInfo_t* getSceneRenderInfo() const {
-		return m_sceneRenderInfo;
+	inline glm::vec2 getRenderSize() const {
+		return m_renderSize;
+	}
+
+	inline IRenderTechnique* getRenderTechnique() const {
+		return m_renderTechnique.get();
 	}
 
 protected:
 	void setGPUPipelineState(const GPUPipelineState& pipelineState);
 	bool setupFullScreenQuad();
+	
 	inline void setViewPort(const Viewport_t& vp) {
 		GLCALL(glViewport(vp.x, vp.y, vp.width, vp.height));
 	}
+
+	Scene_t& makeScene();
 
 	// clipping states
 	void setCullFaceMode(CullFaceMode mode);
@@ -139,19 +201,15 @@ protected:
 	void setBlendColor(const glm::vec4& c);
 
 protected:
+	Mode m_renderMode;
+	std::unique_ptr<IRenderTechnique> m_renderTechnique;
+
+	// gpu pipeline states
 	std::stack<GPUPipelineState*> m_pipelineStates;
 	std::stack<FrameBuffer*> m_renderTargets;
 	std::stack<ShaderProgram*> m_shaders;
 	std::stack<Viewport_t*> m_viewports;
 
-	RenderingSettings_t m_renderingSettings;
-	Mode m_renderMode;
-	RenderContext m_renderContext;
-	Scene* m_scene;
-	SceneRenderInfo_t* m_sceneRenderInfo;
-	std::unique_ptr<RenderTechnique> m_renderTechnique;
-
-	Viewport_t m_mainViewport;
 	glm::vec4 m_clearColor;
 	float m_clearDepth;
 	int m_clearStencil;
@@ -160,4 +218,16 @@ protected:
 	std::unique_ptr<VertexArray> m_quadVAO;
 	std::unique_ptr<Buffer> m_quadVBO;
 	std::unique_ptr<Buffer> m_quadIBO;
+
+	// renderable scene
+	FrameAllocator _frameAlloc;
+	FrameVector<MeshRenderItem_t> m_opaqueItems;
+	FrameVector<MeshRenderItem_t> m_transparentItems;
+	FrameVector<Light_t> m_lights;
+	FrameVector<Camera_t> m_assistCameras;
+	Camera_t m_mainCamera;
+
+	// render settings
+	glm::vec2 m_renderSize;
+	glm::vec2 m_shadowMapResolution;
 };

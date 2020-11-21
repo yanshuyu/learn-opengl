@@ -32,6 +32,6 @@ void IMesh::release() {
 
 std::ostream& operator << (std::ostream& o, const IMesh* mesh) {
 	o << "{name: " << mesh->getName() << "(" << mesh->id() << ")" << ", vertexCount: " << mesh->verticesCount()
-		<< ", indexCount: " << mesh->indicesCount() << ", primitive: " << toStr(mesh->getPrimitiveType()) << "}";
+		<< ", indexCount: " << mesh->indicesCount() << ", primitive: " << PrimitiveType2Str(mesh->getPrimitiveType()) << "}";
 	return o;
 }

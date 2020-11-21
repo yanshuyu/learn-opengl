@@ -1,49 +1,63 @@
 #pragma once
 #include"RendererCore.h"
+#include"Containers.h"
 #include<string>
 #include<memory>
 
 class ShaderProgram;
 
-class RenderTechnique {
+
+class IRenderTechnique {
 public:
-	RenderTechnique(Renderer* invoker);
-	virtual ~RenderTechnique() {}
+	IRenderTechnique(Renderer* renderer = nullptr) : m_renderer(renderer) {}
+	virtual ~IRenderTechnique() {}
 
 	virtual bool intialize() = 0;
 	virtual void cleanUp() = 0;
+	virtual std::string identifier() const = 0;
+
+	virtual void render(const MeshRenderItem_t& task) = 0;
+	virtual void render(const Scene_t& scene) = 0;
+
+	virtual void onWindowResize(float w, float h) = 0;
+	virtual void onShadowMapResolutionChange(float w, float h) = 0;
+	
+	inline void setRenderer(Renderer* renderer) {
+		m_renderer = renderer;
+	}
+
+	inline Renderer* getRenderer() const {
+		return m_renderer;
+	}
+
+protected:
+	Renderer* m_renderer;
+};
+
+
+
+
+class RenderTechniqueBase: public IRenderTechnique {
+public:
+	RenderTechniqueBase(Renderer* renderer = nullptr);
+	virtual ~RenderTechniqueBase() {}
+
+protected:
+	virtual void render(const Scene_t& scene) override;
 
 	virtual void beginFrame() = 0;
 	virtual void endFrame() = 0;
 	
-	virtual void beginDepthPass() = 0;
-	virtual void endDepthPass() = 0;
+	virtual void drawDepthPass(const Scene_t& scene) = 0;
+	virtual void drawGeometryPass(const Scene_t& scene) = 0;
+	virtual void drawOpaquePass(const Scene_t& scene) = 0;
+	virtual void drawTransparentPass(const Scene_t& scene) = 0;
 
-	virtual void beginGeometryPass() = 0;
-	virtual void endGeometryPass() = 0;
-
-	virtual void beginUnlitPass() = 0;
-	virtual void endUnlitPass() = 0;
-
-	virtual void beginLightPass(const Light_t& l) = 0;
-	virtual void endLightPass(const Light_t& l) = 0;
-
-	virtual void beginTransparencyPass() = 0;
-	virtual void endTransparencyPass() = 0;
-
-	virtual void beginShadowPass(const Light_t& l) = 0;
-	virtual void endShadowPass(const Light_t& l) = 0;
-
-	virtual RenderPass currentRenderPass() const = 0;
-	virtual std::string identifier() const = 0;
-
-	virtual void onWindowResize(float w, float h) = 0;
-	virtual void onShadowMapResolutionChange(float w, float h) = 0;
-
-	virtual void performTask(const RenderTask_t& task) = 0;
-	virtual bool shouldRunPass(RenderPass pass) = 0;
+	inline RenderPass getCurrentPass() const {
+		return m_pass;
+	} 
 
 protected:
-	Renderer* m_invoker;
 	std::shared_ptr<ShaderProgram> m_passShader; // current pass used shader
+	RenderPass m_pass;
 };

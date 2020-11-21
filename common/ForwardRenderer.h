@@ -8,21 +8,18 @@
 class Buffer;
 class FrameBuffer;
 class Texture;
-class SpotLightShadowMapping;
-class DirectionalLightShadowMapping;
-class PointLightShadowMapping;
+class IShadowMapping;
 
 
-class ForwardRenderer : public RenderTechnique {
+class ForwardRenderer : public RenderTechniqueBase {
 	friend class DepthPassRenderTaskExecutor;
 	friend class UlitPassRenderTaskExecutror;
 	friend class LightPassRenderTaskExecuter;
 	friend class ShadowPassRenderTaskExecutor;
-
 	friend class SpotLightShadowMapping;
 
 public:
-	ForwardRenderer(Renderer* renderer, const RenderingSettings_t& settings);
+	ForwardRenderer(Renderer* renderer);
 	~ForwardRenderer();
 
 	ForwardRenderer(const ForwardRenderer& other) = delete;
@@ -38,41 +35,26 @@ public:
 	void beginFrame() override;
 	void endFrame() override;
 
-	void beginDepthPass() override;
-	void endDepthPass() override;
+	void render(const MeshRenderItem_t& task) override;
 
-	void beginGeometryPass() override;
-	void endGeometryPass() override;
-
-	void beginUnlitPass() override;
-	void endUnlitPass() override;
-
-
-	void beginShadowPass(const Light_t& l) override;
-	void endShadowPass(const Light_t& l) override;
-
-	void beginLightPass(const Light_t& l) override;
-	void endLightPass(const Light_t& l) override;
-
-	void beginTransparencyPass() override;
-	void endTransparencyPass() override;
-
-	void performTask(const RenderTask_t& task) override;
-	bool shouldRunPass(RenderPass pass) override;
+	void drawDepthPass(const Scene_t& scene) override;
+	void drawGeometryPass(const Scene_t& scene) override;
+	void drawOpaquePass(const Scene_t& scene) override;
+	void drawTransparentPass(const Scene_t& scene) override {};
 
 	void onWindowResize(float w, float h) override;
-	void onShadowMapResolutionChange(float w, float h);
+	void onShadowMapResolutionChange(float w, float h) override;
 
-	RenderPass currentRenderPass() const override {
-		return m_currentPass;
-	}
-
-	std::string identifier() const override {
+	inline std::string identifier() const override {
 		return s_identifier;
 	}
 
-private:
-	RenderPass m_currentPass;
+protected:
+	void drawUnlitScene(const Scene_t& scene);
+	void drawLightScene(const Scene_t& scene, const Light_t& light);
+	void drawLightShadow(const Scene_t& scene, const Light_t& light);
+
+protected:
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 	
 	GPUPipelineState m_depthPassPipelineState;
@@ -86,8 +68,6 @@ private:
 	std::unique_ptr<Buffer> m_spotLightUBO;
 	
 	// shadow mapping
-	std::unique_ptr<SpotLightShadowMapping> m_spotLightShadow;
-	std::unique_ptr<DirectionalLightShadowMapping> m_dirLightShadow;
-	std::unique_ptr<PointLightShadowMapping> m_pointLightShadow;
+	std::unordered_map<LightType, std::unique_ptr<IShadowMapping>> m_shadowMappings;
 
 };

@@ -25,6 +25,8 @@ public:
 	static void destory(const LightComponent* l);
 
 	Component* copy() const override;
+	virtual void onAttached() override;
+	virtual void onDetached() override;
 
 	glm::vec3 getPosition() const;
 	glm::vec3 getDirection() const;

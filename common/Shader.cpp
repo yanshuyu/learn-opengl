@@ -79,3 +79,22 @@ void Shader::release() {
 		m_compiled = false;
 	}
 }
+
+
+
+std::string ShaderType2Str(Shader::Type shaderType) {
+	switch (shaderType)
+	{
+	case Shader::Type::VertexShader:
+		return "VertexShader";
+
+	case Shader::Type::GeometryShader:
+		return "GeometryShader";
+
+	case Shader::Type::FragmentShader:
+		return "FragmentShader";
+
+	default:
+		return "Unknown";
+	}
+}

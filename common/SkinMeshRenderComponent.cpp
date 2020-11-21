@@ -37,7 +37,7 @@ void SkinMeshRenderComponent::render(RenderContext* context) {
 	}
 
 	for (size_t i = 0; i < model->meshCount(); i++) {
-		RenderTask_t task;
+		MeshRenderItem_t task;
 		std::shared_ptr<Material> strongMat = materialAt(i).expired() ? nullptr : materialAt(i).lock();
 		auto mesh = model->meshAt(i);
 		auto mat = strongMat ? strongMat.get() : MaterialManager::getInstance()->defaultMaterial();
@@ -51,7 +51,7 @@ void SkinMeshRenderComponent::render(RenderContext* context) {
 		task.bonesTransform = m_bonesTransform.data();
 		task.boneCount = m_bonesTransform.size();
 
-		context->renderer()->renderTask(task);
+		context->getRenderer()->submitOpaqueItem(task);
 	}
 }
 

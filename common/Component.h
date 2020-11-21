@@ -17,6 +17,8 @@ public:
 	virtual bool initialize() { return true; }
 	virtual void update(double dt) {}
 	virtual Component* copy() const = 0;
+	virtual void onAttached();
+	virtual void onDetached();
 
 	void removeFromOwner() const;
 

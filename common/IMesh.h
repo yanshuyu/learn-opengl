@@ -1,5 +1,6 @@
 #pragma once
 #include"Util.h"
+#include"RendererCore.h"
 #include<memory>
 
 class Buffer;

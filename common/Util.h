@@ -2,9 +2,8 @@
 #include<cassert>
 #include<iostream>
 #include<string>
-#include"Shader.h"
-#include"RendererCore.h"
 #include<cstdint>
+#include<glm/matrix.hpp>
 
 using std::int8_t;
 using std::uint8_t;
@@ -50,8 +49,6 @@ typedef unsigned long ID;
 
 std::string ExtractFileNameFromPath(const std::string& path, bool includeExt = true);
 
-std::string toStr(PrimitiveType pt);
-std::string toStr(Shader::Type shaderType);
 
 
 //

@@ -1,5 +1,6 @@
 #include"CameraComponent.h"
 #include"SceneObject.h"
+#include"Scene.h"
 #include<glm/gtc/matrix_transform.hpp>
 #include<glad/glad.h>
 
@@ -14,10 +15,10 @@ CameraComponent::CameraComponent(float ar) : Component()
 , m_right(20.f)
 , m_top(20.f)
 , m_bottom(-20.f)
-, m_viewPortX(0.f)
-, m_viewPortY(0.f)
-, m_viewPortW(1.f)
-, m_viewPortH(1.f)
+, m_viewPortMinX(0.f)
+, m_viewPortMinY(0.f)
+, m_viewPortMaxX(1.f)
+, m_viewPortMaxY(1.f)
 , m_backGroundColor(0.f, 0.f, 0.f, 1.f)
 , m_projMode(CameraComponent::ProjectionMode::Perspective) {
 }
@@ -28,6 +29,16 @@ CameraComponent::~CameraComponent() {
 
 Component* CameraComponent::copy() const {
 	return nullptr;
+}
+
+void CameraComponent::onAttached() {
+	__super::onAttached();
+	m_owner->getParentScene()->onCameraAdded(m_owner, this);
+}
+
+void CameraComponent::onDetached() {
+	__super::onDetached();
+	m_owner->getParentScene()->onCameraRemoved(m_owner, this);
 }
 
 
@@ -86,12 +97,17 @@ glm::vec3 CameraComponent::getLookDirection() const {
 }
 
 
-Viewport_t CameraComponent::getViewPort(float renderWidth, float renderHeight) const {
+Viewport_t CameraComponent::getViewPort(const glm::vec2& renderSize) const {
 	Viewport_t vp;
-	vp.x = m_viewPortX * renderWidth;
-	vp.y = m_viewPortY * renderHeight;
-	vp.width = m_viewPortW * renderWidth - vp.x;
-	vp.height = m_viewPortH * renderHeight - vp.y;
+	m_viewPortMinX = clamp(m_viewPortMinX, 0.f, 1.f);
+	m_viewPortMinY = clamp(m_viewPortMinY, 0.f, 1.f);
+	m_viewPortMaxX = MIN(MAX(m_viewPortMinX, m_viewPortMaxX), 1.f);
+	m_viewPortMaxY = MIN(MAX(m_viewPortMinY, m_viewPortMaxY), 1.f);
+
+	vp.x = m_viewPortMinX * renderSize.x;
+	vp.y = m_viewPortMinY * renderSize.y;
+	vp.width = m_viewPortMaxX * renderSize.x - vp.x;
+	vp.height = m_viewPortMaxY * renderSize.y - vp.y;
 
 	return vp;
 }
@@ -136,7 +152,7 @@ ViewFrustum_t CameraComponent::getViewFrustum() const {
 }
 
 
-Camera_t CameraComponent::makeCamera(float wndWidth, float wndHeight) const {
+Camera_t CameraComponent::makeCamera(const glm::vec2& renderSize) const {
 	Camera_t c;
 	c.position = getPosition();
 	c.lookDirection = getLookDirection();
@@ -145,7 +161,7 @@ Camera_t CameraComponent::makeCamera(float wndWidth, float wndHeight) const {
 	c.near = m_near;
 	c.far = m_far;
 	c.backgrounColor = m_backGroundColor;
-	c.viewport = getViewPort(wndWidth, wndHeight);
+	c.viewport = getViewPort(renderSize);
 	c.viewFrustum = getViewFrustum();
 	c.viewMatrix = viewMatrix();
 	c.projMatrix = projectionMatrix();

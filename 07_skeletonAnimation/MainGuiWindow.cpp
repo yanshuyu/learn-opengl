@@ -1,5 +1,6 @@
 #include"MainGuiWindow.h"
 #include<iamgui/imgui.h>
+#include<common/Renderer.h>
 #include"SkeletonAnimationApp.h"
 #include"AnimatorController.h"
 

@@ -6,21 +6,20 @@
 // cascade shadow mapping (CSM) implementation
 //
 
-class Renderer;
 class FrameBuffer;
 class Texture;
 class Buffer;
 
-class DirectionalLightShadowMapping : ShadowMapping {
+class DirectionalLightShadowMapping : public IShadowMapping {
 public:
-	DirectionalLightShadowMapping(Renderer* renderer, const glm::vec2& shadowMapResolution, const std::vector<float>& cascadeSplitPercentage = {0.2f, 0.5f});;
+	DirectionalLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution, const std::vector<float>& cascadeSplitPercentage = {0.2f, 0.5f});
 	
 	static const int s_maxNumCascades;
 	
 	bool initialize() override;
 	void cleanUp() override;
-	void beginShadowPhase(const Light_t& light, const Camera_t& camera) override;
-	void endShadowPhase(const Light_t& light) override;
+	void beginShadowPhase(const Scene_t& scene, const Light_t& light) override;
+	void endShadowPhase() override;
 	void beginLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
 	void endLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
 	void onShadowMapResolutionChange(float w, float h) override;
@@ -34,7 +33,6 @@ private:
 	void calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
 
 private:
-	Renderer* m_renderer;
 	std::unique_ptr<FrameBuffer> m_FBO;
 	std::unique_ptr<Texture> m_shadowMapArray;
 	std::shared_ptr<ShaderProgram> m_shader;

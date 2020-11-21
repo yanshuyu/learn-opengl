@@ -108,6 +108,7 @@ void GLApplication::run() {
 #ifdef _DEBUG
 		debugDraw(now - last);
 #endif // _DEBUG
+		GuiManager::getInstance()->render();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

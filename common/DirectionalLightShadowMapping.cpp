@@ -2,9 +2,9 @@
 #include"FrameBuffer.h"
 #include"Texture.h"
 #include"RenderTechnique.h"
+#include"Renderer.h"
 #include"Util.h"
 #include"ShaderProgamMgr.h"
-#include"Renderer.h"
 #include"Buffer.h"
 #include<glm/gtx/transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
@@ -14,9 +14,8 @@
 const int DirectionalLightShadowMapping::s_maxNumCascades = 4;
 
 
-DirectionalLightShadowMapping::DirectionalLightShadowMapping(Renderer* renderer,
-	const glm::vec2& shadowMapResolution,
-	const std::vector<float>& cascadeSplitPercentage) : m_renderer(renderer)
+DirectionalLightShadowMapping::DirectionalLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution, const std::vector<float>& cascadeSplitPercentage)
+: IShadowMapping(rt)
 , m_cascadeSplitPercents(cascadeSplitPercentage)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
@@ -84,19 +83,20 @@ void DirectionalLightShadowMapping::cleanUp() {
 	m_shadowMapArray.release();
 }
 
-void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const Camera_t& camera) {
-	calcViewFrumstumCascades(light, camera);
+void DirectionalLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
+	calcViewFrumstumCascades(light, *scene.mainCamera);
 	
 	auto shader = ShaderProgramManager::getInstance()->getProgram("DirectionalLightShadowPass");
 	if (shader.expired())
 		shader = ShaderProgramManager::getInstance()->addProgram("DirectionalLightShadowPass.shader");
 	ASSERT(!shader.expired());
 
+	Renderer* renderer = m_renderTech->getRenderer();
 	m_shader = shader.lock();
-	m_renderer->pushShaderProgram(m_shader.get());
-	m_renderer->pushRenderTarget(m_FBO.get());
-	m_renderer->pushViewport(&m_shadowViewport);
-	m_renderer->clearScreen(ClearFlags::Depth);
+	renderer->pushShaderProgram(m_shader.get());
+	renderer->pushRenderTarget(m_FBO.get());
+	renderer->pushViewport(&m_shadowViewport);
+	renderer->clearScreen(ClearFlags::Depth);
 
 	if (m_shader->hasUniform("u_numCascade"))
 		m_shader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
@@ -109,19 +109,22 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Light_t& light, const
 		m_shader->setUniformMat4v("u_lightVP[0]", glm::value_ptr(lightsVP[0]), lightsVP.size());
 	}
 
-	m_renderer->pullingRenderTask();
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		m_renderTech->render(scene.opaqueItems[i]);
+	}
 }
 
 
-void DirectionalLightShadowMapping::endShadowPhase(const Light_t& light) {
-	m_renderer->popRenderTarget();
-	m_renderer->popViewport();
-	m_renderer->popShadrProgram();
+void DirectionalLightShadowMapping::endShadowPhase() {
+	Renderer* renderer = m_renderTech->getRenderer();
+	renderer->popRenderTarget();
+	renderer->popViewport();
+	renderer->popShadrProgram();
 	m_shader = nullptr;
 }
 
 void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {
-	
+
 	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
 		switch (light.shadowType)
 		{

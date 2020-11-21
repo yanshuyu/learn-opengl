@@ -1,10 +1,20 @@
 #include"RenderTechnique.h"
-#include"Renderer.h"
-#include"Util.h"
-#include<glad/glad.h>
 
 
-RenderTechnique::RenderTechnique(Renderer* invoker): m_invoker(invoker)
-, m_passShader(nullptr) {
+RenderTechniqueBase::RenderTechniqueBase(Renderer* renderer) :IRenderTechnique(renderer)
+, m_pass(RenderPass::None)
+, m_passShader() {
 
+}
+
+
+void RenderTechniqueBase::render(const Scene_t& scene) {
+	beginFrame();
+
+	drawDepthPass(scene);
+	drawGeometryPass(scene);
+	drawOpaquePass(scene);
+	drawTransparentPass(scene);
+
+	endFrame();
 }

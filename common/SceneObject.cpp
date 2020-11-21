@@ -13,8 +13,17 @@ SceneObject::SceneObject(const std::string& name) :m_name(name)
 , m_isEnable(true)
 , m_isVisible(true)
 , m_parent(nullptr)
-, m_tag(0) {
-	m_id = reinterpret_cast<unsigned long>(this);
+, m_tag(0)
+, m_layer(Layer::Default)
+, m_components()
+, m_parentScene() {
+	m_id = reinterpret_cast<ID>(this);
+}
+
+
+SceneObject::~SceneObject() {
+	removeAllComponent();
+	m_parentScene = nullptr;
 }
 
 
@@ -64,6 +73,10 @@ void SceneObject::update(double dt) {
 			return false;
 		for (size_t i = 0; i < obj->componentCount(); i++) {
 			auto c = obj->componentAt(i);
+			
+			if (!c->m_isEnable)
+				continue;
+
 			c->update(dt);
 		}
 		return true;
@@ -105,6 +118,8 @@ bool SceneObject::addComponent(std::shared_ptr<Component> c) {
 	c->m_owner = this;
 	m_components.push_back(c);
 
+	c->onAttached();
+
 	return true;
 }
 
@@ -131,6 +146,8 @@ bool SceneObject::removeComponent(const ID id) {
 	for (auto itr = m_components.begin(); itr != m_components.end(); itr++) {
 		if ((*itr)->typeId() == id) {
 			m_components.erase(itr);
+			(*itr)->onDetached();
+
 			return true;
 		}
 	}
@@ -138,26 +155,35 @@ bool SceneObject::removeComponent(const ID id) {
 	return false;
 }
 
+
+void SceneObject::removeAllComponent() {
+	for (auto& c : m_components) {
+		c->onDetached();
+	}
+	m_components.clear();
+}
+
+
 void SceneObject::addChild(SceneObject* c) {
-	m_childs.emplace_back(c);
-	c->m_parent = this;
+	addChild(std::unique_ptr<SceneObject>(c));
 }
 
 void SceneObject::addChild(std::unique_ptr<SceneObject>&& c) {
 	auto _c = c.get();
 	m_childs.push_back(std::move(c));
 	_c->m_parent = this;
+	_c->m_parentScene = m_parentScene;
 }
 
 void SceneObject::insertChild(SceneObject* c, size_t index) {
-	m_childs.insert(m_childs.begin() + index, std::unique_ptr<SceneObject>(c));
-	c->m_parent = this;
+	insertChild(std::unique_ptr<SceneObject>(c), index);
 }
 
 void SceneObject::insertChild(std::unique_ptr<SceneObject>&& c, size_t index) {
 	auto _c = c.get();
 	m_childs.insert(m_childs.begin() + index, std::move(c));
 	_c->m_parent = this;
+	_c->m_parentScene = m_parentScene;
 }
 
 void SceneObject::movechild(size_t srcIndex, size_t dstIndex) {
@@ -298,7 +324,7 @@ void SceneObject::removeFromParent() {
 }
 
 
-void SceneObject::clearChilds() {
+void SceneObject::removeAllChildren() {
 	m_childs.clear();
 }
 
