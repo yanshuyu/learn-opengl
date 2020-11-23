@@ -42,6 +42,10 @@ public:
 	Viewport_t getViewPort(const glm::vec2& renderSize) const; // screen space view port
 	ViewFrustum_t getViewFrustum() const; // view space view frumstum
 	
+	inline void onWindowResized(const glm::vec2& sz) {
+		if (sz.y != 0) m_aspectRatio = sz.x / sz.y;
+	}
+
 protected:
 	Camera_t makeCamera(const glm::vec2& renderSize) const;
 

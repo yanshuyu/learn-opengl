@@ -92,6 +92,7 @@ public:
 	//
 	// events
 	//
+	void onWindowResize(float width, float height);
 	void onComponentAttach(SceneObject* obj, Component* c) {};
 	void onComponentDetach(SceneObject* obj, Component* c) {};
 	void onCameraAdded(SceneObject* obj, CameraComponent* camera);

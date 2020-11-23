@@ -269,6 +269,11 @@ size_t Scene::objectCountRecursive() const {
 	return m_rootObject->childCountRecursive();
 }
 
+void Scene::onWindowResize(float width, float height) {
+	for (auto camera : m_cameras) {
+		camera->onWindowResized({width, height});
+	}
+}
 
 void Scene::onCameraAdded(SceneObject* obj, CameraComponent* camera) {
 	m_cameras.push_back(camera);
