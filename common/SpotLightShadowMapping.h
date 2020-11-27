@@ -1,10 +1,10 @@
 #pragma once
 #include"ShadowMapping.h"
+#include"RenderTarget.h"
 #include<memory>
 
 
 class Renderer;
-class FrameBuffer;
 class Texture;
 class Buffer;
 
@@ -25,8 +25,7 @@ private:
 	Camera_t makeLightCamera(const Light_t& light);
 
 private:
-	std::unique_ptr<FrameBuffer> m_shadowMapFBO;
-	std::unique_ptr<Texture> m_shadowMap;
+	RenderTarget m_shadowTarget;
 	std::unique_ptr<Buffer> m_shadowUBO;
 	std::shared_ptr<ShaderProgram> m_shader;
 

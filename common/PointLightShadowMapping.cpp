@@ -1,7 +1,6 @@
 #include"PointLightShadowMapping.h"
 #include"Renderer.h"
 #include"ShaderProgamMgr.h"
-#include"FrameBuffer.h"
 #include"Texture.h"
 #include"Util.h"
 #include<glm/gtc/type_ptr.hpp>
@@ -12,8 +11,7 @@ PointLightShadowMapping::PointLightShadowMapping(IRenderTechnique* rt, const glm
 : IShadowMapping(rt)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
-, m_FBO(nullptr)
-, m_cubeShadowMap(nullptr)
+, m_shadowTarget(shadowMapResolution)
 , m_shader(nullptr) {
 	
 }
@@ -23,56 +21,40 @@ PointLightShadowMapping::~PointLightShadowMapping() {
 }
 
 bool PointLightShadowMapping::initialize() {
-	m_FBO.reset(new FrameBuffer());
-	m_cubeShadowMap.reset(new Texture);
-
-	m_cubeShadowMap->bind(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
-	if (!m_cubeShadowMap->loadCubeMapFromMemory(Texture::Format::Depth32,
-		Texture::Format::Depth,
-		Texture::FormatDataType::Float,
-		m_shadowMapResolution.x,
-		m_shadowMapResolution.y)) {
+	if (!m_shadowTarget.attachTextureCube(Texture::Format::Depth24, Texture::Format::Depth, Texture::FormatDataType::Float, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
 		return false;
 	}
-	m_cubeShadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-	m_cubeShadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-	m_cubeShadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
-	m_cubeShadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
-	m_cubeShadowMap->setWrapMode(Texture::WrapType::R, Texture::WrapMode::Clamp_To_Border);
-	m_cubeShadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
 
-	m_FBO->bind();
-	if (!m_FBO->addTextureAttachment(m_cubeShadowMap->getHandler(), FrameBuffer::AttachmentPoint::Depth)) {
+	if (!m_shadowTarget.isValid()) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
 		return false;
 	}
-	m_FBO->setDrawBufferLocation({});
-	m_FBO->setReadBufferLocation(-1);
-	FrameBuffer::Status status = m_FBO->checkStatus();
-	m_FBO->unbind();
-	m_cubeShadowMap->unbind();
 
-	if (status != FrameBuffer::Status::Ok) {
-		cleanUp();
+	Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
 #ifdef _DEBUG
-		ASSERT(false);
+	ASSERT(shadowMap);
 #endif // _DEBUG
-		return false;
+	if (shadowMap) {
+		shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+		shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+		shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
+		shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
+		shadowMap->setWrapMode(Texture::WrapType::R, Texture::WrapMode::Clamp_To_Border);
+		shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
 	}
 
 	return true;
 }
 
 void PointLightShadowMapping::cleanUp() {
-	m_FBO.release();
-	m_cubeShadowMap.release();
+	m_shadowTarget.cleanUp();
 }
 
 void PointLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
@@ -84,7 +66,7 @@ void PointLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light
 	m_shader = shader.lock();
 	auto renderer = m_renderTech->getRenderer();
 	renderer->pushShaderProgram(m_shader.get());
-	renderer->pushRenderTarget(m_FBO.get());
+	renderer->pushRenderTarget(&m_shadowTarget);
 	renderer->pushViewport(&m_shadowViewport);
 	renderer->clearScreen(ClearFlags::Depth);
 
@@ -126,8 +108,11 @@ void PointLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPr
 	}
 
 	if (shader->hasUniform("u_shadowMap") && light.isCastShadow()) {
-		m_cubeShadowMap->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_CubeMap);
-		shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
+		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+		if (shadowMap) {
+			shadowMap->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_CubeMap);
+			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
+		}
 
 		if (shader->hasUniform("u_shadowStrength"))
 			shader->setUniform1("u_shadowStrength", light.shadowStrength);
@@ -138,15 +123,16 @@ void PointLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPr
 }
 
 void PointLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {
-	if (light.isCastShadow())
-		m_cubeShadowMap->unbind();
-
+	if (light.isCastShadow()) {
+		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
+			shadowMap->unbind();
+	}
 }
 
 void PointLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
 	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
-	bool ok = initialize();
+	bool ok = m_shadowTarget.resize({w, h});
 #ifdef _DEBUG
 	ASSERT(ok);
 #endif // _DEBUG

@@ -2,8 +2,7 @@
 #include"ShaderProgamMgr.h"
 #include"CameraComponent.h"
 #include"Buffer.h"
-#include"Scene.h"
-#include"FrameBuffer.h"  
+#include"Scene.h"  
 #include"Renderer.h"
 #include"SpotLightShadowMapping.h"
 #include"DirectionalLightShadowMapping.h"
@@ -12,11 +11,11 @@
 #include<sstream>
 
 
-
 const std::string ForwardRenderer::s_identifier = "ForwardRenderer";
 
 
 ForwardRenderer::ForwardRenderer(Renderer* renderer): RenderTechniqueBase(renderer)
+, m_frameTarget(renderer->getRenderSize())
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
@@ -56,8 +55,6 @@ bool ForwardRenderer::intialize() {
 	m_unlitPassPipelineState.depthMask = 0;
 	
 
-	bool ok = true;
-
 	m_directionalLightUBO.reset(new Buffer());
 	m_directionalLightUBO->bind(Buffer::Target::UniformBuffer);
 	m_directionalLightUBO->loadData(nullptr, sizeof(DirectionalLightBlock), Buffer::Usage::StaticDraw);
@@ -81,18 +78,38 @@ bool ForwardRenderer::intialize() {
 
 	for (auto& executor : m_taskExecutors) {
 		if (!executor.second->initialize()) {
-			ok = false;
 #ifdef _DEBUG
 			ASSERT(false);
 #endif // _DEBUG
-			break;
+			return false;
 		}
 	}
 
-	m_renderer->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
-	m_renderer->setColorMask(true);
+	//m_renderer->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
+	//m_renderer->setColorMask(true);
 
-	return ok;
+	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, RenderTarget::Slot::Color)) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG	
+		return false;
+	}
+
+	if (!m_frameTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, Texture::Format::Depth_Stencil, Texture::FormatDataType::UInt_24_8, RenderTarget::Slot::Depth_Stencil)) {
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
+		return false;
+	}
+	
+	if (!m_frameTarget.isValid()) {
+#ifdef _DEBUG
+		 ASSERT(false);
+#endif // _DEBUG
+		 return false;
+	 }
+
+	return true;
 }
 
 
@@ -107,19 +124,13 @@ void ForwardRenderer::cleanUp() {
 
 
 void ForwardRenderer::beginFrame() {
-	m_renderer->clearScreen(ClearFlags::Color | ClearFlags::Depth);
+	m_renderer->pushRenderTarget(&m_frameTarget);
+	m_renderer->clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 }
 
 
-void ForwardRenderer::endFrame() {	
-	GLCALL(glBindVertexArray(0));
-
-	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
-		GLCALL(glActiveTexture(GL_TEXTURE0 + unit));
-		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
-	}
-	
-	m_passShader = nullptr;
+void ForwardRenderer::endFrame() {
+	m_renderer->popRenderTarget();
 }
 
 
@@ -384,7 +395,11 @@ void ForwardRenderer::render(const MeshRenderItem_t& task) {
 
 
 void ForwardRenderer::onWindowResize(float w, float h) {
-	
+	bool ok = m_frameTarget.resize({ w, h });
+#ifdef _DEBUG
+	ASSERT(ok);
+#endif // _DEBUG
+
 }
 
 void ForwardRenderer::onShadowMapResolutionChange(float w, float h) {

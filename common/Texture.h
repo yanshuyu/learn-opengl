@@ -113,6 +113,7 @@ public:
 	};
 
 	enum class FormatDataType {
+		Unknown,
 		Byte = GL_BYTE,
 		UByte = GL_UNSIGNED_BYTE,
 		Short = GL_SHORT,
@@ -190,6 +191,18 @@ public:
 		return m_format;
 	}
 
+	inline Format getCpuFormat() const {
+		return m_cpuFormat;
+	}
+
+	inline FormatDataType getCpuFormatDataType() {
+		return m_cpuFormatDataType;
+	}
+
+	inline size_t getLayerCount() const {
+		return m_numLayer;
+	}
+
 	inline int getHandler() const {
 		return m_handler;
 	}
@@ -201,7 +214,10 @@ private:
 	std::string m_file;
 	int m_width;
 	int m_height;
+	int m_numLayer;
 	Format m_format;
+	Format m_cpuFormat;
+	FormatDataType m_cpuFormatDataType;
 	mutable Unit m_bindedUnit;
 	mutable Target m_bindedTarget;
 	GLuint m_handler;

@@ -1,5 +1,6 @@
 #pragma once
 #include"ShadowMapping.h"
+#include"RenderTarget.h"
 #include<memory>
 
 //
@@ -33,8 +34,7 @@ private:
 	void calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
 
 private:
-	std::unique_ptr<FrameBuffer> m_FBO;
-	std::unique_ptr<Texture> m_shadowMapArray;
+	RenderTarget m_shadowTarget;
 	std::shared_ptr<ShaderProgram> m_shader;
 
 	glm::vec2 m_shadowMapResolution;

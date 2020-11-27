@@ -7,7 +7,6 @@
 #include"VertexArray.h"
 #include"Buffer.h"
 #include"Texture.h"
-#include"FrameBuffer.h"
 #include"VertexLayoutDescription.h"
 #include"GuiMgr.h"
 #include<glm/gtx/transform.hpp>
@@ -46,12 +45,12 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 }
 
 Renderer::~Renderer() {
-	clenUp();
+	cleanUp();
 	m_quadVAO.release();
 	m_quadVBO.release();
 	m_quadIBO.release();
 	
-	_frameAlloc.clearFrame();
+	_frameAlloc.clearAllFrame();
 }
 
 
@@ -60,7 +59,7 @@ bool Renderer::initialize() {
 }
 
 
-void Renderer::clenUp() {
+void Renderer::cleanUp() {
 	if (m_renderTechnique) {
 		m_renderTechnique->cleanUp();
 		m_renderTechnique.release();
@@ -79,7 +78,7 @@ bool Renderer::setRenderMode(Mode mode) {
 	if (m_renderMode == mode)
 		return true;
 
-	clenUp();
+	cleanUp();
 
 	if (mode == Mode::Forward) {
 		m_renderTechnique.reset(new ForwardRenderer(this));
@@ -140,7 +139,15 @@ void Renderer::popGPUPipelineState() {
 	setGPUPipelineState(s);
 }
 
-void Renderer::pushRenderTarget(FrameBuffer* target) {
+void Renderer::clearGPUPiepelineStates() {
+	while (!m_pipelineStates.empty()) {
+		m_pipelineStates.pop();
+	}
+
+	setGPUPipelineState(GPUPipelineState::s_defaultState);
+}
+
+void Renderer::pushRenderTarget(RenderTarget* target) {
 	if (target) {
 		m_renderTargets.push(target);
 		target->bind();
@@ -157,6 +164,15 @@ void Renderer::popRenderTarget() {
 	} else {
 		m_renderTargets.top()->bind();
 	}
+}
+
+
+void Renderer::clearRenerTargets() {
+	while (!m_renderTargets.empty()) {
+		m_renderTargets.pop();
+	}
+
+	GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }
 
 
@@ -186,6 +202,14 @@ void Renderer::popShadrProgram() {
 	}
 }
 
+void Renderer::clearShaderPrograms() {
+	while (!m_shaders.empty()) {
+		m_shaders.pop();
+	}
+
+	GLCALL(glUseProgram(0));
+}
+
 ShaderProgram* Renderer::getActiveShaderProgram() const {
 	if (m_shaders.empty())
 		return nullptr;
@@ -211,6 +235,14 @@ void Renderer::popViewport() {
 	if (!m_viewports.empty()) {
 		setViewPort(*m_viewports.top());
 	}
+}
+
+void Renderer::clearViewports() {
+	while (!m_viewports.empty()) {
+		m_viewports.pop();
+	}
+
+	setViewPort(m_mainCamera.viewport);
 }
 
 const Viewport_t* Renderer::getActiveViewport() const {
@@ -243,8 +275,24 @@ Scene_t& Renderer::makeScene() {
 
 
 void Renderer::flush() {
+	GLCALL(glBindVertexArray(0));
+	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
+		GLCALL(glActiveTexture(GL_TEXTURE0 + unit));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
+	}
+
+	clearShaderPrograms();
+	clearGPUPiepelineStates();
+	clearRenerTargets();
+	setDepthMask(true);
+	setColorMask(true);
+	setStencilMask(0xffffffff);
+	clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
+	
 	auto& scene = makeScene();
 	m_renderTechnique->render(scene);
+
+	presentFrame(m_renderTechnique->getRenderedFrame());
 	
 	// clen up flushed renderables
 	m_opaqueItems.clear();
@@ -257,6 +305,24 @@ void Renderer::flush() {
 	_frameAlloc.markFrame();
 }
 
+void Renderer::presentFrame(Texture* frame) {
+	if (!frame)
+		return; 
+
+	clearRenerTargets();
+	auto shader = ShaderProgramManager::getInstance()->getProgram("FullScreenQuad");
+	if (shader.expired())
+		shader = ShaderProgramManager::getInstance()->addProgram("FullScreenQuad");
+	
+	shader.lock()->bind();
+	m_quadVAO->bind();
+
+	glActiveTexture(int(Texture::Unit::Defualt));
+	frame->bind(Texture::Unit::Defualt);
+	shader.lock()->setUniform1("u_color", int(Texture::Unit::Defualt));
+
+	GLCALL(glDrawElements(GL_TRIANGLES, m_quadIBO->getElementCount(), GL_UNSIGNED_INT, 0));
+}
 
 void Renderer::drawFullScreenQuad() {
 	MeshRenderItem_t task;

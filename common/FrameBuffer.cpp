@@ -119,7 +119,9 @@ void FrameBuffer::getDimension(int* width, int* height) const {
 
 void FrameBuffer::release() {
 	if (m_handler) {
-		unbind();
+		if (m_bindTarget != Target::Unknown) 
+			unbind();
+
 		glDeleteFramebuffers(1, &m_handler);
 		m_handler = 0;
 		m_bindTarget = Target::Unknown;

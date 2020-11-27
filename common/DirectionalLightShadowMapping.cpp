@@ -1,5 +1,4 @@
 #include"DirectionalLightShadowMapping.h"
-#include"FrameBuffer.h"
 #include"Texture.h"
 #include"RenderTechnique.h"
 #include"Renderer.h"
@@ -19,8 +18,7 @@ DirectionalLightShadowMapping::DirectionalLightShadowMapping(IRenderTechnique* r
 , m_cascadeSplitPercents(cascadeSplitPercentage)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
-, m_FBO(nullptr)
-, m_shadowMapArray()
+, m_shadowTarget(shadowMapResolution)
 , m_shader() {
 
 }
@@ -33,54 +31,29 @@ bool DirectionalLightShadowMapping::initialize() {
 
 		return false;
 	}
-
-	m_FBO.reset(new FrameBuffer());
-	m_shadowMapArray.reset(new Texture());
-	bool ok = true;
-
-	m_shadowMapArray->bind(Texture::Unit::Defualt, Texture::Target::Texture_2D_Array);
-	GLCALL(ok = m_shadowMapArray->loadImage2DArrayFromMemory(Texture::Format::Depth32,
-														Texture::Format::Depth,
-														Texture::FormatDataType::Float,
-														m_shadowMapResolution.x,
-														m_shadowMapResolution.y,
-														m_cascadeSplitPercents.size() + 1,
-														nullptr,
-														false));
-	if (!ok) {
+	
+	if (!m_shadowTarget.attchTexture2DArray(Texture::Format::Depth24, Texture::Format::Depth, Texture::FormatDataType::Float, m_cascadeSplitPercents.size() + 1, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
-
 		return false;
 	}
-
-	m_FBO->bind();
-	m_FBO->addTextureAttachment(m_shadowMapArray->getHandler(), FrameBuffer::AttachmentPoint::Depth);
-	m_FBO->setDrawBufferLocation({});
-	m_FBO->setReadBufferLocation(-1);
-	FrameBuffer::Status status = m_FBO->checkStatus();
-	m_FBO->unbind();
-	m_shadowMapArray->unbind();
-
-	ok = status == FrameBuffer::Status::Ok;
-	if (!ok) {
+	
+	if (!m_shadowTarget.isValid()) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
-
 		return false;
 	}
-
+	
 	return true;
 }
 
 
 void DirectionalLightShadowMapping::cleanUp() {
-	m_FBO.release();
-	m_shadowMapArray.release();
+	m_shadowTarget.cleanUp();
 }
 
 void DirectionalLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
@@ -94,7 +67,7 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Scene_t& scene, const
 	Renderer* renderer = m_renderTech->getRenderer();
 	m_shader = shader.lock();
 	renderer->pushShaderProgram(m_shader.get());
-	renderer->pushRenderTarget(m_FBO.get());
+	renderer->pushRenderTarget(&m_shadowTarget);
 	renderer->pushViewport(&m_shadowViewport);
 	renderer->clearScreen(ClearFlags::Depth);
 
@@ -143,8 +116,11 @@ void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, Sh
 	}
 
 	if (shader->hasUniform("u_shadowMapArray") && light.isCastShadow()) {
-		m_shadowMapArray->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
-		shader->setUniform1("u_shadowMapArray", int(Texture::Unit::ShadowMap));
+		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+		if (shadowMap) {
+			shadowMap->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
+			shader->setUniform1("u_shadowMapArray", int(Texture::Unit::ShadowMap));
+		}
 
 		if (shader->hasUniform("u_lightVP[0]")) {
 			std::vector<glm::mat4> lightsVP;
@@ -171,14 +147,16 @@ void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, Sh
 
 void DirectionalLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
-		m_shadowMapArray->unbind();
+		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+		if (shadowMap)
+			shadowMap->unbind();
 	}
 }
 
 void DirectionalLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
 	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
-	bool ok = initialize();
+	bool ok = m_shadowTarget.resize({w, h});
 #ifdef _DEBUG
 	ASSERT(ok);
 #endif // _DEBUG

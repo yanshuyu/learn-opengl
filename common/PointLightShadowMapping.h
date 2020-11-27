@@ -1,9 +1,9 @@
 #pragma once
 #include"SpotLightShadowMapping.h"
+#include"RenderTarget.h"
 #include<memory>
 
 class Renderer;
-class FrameBuffer;
 class Texture;
 
 class PointLightShadowMapping : public IShadowMapping {
@@ -26,7 +26,6 @@ private:
 	glm::vec2 m_shadowMapResolution;
 	Viewport_t m_shadowViewport;
 
-	std::unique_ptr<FrameBuffer> m_FBO;
-	std::unique_ptr<Texture> m_cubeShadowMap;
+	RenderTarget m_shadowTarget;
 	std::shared_ptr<ShaderProgram> m_shader;
 };

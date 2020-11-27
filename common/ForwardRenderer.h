@@ -1,12 +1,12 @@
 #pragma once
 #include"RenderTechnique.h"
 #include"RenderTaskExecutor.h"
+#include"RenderTarget.h"
 #include<unordered_map>
 #include<memory>
 
 
 class Buffer;
-class FrameBuffer;
 class Texture;
 class IShadowMapping;
 
@@ -36,6 +36,10 @@ public:
 	void endFrame() override;
 
 	void render(const MeshRenderItem_t& task) override;
+	
+	inline Texture* getRenderedFrame() override {
+		return m_frameTarget.getAttachedTexture(RenderTarget::Slot::Color);
+	}
 
 	void drawDepthPass(const Scene_t& scene) override;
 	void drawGeometryPass(const Scene_t& scene) override;
@@ -55,12 +59,15 @@ protected:
 	void drawLightShadow(const Scene_t& scene, const Light_t& light);
 
 protected:
-	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
-	
 	GPUPipelineState m_depthPassPipelineState;
 	GPUPipelineState m_shadowPassPipelineState;
 	GPUPipelineState m_lightPassPipelineState;
 	GPUPipelineState m_unlitPassPipelineState;
+	
+	// default frame rener target (input frame for post processing)
+	RenderTarget m_frameTarget;
+	
+	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 
 	// light uniform blocks
 	std::unique_ptr<Buffer> m_directionalLightUBO;

@@ -8,7 +8,10 @@ Texture::Texture():m_handler(0)
 , m_file("")
 , m_width(0)
 , m_height(0)
+, m_numLayer(0)
 , m_format(Format::Unknown)
+, m_cpuFormat(Format::Unknown)
+, m_cpuFormatDataType(FormatDataType::Unknown)
 , m_bindedUnit(Unit::Defualt)
 , m_bindedTarget(Target::Unknown) {
 	GLCALL(glGenTextures(1, &m_handler));
@@ -39,6 +42,7 @@ bool Texture::loadImage2DFromFile(const std::string& file, bool genMipMap) {
 
 		stbi_image_free(data);
 		m_file = file;
+		m_numLayer = 1;
 
 		unbind();
 
@@ -87,8 +91,11 @@ bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt,
 		GLCALL(glGenerateTextureMipmap(m_handler));
 
 	m_format = internalFmt;
+	m_cpuFormat = srcFmt;
+	m_cpuFormatDataType = srcFmtDataType;
 	m_width = width;
 	m_height = height;
+	m_numLayer = 1;
 
 	return true;
 }
@@ -165,8 +172,11 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 		GLCALL(glGenerateTextureMipmap(m_handler));
 
 	m_format = gpuFmt;
+	m_cpuFormat = cpuFmt;
+	m_cpuFormatDataType = cpuFmtDataType;
 	m_width = w;
 	m_height = h;
+	m_numLayer = 6;
 
 	setFilterMode(FilterType::Magnification, FilterMode::Liner);
 	setFilterMode(FilterType::Minification, FilterMode::Liner);
@@ -208,9 +218,12 @@ bool Texture::loadImage2DArrayFromMemory(Format gpuFmt,
 	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
 
 	m_format = gpuFmt;
+	m_cpuFormat = cpuFmt;
+	m_cpuFormatDataType = cpuFmtDataType;
 	m_width = width;
 	m_height = height;
-	
+	m_numLayer = numLayer;
+
 	return true;
 }
 
@@ -279,8 +292,11 @@ void Texture::release() {
 		m_handler = 0;
 		m_width = 0;
 		m_height = 0;
+		m_numLayer = 0;
 		m_file.clear();
 		m_format = Format::Unknown;
+		m_cpuFormat = Format::Unknown;
+		m_cpuFormatDataType = FormatDataType::Unknown;
 		m_bindedUnit = Unit::Defualt;
 		m_bindedTarget = Target::Unknown;
 	}

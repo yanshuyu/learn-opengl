@@ -5,7 +5,7 @@
 #include<memory>
 
 class ShaderProgram;
-
+class Texture;
 
 class IRenderTechnique {
 public:
@@ -18,6 +18,7 @@ public:
 
 	virtual void render(const MeshRenderItem_t& task) = 0;
 	virtual void render(const Scene_t& scene) = 0;
+	virtual Texture* getRenderedFrame() = 0;
 
 	virtual void onWindowResize(float w, float h) = 0;
 	virtual void onShadowMapResolutionChange(float w, float h) = 0;

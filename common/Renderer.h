@@ -4,14 +4,13 @@
 #include"RendererCore.h"
 #include"ShaderProgram.h"
 #include"RenderTechnique.h"
-
 #include"FrameAllocator.h"
 
 class Scene;
 class Texture;
-class FrameBuffer;
 class Buffer;
 class VertexArray;
+class RenderTarget;
 
 
 class Renderer {
@@ -51,7 +50,7 @@ public:
 	// life cycle
 	//
 	bool initialize();
-	void clenUp();
+	void cleanUp();
 	bool setRenderMode(Mode mode);
 	Mode getRenderMode() const;
 	bool isValid() const;
@@ -61,36 +60,21 @@ public:
 	//
 	void pushGPUPipelineState(GPUPipelineState* pipeLineState);
 	void popGPUPipelineState();
-	inline void clearGPUPiepelineStates() {
-		while (!m_pipelineStates.empty()) {
-			m_pipelineStates.pop();
-		}
-	}
+	void clearGPUPiepelineStates();
 
-	void pushRenderTarget(FrameBuffer* target);
+	void pushRenderTarget(RenderTarget* target);
 	void popRenderTarget();
-	inline void clearRenerTargets() {
-		while (!m_renderTargets.empty()) {
-			m_renderTargets.pop();
-		}
-	}
+	void clearRenerTargets();
 
 	void pushShaderProgram(ShaderProgram* shader);
 	void popShadrProgram();
-	inline void clearShaderPrograms() {
-		while (!m_shaders.empty()) {
-			m_shaders.pop();
-		}
-	}
+	inline void clearShaderPrograms();
+
 	ShaderProgram* getActiveShaderProgram() const;
 
 	void pushViewport(Viewport_t* viewport);
 	void popViewport();
-	void clearViewports() {
-		while (!m_viewports.empty()) {
-			m_viewports.pop();
-		}
-	}
+	void clearViewports();
 	const Viewport_t* getActiveViewport() const;
 
 	
@@ -200,13 +184,15 @@ protected:
 	void setBlendFunc(int buffer, BlendFunc func);
 	void setBlendColor(const glm::vec4& c);
 
+	void presentFrame(Texture* frame);
+
 protected:
 	Mode m_renderMode;
 	std::unique_ptr<IRenderTechnique> m_renderTechnique;
 
 	// gpu pipeline states
 	std::stack<GPUPipelineState*> m_pipelineStates;
-	std::stack<FrameBuffer*> m_renderTargets;
+	std::stack<RenderTarget*> m_renderTargets;
 	std::stack<ShaderProgram*> m_shaders;
 	std::stack<Viewport_t*> m_viewports;
 

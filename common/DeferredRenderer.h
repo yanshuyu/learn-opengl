@@ -1,13 +1,13 @@
 #pragma once
 #include"RenderTechnique.h"
 #include"RenderTaskExecutor.h"
+#include"RenderTarget.h"
 #include<memory>
 #include<unordered_map>
 
 
 class VertexArray;
 class Buffer;
-class FrameBuffer;
 class Texture;
 class ShaderProgram;
 class IShadowMapping;
@@ -36,6 +36,10 @@ public:
 	static const std::string s_identifier;
 
 	void render(const MeshRenderItem_t& task) override;
+	
+	inline Texture* getRenderedFrame() override {
+		return m_frameTarget.getAttachedTexture(RenderTarget::Slot::Color);
+	}
 
 	void beginFrame() override;
 	void endFrame() override;
@@ -54,7 +58,7 @@ public:
 
 
 protected:
-	bool setupGBuffers();
+	bool setupRenderTargets();
 	void drawUnlitScene(const Scene_t& scene);
 	void drawLightScene(const Scene_t& scene, const Light_t& light);
 	void drawLightShadow(const Scene_t& scene, const Light_t& light);
@@ -69,13 +73,8 @@ private:
 	GPUPipelineState m_unlitPassPipelineState;
 
 	// geometry buffers
-	std::unique_ptr<FrameBuffer> m_gBuffersFBO;
-	std::unique_ptr<Texture> m_posWBuffer;
-	std::unique_ptr<Texture> m_normalWBuffer;
-	std::unique_ptr<Texture> m_diffuseBuffer;
-	std::unique_ptr<Texture> m_specularBuffer;
-	std::unique_ptr<Texture> m_emissiveBuffer;
-	std::unique_ptr<Texture> m_depthStencilBuffer;
+	RenderTarget m_geometryBufferTarget;
+	RenderTarget m_frameTarget;
 
 	// light ubo
 	std::unique_ptr<Buffer> m_directionalLightUBO;

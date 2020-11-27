@@ -243,6 +243,9 @@
     <ClCompile Include="image_processing_main.cpp">
       <Filter>main</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\RenderTarget.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h">
@@ -491,6 +494,9 @@
     <ClInclude Include="MainGuiWindow.h">
       <Filter>main</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\RenderTarget.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader">
@@ -539,6 +545,9 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\UnlitDeferred.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\FullScreenQuad.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

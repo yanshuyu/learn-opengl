@@ -227,7 +227,11 @@ void FrameAllocator::clearFrame() {
 	}
 }
 
-
+void FrameAllocator::clearAllFrame() {
+	while (mLastFrame){
+		clearFrame();
+	}
+}
 
 
 FrameAllocator::MemBlock* FrameAllocator::allocBlock(UINT32 wantedSize) {

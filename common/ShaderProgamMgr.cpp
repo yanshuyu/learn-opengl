@@ -47,9 +47,10 @@ bool ShaderProgramManager::removeProgram(const std::string& name) {
 
 std::string ShaderProgramManager::getResourcePath(const std::string& fileName) const {
 	auto res = FileSystem::Default.getHomeDirectory();
-	res /= "res/shader";
+	res /= "res";
+	res /= "shader";
 	res /= fileName;
-	res = fs::canonical(res);
+	//res = fs::canonical(res);
 
 	if (!res.has_extension())
 		res.concat(".shader");

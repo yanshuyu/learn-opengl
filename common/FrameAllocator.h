@@ -118,6 +118,7 @@ public:
 	 */
 	void clearFrame();
 
+	void clearAllFrame();
 private:
 	UINT32 mBlockSize;
 	Vector<MemBlock*> mBlocks;

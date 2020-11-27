@@ -2,7 +2,6 @@
 #include"RenderTechnique.h"
 #include"Renderer.h"
 #include"Buffer.h"
-#include"FrameBuffer.h"
 #include"Texture.h"
 #include"ShaderProgamMgr.h"
 #include"Renderer.h"
@@ -12,8 +11,7 @@
 
 SpotLightShadowMapping::SpotLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution)
 : IShadowMapping(rt)
-, m_shadowMapFBO(nullptr) 
-, m_shadowMap(nullptr) 
+, m_shadowTarget(shadowMapResolution)
 , m_shadowUBO(nullptr) 
 , m_shader()
 , m_lightCamera()
@@ -28,51 +26,44 @@ SpotLightShadowMapping::~SpotLightShadowMapping() {
 bool SpotLightShadowMapping::initialize() {
 	m_shadowUBO.reset(new Buffer());
 	m_shadowUBO->bind(Buffer::Target::UniformBuffer);
-	m_shadowUBO->loadData(nullptr, sizeof(ShadowBlock), Buffer::Usage::StaticDraw);
+	m_shadowUBO->loadData(nullptr, sizeof(ShadowBlock), Buffer::Usage::DynamicDraw);
 	m_shadowUBO->unbind();
 
-	m_shadowMapFBO.reset(new FrameBuffer());
-	m_shadowMap.reset(new Texture());
-
-	bool success = true;
-	m_shadowMap->bind();
-	success = m_shadowMap->loadImage2DFromMemory(Texture::Format::Depth32,
-		Texture::Format::Depth,
-		Texture::FormatDataType::Float,
-		m_shadowMapResolution.x,
-		m_shadowMapResolution.y,
-		nullptr);
-	m_shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-	m_shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-	m_shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
-	m_shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
-	m_shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
-	m_shadowMap->unbind();
-
-
-	if (!success) {
+	if (!m_shadowTarget.attachTexture2D(Texture::Format::Depth24, Texture::Format::Depth, Texture::FormatDataType::Float, RenderTarget::Slot::Depth)) {
 		cleanUp();
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
 		return false;
 	}
 
-	m_shadowMapFBO->bind();
-	m_shadowMapFBO->addTextureAttachment(m_shadowMap->getHandler(), FrameBuffer::AttachmentPoint::Depth);
-	FrameBuffer::Status result = m_shadowMapFBO->checkStatus();
-	m_shadowMapFBO->setDrawBufferLocation({});
-	m_shadowMapFBO->setReadBufferLocation(-1);
-	m_shadowMapFBO->unbind();
-
-	if (result != FrameBuffer::Status::Ok) {
+	if (!m_shadowTarget.isValid()) {
 		cleanUp();
+#ifdef _DEBUG
+		ASSERT(false);
+#endif // _DEBUG
 		return false;
+	}
+
+	Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+#ifdef _DEBUG
+	ASSERT(shadowMap);
+#endif // _DEBUG
+	if (shadowMap) {
+		shadowMap->bind();
+		shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+		shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+		shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
+		shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
+		shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
+		shadowMap->unbind();
 	}
 
 	return true;
 }
 
 void SpotLightShadowMapping::cleanUp() {
-	m_shadowMapFBO.release();
-	m_shadowMap.release();
+	m_shadowTarget.cleanUp();
 	m_shadowUBO.release();
 	m_lightCamera = Camera_t();
 }
@@ -88,7 +79,7 @@ void SpotLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_
 	m_shader = preZShader.lock();
 	auto renderer = m_renderTech->getRenderer();
 	renderer->pushShaderProgram(m_shader.get());
-	renderer->pushRenderTarget(m_shadowMapFBO.get());
+	renderer->pushRenderTarget(&m_shadowTarget);
 	renderer->pushViewport(&m_shadowViewport);
 	renderer->clearScreen(ClearFlags::Depth);
 
@@ -117,8 +108,11 @@ void SpotLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPro
 	if (shader->hasUniform("u_shadowMap")) {
 		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
 		if (light.isCastShadow()) {
-			m_shadowMap->bind(Texture::Unit::ShadowMap);
-			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
+			Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+			if (shadowMap) {
+				shadowMap->bind(Texture::Unit::ShadowMap);
+				shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
+			}
 
 			static ShadowBlock shadowBlock;
 			shadowBlock.lightVP = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;
@@ -135,15 +129,22 @@ void SpotLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPro
 
 
 void SpotLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {
-	m_shadowMap->unbind();
-	m_shadowUBO->unbind();
+	if (light.isCastShadow()) {
+		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
+			shadowMap->unbind();
+
+		m_shadowUBO->unbind();
+	}
 }
 
 
 void SpotLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
 	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
-	initialize();
+	bool ok = m_shadowTarget.resize({ w, h });
+#ifdef _DEBUG
+	ASSERT(ok);
+#endif // _DEBUGÄã»¹ÄÜ 
 }
 
 

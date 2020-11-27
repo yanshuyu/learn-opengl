@@ -196,6 +196,7 @@
     <ClCompile Include="..\common\RenderBuffer.cpp" />
     <ClCompile Include="..\common\Renderer.cpp" />
     <ClCompile Include="..\common\RendererCore.cpp" />
+    <ClCompile Include="..\common\RenderTarget.cpp" />
     <ClCompile Include="..\common\RenderTaskExecutor.cpp" />
     <ClCompile Include="..\common\RenderTechnique.cpp" />
     <ClCompile Include="..\common\Scene.cpp" />
@@ -276,6 +277,7 @@
     <ClInclude Include="..\common\RenderBuffer.h" />
     <ClInclude Include="..\common\Renderer.h" />
     <ClInclude Include="..\common\RendererCore.h" />
+    <ClInclude Include="..\common\RenderTarget.h" />
     <ClInclude Include="..\common\RenderTaskExecutor.h" />
     <ClInclude Include="..\common\RenderTechnique.h" />
     <ClInclude Include="..\common\RTTI.h" />
@@ -318,6 +320,7 @@
     <None Include="..\res\shader\DirectionalLight.shader" />
     <None Include="..\res\shader\DirectionalLightDeferred.shader" />
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
+    <None Include="..\res\shader\FullScreenQuad.shader" />
     <None Include="..\res\shader\GeometryPass.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
     <None Include="..\res\shader\PointLight.shader" />
