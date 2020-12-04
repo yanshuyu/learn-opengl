@@ -52,7 +52,8 @@ bool ImageProcessingApp::initailize() {
 
 	// camera
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
-	camera->addComponent(FirstPersonCameraController::create());
+	camera->addComponent<FirstPersonCameraController>();
+	camera->addComponent<HDRFilterComponent>();
 
 	//camera->addComponent(ArcballCameraController::create());
 	//auto cameraController = camera->getComponent<ArcballCameraController>();

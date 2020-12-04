@@ -246,6 +246,18 @@
     <ClCompile Include="..\common\RenderTarget.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\FilterParams.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\IFilter.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\HDRFilter.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\PostProcessingManager.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h">
@@ -497,6 +509,21 @@
     <ClInclude Include="..\common\RenderTarget.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\res\shader\标头.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\FilterParams.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IFilter.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\HDRFilter.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\PostProcessingManager.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader">
@@ -548,6 +575,9 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\FullScreenQuad.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\HDR.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

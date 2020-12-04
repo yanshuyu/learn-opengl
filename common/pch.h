@@ -45,3 +45,4 @@
 #include"AnimatorComponent.h"
 #include"FirstPersonCameraController.h"
 #include"ArcballCameraController.h"
+#include"HDRFilter.h"

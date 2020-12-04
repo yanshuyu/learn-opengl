@@ -53,7 +53,7 @@ bool DirectionalLightShadowMapping::initialize() {
 
 
 void DirectionalLightShadowMapping::cleanUp() {
-	m_shadowTarget.cleanUp();
+	m_shadowTarget.detachAllTexture();
 }
 
 void DirectionalLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {

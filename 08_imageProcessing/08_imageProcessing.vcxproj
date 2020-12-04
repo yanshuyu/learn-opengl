@@ -166,6 +166,7 @@
     <ClCompile Include="..\common\DirectionalLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Exceptions.cpp" />
     <ClCompile Include="..\common\FileSystem.cpp" />
+    <ClCompile Include="..\common\FilterParams.cpp" />
     <ClCompile Include="..\common\FirstPersonCameraController.cpp" />
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
     <ClCompile Include="..\common\FrameAllocator.cpp" />
@@ -174,6 +175,8 @@
     <ClCompile Include="..\common\GLApplication.cpp" />
     <ClCompile Include="..\common\GuiMgr.cpp" />
     <ClCompile Include="..\common\GuiWindow.cpp" />
+    <ClCompile Include="..\common\HDRFilter.cpp" />
+    <ClCompile Include="..\common\IFilter.cpp" />
     <ClCompile Include="..\common\IMesh.cpp" />
     <ClCompile Include="..\common\InputMgr.cpp" />
     <ClCompile Include="..\common\Interpolation.cpp" />
@@ -192,6 +195,7 @@
     <ClCompile Include="..\common\PointLightShadowMapping.cpp" />
     <ClCompile Include="..\common\PoolAllocator.cpp" />
     <ClCompile Include="..\common\Pose.cpp" />
+    <ClCompile Include="..\common\PostProcessingManager.cpp" />
     <ClCompile Include="..\common\RenderableComponent.cpp" />
     <ClCompile Include="..\common\RenderBuffer.cpp" />
     <ClCompile Include="..\common\Renderer.cpp" />
@@ -245,6 +249,7 @@
     <ClInclude Include="..\common\DirectionalLightShadowMapping.h" />
     <ClInclude Include="..\common\Exceptions.h" />
     <ClInclude Include="..\common\FileSystem.h" />
+    <ClInclude Include="..\common\FilterParams.h" />
     <ClInclude Include="..\common\FirstPersonCameraController.h" />
     <ClInclude Include="..\common\ForwardRenderer.h" />
     <ClInclude Include="..\common\FrameAllocator.h" />
@@ -253,6 +258,8 @@
     <ClInclude Include="..\common\GLApplication.h" />
     <ClInclude Include="..\common\GuiMgr.h" />
     <ClInclude Include="..\common\GuiWindow.h" />
+    <ClInclude Include="..\common\HDRFilter.h" />
+    <ClInclude Include="..\common\IFilter.h" />
     <ClInclude Include="..\common\IMesh.h" />
     <ClInclude Include="..\common\InputMgr.h" />
     <ClInclude Include="..\common\Interpolation.h" />
@@ -273,6 +280,7 @@
     <ClInclude Include="..\common\PointLightShadowMapping.h" />
     <ClInclude Include="..\common\PoolAllocator.h" />
     <ClInclude Include="..\common\Pose.h" />
+    <ClInclude Include="..\common\PostProcessingManager.h" />
     <ClInclude Include="..\common\RenderableComponent.h" />
     <ClInclude Include="..\common\RenderBuffer.h" />
     <ClInclude Include="..\common\Renderer.h" />
@@ -309,6 +317,7 @@
     <ClInclude Include="..\deps\src\iamgui\imstb_rectpack.h" />
     <ClInclude Include="..\deps\src\iamgui\imstb_textedit.h" />
     <ClInclude Include="..\deps\src\iamgui\imstb_truetype.h" />
+    <ClInclude Include="..\res\shader\标头.h" />
     <ClInclude Include="AnimatorController.h" />
     <ClInclude Include="ImageProcessingApp.h" />
     <ClInclude Include="MainGuiWindow.h" />
@@ -322,6 +331,7 @@
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
     <None Include="..\res\shader\FullScreenQuad.shader" />
     <None Include="..\res\shader\GeometryPass.shader" />
+    <None Include="..\res\shader\HDR.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />

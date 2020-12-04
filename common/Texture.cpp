@@ -265,6 +265,15 @@ void Texture::setBorderColor(glm::vec4 color) {
 	GLCALL(glTextureParameterfv(m_handler, GL_TEXTURE_BORDER_COLOR, &color[0]));
 }
 
+
+void Texture::getPiexls(int level, Texture::Format piexlFmt, Texture::FormatDataType fmtDataType, size_t bufferSz, void* piexls) {
+	if (!piexls)
+		return;
+
+	GLCALL(glGetTextureImage(m_handler, level, int(piexlFmt), int(fmtDataType), bufferSz, piexls));
+}
+
+
 Texture::Format Texture::getGenericFormat(size_t channelCnt) {
 	switch (channelCnt)
 	{

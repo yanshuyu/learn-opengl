@@ -5,6 +5,7 @@
 #include"ShaderProgram.h"
 #include"RenderTechnique.h"
 #include"FrameAllocator.h"
+#include"PostProcessingManager.h"
 
 class Scene;
 class Texture;
@@ -105,6 +106,10 @@ public:
 
 	inline void submitTransparentItem(const MeshRenderItem_t& item) {
 		m_transparentItems.push_back(item);
+	}
+
+	inline void submitPostProcessingFilter(const FilterComponent* filter) {
+		m_filters.push_back(filter);
 	}
 
 	void flush(); // render all submited tasks
@@ -211,7 +216,11 @@ protected:
 	FrameVector<MeshRenderItem_t> m_transparentItems;
 	FrameVector<Light_t> m_lights;
 	FrameVector<Camera_t> m_assistCameras;
+	FrameVector<const FilterComponent*> m_filters;
 	Camera_t m_mainCamera;
+
+	//post processing
+	PostProcessingManager m_postProcessingMgr;
 
 	// render settings
 	glm::vec2 m_renderSize;

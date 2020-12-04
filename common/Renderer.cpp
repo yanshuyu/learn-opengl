@@ -33,7 +33,9 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_transparentItems(&_frameAlloc)
 , m_lights(&_frameAlloc)
 , m_assistCameras(&_frameAlloc)
-, m_mainCamera() {
+, m_filters(&_frameAlloc)
+, m_mainCamera()
+, m_postProcessingMgr(this) {
 	if (mode != Mode::None)
 		setRenderMode(mode);
 
@@ -42,6 +44,7 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 	m_transparentItems.reserve(256);
 	m_lights.reserve(128);
 	m_assistCameras.reserve(8);
+	m_filters.reserve(16);
 }
 
 Renderer::~Renderer() {
@@ -50,12 +53,15 @@ Renderer::~Renderer() {
 	m_quadVBO.release();
 	m_quadIBO.release();
 	
+	m_postProcessingMgr.cleanUp();
+
 	_frameAlloc.clearAllFrame();
 }
 
 
 bool Renderer::initialize() {
-	return setupFullScreenQuad();
+	m_postProcessingMgr.registerStandardFilters();
+	return setupFullScreenQuad() && m_postProcessingMgr.initialize();
 }
 
 
@@ -71,6 +77,7 @@ void Renderer::cleanUp() {
 	clearShaderPrograms();
 	clearViewports();
 	m_mainCamera = Camera_t();
+
 }
 
 
@@ -255,6 +262,7 @@ const Viewport_t* Renderer::getActiveViewport() const {
 void Renderer::onWindowResize(float w, float h) {
 	m_renderSize = glm::vec2(w, h);
 	m_renderTechnique->onWindowResize(w, h);
+	m_postProcessingMgr.onRenderSizeChange(w, h);
 }
 
 Scene_t& Renderer::makeScene() {
@@ -291,14 +299,19 @@ void Renderer::flush() {
 	
 	auto& scene = makeScene();
 	m_renderTechnique->render(scene);
+	
+	Texture* finalFrame = m_renderTechnique->getRenderedFrame();
+	if (m_filters.size() > 0)
+		finalFrame = m_postProcessingMgr.applyFilters(finalFrame, m_filters.data(), m_filters.size());
 
-	presentFrame(m_renderTechnique->getRenderedFrame());
+	presentFrame(finalFrame);
 	
 	// clen up flushed renderables
 	m_opaqueItems.clear();
 	m_transparentItems.clear();
 	m_lights.clear();
 	m_assistCameras.clear();
+	m_filters.clear();
 
 	// release allocated frame memory, remake a new frame
 	_frameAlloc.clearFrame();
@@ -325,11 +338,14 @@ void Renderer::presentFrame(Texture* frame) {
 }
 
 void Renderer::drawFullScreenQuad() {
-	MeshRenderItem_t task;
-	task.vao = m_quadVAO.get();
-	task.indexCount = m_quadIBO->getElementCount();
-	task.primitive = PrimitiveType::Triangle;
-	m_renderTechnique->render(task);
+	//MeshRenderItem_t task;
+	//task.vao = m_quadVAO.get();
+	//task.indexCount = m_quadIBO->getElementCount();
+	//task.primitive = PrimitiveType::Triangle;
+	//m_renderTechnique->render(task);
+
+	m_quadVAO->bind();
+	GLCALL(glDrawElements(GL_TRIANGLES, m_quadIBO->getElementCount(), GL_UNSIGNED_INT, 0));
 }
 
 

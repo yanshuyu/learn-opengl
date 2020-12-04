@@ -88,7 +88,7 @@ bool ForwardRenderer::intialize() {
 	//m_renderer->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
 	//m_renderer->setColorMask(true);
 
-	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, RenderTarget::Slot::Color)) {
+	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, RenderTarget::Slot::Color)) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG	

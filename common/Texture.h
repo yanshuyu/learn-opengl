@@ -175,6 +175,8 @@ public:
 	void setWrapMode(WrapType type, WrapMode mode);
 	void setBorderColor(glm::vec4 color);
 
+	void getPiexls(int level, Texture::Format piexlFmt, Texture::FormatDataType fmtDataType, size_t bufferSz, void* piexls);
+
 	inline size_t getWidth() const {
 		return m_width;
 	}

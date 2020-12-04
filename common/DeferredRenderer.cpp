@@ -117,8 +117,8 @@ void DeferredRenderer::cleanUp() {
 
 	m_shadowMappings.clear();
 
-	m_geometryBufferTarget.cleanUp();
-	m_frameTarget.cleanUp();
+	m_geometryBufferTarget.detachAllTexture();
+	m_frameTarget.detachAllTexture();
 }
 
 
@@ -128,6 +128,8 @@ void DeferredRenderer::beginFrame() {
 }
 
 void DeferredRenderer::endFrame() {
+	m_renderer->popRenderTarget(); 
+
 	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
 		GLCALL(glActiveTexture(GL_TEXTURE0 + unit));
 		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
@@ -197,20 +199,19 @@ void DeferredRenderer::drawGeometryPass(const Scene_t& scene) {
 		render(scene.opaqueItems[i]);
 	}
 	
-	m_renderer->popRenderTarget();
+	//m_renderer->popRenderTarget();
 	m_renderer->popGPUPipelineState();
-	m_renderer->popRenderTarget();
 	m_renderer->popShadrProgram();
 	m_passShader = nullptr;
 	m_pass = RenderPass::None;
-
-	m_renderer->pushRenderTarget(&m_frameTarget);
-	m_renderer->clearScreen(ClearFlags::Color);
 }
 
 
 
 void DeferredRenderer::drawOpaquePass(const Scene_t& scene) {
+	m_renderer->pushRenderTarget(&m_frameTarget);
+	m_renderer->clearScreen(ClearFlags::Color);
+
 	if (scene.numLights <= 0) {
 		drawUnlitScene(scene);
 	}
@@ -220,6 +221,7 @@ void DeferredRenderer::drawOpaquePass(const Scene_t& scene) {
 		}
 	}
 
+	m_renderer->popRenderTarget();
 }
 
 void DeferredRenderer::drawUnlitScene(const Scene_t& scene) {
@@ -631,7 +633,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 
-	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, RenderTarget::Slot::Color)) {
+	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, RenderTarget::Slot::Color)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

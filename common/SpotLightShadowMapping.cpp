@@ -63,7 +63,7 @@ bool SpotLightShadowMapping::initialize() {
 }
 
 void SpotLightShadowMapping::cleanUp() {
-	m_shadowTarget.cleanUp();
+	m_shadowTarget.detachAllTexture();
 	m_shadowUBO.release();
 	m_lightCamera = Camera_t();
 }

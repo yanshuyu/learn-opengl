@@ -54,7 +54,7 @@ bool PointLightShadowMapping::initialize() {
 }
 
 void PointLightShadowMapping::cleanUp() {
-	m_shadowTarget.cleanUp();
+	m_shadowTarget.detachAllTexture();
 }
 
 void PointLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
