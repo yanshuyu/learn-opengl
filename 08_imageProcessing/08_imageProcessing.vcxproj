@@ -173,6 +173,7 @@
     <ClCompile Include="..\common\FrameBuffer.cpp" />
     <ClCompile Include="..\common\Geometry3D.cpp" />
     <ClCompile Include="..\common\GLApplication.cpp" />
+    <ClCompile Include="..\common\GrayFilter.cpp" />
     <ClCompile Include="..\common\GuiMgr.cpp" />
     <ClCompile Include="..\common\GuiWindow.cpp" />
     <ClCompile Include="..\common\HDRFilter.cpp" />
@@ -210,6 +211,7 @@
     <ClCompile Include="..\common\ShaderProgram.cpp" />
     <ClCompile Include="..\common\Skeleton.cpp" />
     <ClCompile Include="..\common\SkinMeshRenderComponent.cpp" />
+    <ClCompile Include="..\common\SkyboxComponent.cpp" />
     <ClCompile Include="..\common\SpotLightShadowMapping.cpp" />
     <ClCompile Include="..\common\StackAllocator.cpp" />
     <ClCompile Include="..\common\Texture.cpp" />
@@ -256,6 +258,7 @@
     <ClInclude Include="..\common\FrameBuffer.h" />
     <ClInclude Include="..\common\Geometry3D.h" />
     <ClInclude Include="..\common\GLApplication.h" />
+    <ClInclude Include="..\common\GrayFilter.h" />
     <ClInclude Include="..\common\GuiMgr.h" />
     <ClInclude Include="..\common\GuiWindow.h" />
     <ClInclude Include="..\common\HDRFilter.h" />
@@ -298,6 +301,7 @@
     <ClInclude Include="..\common\Singleton.h" />
     <ClInclude Include="..\common\Skeleton.h" />
     <ClInclude Include="..\common\SkinMeshRenderComponent.h" />
+    <ClInclude Include="..\common\SkyboxComponent.h" />
     <ClInclude Include="..\common\SpotLightShadowMapping.h" />
     <ClInclude Include="..\common\StackAllocator.h" />
     <ClInclude Include="..\common\Texture.h" />
@@ -317,7 +321,6 @@
     <ClInclude Include="..\deps\src\iamgui\imstb_rectpack.h" />
     <ClInclude Include="..\deps\src\iamgui\imstb_textedit.h" />
     <ClInclude Include="..\deps\src\iamgui\imstb_truetype.h" />
-    <ClInclude Include="..\res\shader\标头.h" />
     <ClInclude Include="AnimatorController.h" />
     <ClInclude Include="ImageProcessingApp.h" />
     <ClInclude Include="MainGuiWindow.h" />
@@ -331,11 +334,13 @@
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
     <None Include="..\res\shader\FullScreenQuad.shader" />
     <None Include="..\res\shader\GeometryPass.shader" />
+    <None Include="..\res\shader\Gray.shader" />
     <None Include="..\res\shader\HDR.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />
     <None Include="..\res\shader\PointLightShadowPass.shader" />
+    <None Include="..\res\shader\SkyBox.shader" />
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />
     <None Include="..\res\shader\TextureDebugViewer.shader" />

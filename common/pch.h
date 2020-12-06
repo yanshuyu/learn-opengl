@@ -45,4 +45,6 @@
 #include"AnimatorComponent.h"
 #include"FirstPersonCameraController.h"
 #include"ArcballCameraController.h"
+#include"SkyboxComponent.h"
 #include"HDRFilter.h"
+#include"GrayFilter.h"

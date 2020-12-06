@@ -35,6 +35,7 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_assistCameras(&_frameAlloc)
 , m_filters(&_frameAlloc)
 , m_mainCamera()
+, m_skyBox()
 , m_postProcessingMgr(this) {
 	if (mode != Mode::None)
 		setRenderMode(mode);
@@ -277,6 +278,7 @@ Scene_t& Renderer::makeScene() {
 	scene.assistCameras = m_assistCameras.data();
 	scene.numAssistCameras = m_assistCameras.size();
 	scene.mainCamera = &m_mainCamera;
+	scene.skyBox = m_skyBox ? &m_skyBox : nullptr;
 
 	return scene;
 }
@@ -312,6 +314,7 @@ void Renderer::flush() {
 	m_lights.clear();
 	m_assistCameras.clear();
 	m_filters.clear();
+	m_skyBox.reset();
 
 	// release allocated frame memory, remake a new frame
 	_frameAlloc.clearFrame();

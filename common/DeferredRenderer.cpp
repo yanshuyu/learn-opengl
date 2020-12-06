@@ -466,6 +466,13 @@ void DeferredRenderer::drawLightShadow(const Scene_t& scene, const Light_t& ligh
 }
 
 
+void DeferredRenderer::render(const SkyBox_t& skyBox) {
+	m_renderer->pushRenderTarget(&m_frameTarget);
+	__super::render(skyBox);
+	m_renderer->popRenderTarget();
+}
+
+
 void DeferredRenderer::render(const MeshRenderItem_t& task) {
 	auto taskExecutor = m_taskExecutors.find(m_pass);
 	if (taskExecutor == m_taskExecutors.end()) {
@@ -641,7 +648,14 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 
-
+	Texture* dsTex = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
+	if (!m_frameTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil)) {
+		cleanUp();
+#ifdef _DEBUG
+		ASSERT(false);
+#endif
+		return false;
+	}
 
 	return true;
 }

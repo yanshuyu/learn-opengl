@@ -189,7 +189,7 @@ void Scene_t::clear() {
 
 void Scene_t::reset() {
 	opaqueItems = nullptr;
-	numOpaqueItems - 0;
+	numOpaqueItems = 0;
 	
 	transparentItems = nullptr;
 	numTransparentItems = 0;
@@ -201,6 +201,8 @@ void Scene_t::reset() {
 	numAssistCameras = 0;
 
 	mainCamera = nullptr;
+
+	skyBox = nullptr;
 }
 
 

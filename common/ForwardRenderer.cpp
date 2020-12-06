@@ -372,8 +372,6 @@ void ForwardRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light
 }
 
 
-
-
 void ForwardRenderer::render(const MeshRenderItem_t& task) {
 #ifdef _DEBUG
 	ASSERT(m_pass != RenderPass::None && m_pass != RenderPass::GeometryPass)

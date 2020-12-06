@@ -4,6 +4,7 @@
 #include"Containers.h"
 
 class VertexArray;
+class Texture;
 class Material;
 class Renderer;
 
@@ -150,6 +151,18 @@ struct Light_t {
 };
 
 
+struct SkyBox_t {
+	VertexArray* cubeVAO;
+	Texture* cubeMap;
+
+	operator bool () const { return cubeVAO != nullptr && cubeMap != nullptr; }
+	inline void reset() { cubeVAO = nullptr; cubeMap = nullptr; }
+
+	SkyBox_t() : SkyBox_t(nullptr, nullptr) {}
+	SkyBox_t(VertexArray* cv, Texture* cm) : cubeVAO(cv), cubeMap(cm) {}
+};
+
+
 struct MeshRenderItem_t {
 	const VertexArray* vao;
 	const Material* material;
@@ -179,6 +192,8 @@ struct Scene_t {
 	size_t numAssistCameras;
 
 	Camera_t* mainCamera;
+
+	SkyBox_t* skyBox;
 
 	Scene_t();
 	void clear();

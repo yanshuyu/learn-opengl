@@ -112,6 +112,10 @@ public:
 		m_filters.push_back(filter);
 	}
 
+	inline void submitSkyBox(const SkyBox_t& skyBox) {
+		m_skyBox = skyBox;
+	}
+
 	void flush(); // render all submited tasks
 
 
@@ -217,7 +221,9 @@ protected:
 	FrameVector<Light_t> m_lights;
 	FrameVector<Camera_t> m_assistCameras;
 	FrameVector<const FilterComponent*> m_filters;
-	Camera_t m_mainCamera;
+	Camera_t m_mainCamera;	
+	SkyBox_t m_skyBox;
+
 
 	//post processing
 	PostProcessingManager m_postProcessingMgr;

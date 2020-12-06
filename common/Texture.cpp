@@ -101,8 +101,8 @@ bool Texture::loadImage2DFromMemory(Format internalFmt, Format srcFmt,
 }
 
 
-bool Texture::loadCubeMapFromFiles(const std::string& left,
-									const std::string& right,
+bool Texture::loadCubeMapFromFiles(const std::string& right,
+									const std::string& left,
 									const std::string& top,
 									const std::string& bottom,
 									const std::string& front,
@@ -111,12 +111,12 @@ bool Texture::loadCubeMapFromFiles(const std::string& left,
 	if (m_bindedTarget != Target::Texture_CubeMap)
 		return false;
 
-	std::string faces[] = { left, right, top, bottom, front, back };
+	std::string faces[] = { right, left, top, bottom, front, back };
 	std::vector<void*> datas;
 	int channelCnt = 0;
 	bool ok = true;
 	for (size_t i = 0; i < 6; i++) {
-		stbi_set_flip_vertically_on_load(true);
+		stbi_set_flip_vertically_on_load(false);
 		auto data = stbi_load(faces[i].c_str(), &m_width, &m_height, &channelCnt, 0);
 		if (!data) {
 			ok = false;
@@ -145,8 +145,8 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 									FormatDataType cpuFmtDataType,
 									float w,
 									float h,
-									const void* left,
 									const void* right,
+									const void* left,
 									const void* top,
 									const void* bottom,
 									const void* front,
@@ -157,6 +157,9 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 
 	const void* datas[] = {right, left, top, bottom, front, back };
 	for (size_t i = 0; i < 6; i++) {
+		if (!datas[i])
+			continue;
+
 		GLCALL(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 			0,
 			int(gpuFmt),
@@ -182,6 +185,7 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 	setFilterMode(FilterType::Minification, FilterMode::Liner);
 	setWrapMode(WrapType::S, WrapMode::Clamp_To_Edge);
 	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
+	setWrapMode(WrapType::R, WrapMode::Clamp_To_Edge);
 
 	return true;
 }

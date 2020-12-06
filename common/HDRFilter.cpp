@@ -77,16 +77,9 @@ void HDRFilter::apply(Texture* inputFrame, Texture* outputFrame, const FilterPar
 	auto shaderWeak = ShaderProgramManager::getInstance()->getProgram("HDR");
 	if (shaderWeak.expired())
 		shaderWeak = ShaderProgramManager::getInstance()->addProgram("HDR");
-
-#ifdef _DEBUG
+	
 	ASSERT(!shaderWeak.expired());
-#endif // _DEBUG
-
-	if (shaderWeak.expired())
-		return;
-
 	auto shader = shaderWeak.lock();
-
 	m_manager->getRenderer()->pushShaderProgram(shader.get());
 
 	inputFrame->bind();

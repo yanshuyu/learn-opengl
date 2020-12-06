@@ -24,7 +24,6 @@ public:
 	}
 
 
-protected:
 	std::string getResourcePath(const std::string& fileName) const;
 
 private:

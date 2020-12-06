@@ -2,7 +2,7 @@
 #include"Renderer.h"
 #include<algorithm>
 #include"HDRFilter.h"
-
+#include"GrayFilter.h"
 
 
 PostProcessingManager::PostProcessingManager(Renderer* renderer) : m_renderer(renderer)
@@ -138,4 +138,5 @@ IFilter* PostProcessingManager::getFilterProcessor(const std::string& name) {
 
 void PostProcessingManager::registerStandardFilters() {
 	addFilterCreater(HDRFilter::sName, [this]()->IFilter* {return new HDRFilter(this); });
+	addFilterCreater(GrayFilter::sName, [this]()->IFilter* { return new GrayFilter(this); });
 }

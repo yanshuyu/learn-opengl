@@ -17,6 +17,7 @@ public:
 	virtual std::string identifier() const = 0;
 
 	virtual void render(const MeshRenderItem_t& task) = 0;
+	virtual void render(const SkyBox_t& skyBox) = 0;
 	virtual void render(const Scene_t& scene) = 0;
 	virtual Texture* getRenderedFrame() = 0;
 
@@ -44,6 +45,7 @@ public:
 	virtual ~RenderTechniqueBase() {}
 
 protected:
+	virtual void render(const SkyBox_t& skyBox) override;
 	virtual void render(const Scene_t& scene) override;
 
 	virtual void beginFrame() = 0;
@@ -59,6 +61,10 @@ protected:
 	} 
 
 protected:
+	void drawSkyBox(const SkyBox_t& skyBox, const Camera_t& camera);
+
+protected:
 	std::shared_ptr<ShaderProgram> m_passShader; // current pass used shader
 	RenderPass m_pass;
+	GPUPipelineState m_skyBoxPipelineState;
 };

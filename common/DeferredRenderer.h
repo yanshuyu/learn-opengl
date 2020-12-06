@@ -36,6 +36,7 @@ public:
 	static const std::string s_identifier;
 
 	void render(const MeshRenderItem_t& task) override;
+	void render(const SkyBox_t& skyBox) override;
 	
 	inline Texture* getRenderedFrame() override {
 		return m_frameTarget.getAttachedTexture(RenderTarget::Slot::Color);

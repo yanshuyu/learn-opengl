@@ -258,6 +258,12 @@
     <ClCompile Include="..\common\PostProcessingManager.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\GrayFilter.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\SkyboxComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h">
@@ -509,9 +515,6 @@
     <ClInclude Include="..\common\RenderTarget.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\res\shader\标头.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\FilterParams.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -522,6 +525,12 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\PostProcessingManager.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GrayFilter.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\SkyboxComponent.h">
       <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>
@@ -578,6 +587,12 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\HDR.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\Gray.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\SkyBox.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>
