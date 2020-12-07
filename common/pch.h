@@ -47,4 +47,5 @@
 #include"ArcballCameraController.h"
 #include"SkyboxComponent.h"
 #include"HDRFilter.h"
+#include"HDRFilter2.h"
 #include"GrayFilter.h"

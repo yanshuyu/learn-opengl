@@ -2,11 +2,14 @@
 #include"ImageProcessingApp.h"
 #include<iamgui/imgui.h>
 #include"AnimatorController.h"
+#include<common/HDRFilter2.h>
+
 
 MainGuiWindow::MainGuiWindow(const std::string& title, ImageProcessingApp* app): GuiWindow(title)
 , m_application(app)
 , m_dirLight()
-, m_animAC() {
+, m_animAC()
+, m_hdrFilter() {
 
 }
 
@@ -22,6 +25,13 @@ bool MainGuiWindow::initialize() {
 	obj = m_application->m_scene->findObjectWithTagRecursive(100);
 	if (obj) {
 		m_animAC = obj->getComponent<AnimatorController>();
+	}
+
+	obj = m_application->m_scene->findObjectWithTagRecursive(Scene::Tag::Camera);
+	if (obj) {
+		m_hdrFilter = obj->getComponent<HDRFilterComponent2>();
+		if (!m_hdrFilter.expired())
+			m_exposure = m_hdrFilter.lock()->getExposure();
 	}
 
 	return true;
@@ -81,6 +91,16 @@ void MainGuiWindow::render() {
 		if (ImGui::SliderFloat("HP", &m_hp, 0.f, 1.f) && !m_animAC.expired())
 			m_animAC.lock()->setHp(m_hp);
 
+	}
+
+
+	if (!m_hdrFilter.expired()) {
+		auto hdrFilter = m_hdrFilter.lock();
+
+		ImGui::Text("HDR Filter");
+		
+		if (ImGui::SliderFloat("Exposure", &m_exposure, 0.f, 3.f))
+			hdrFilter->setExposure(m_exposure);
 	}
 
 	ImGui::End();

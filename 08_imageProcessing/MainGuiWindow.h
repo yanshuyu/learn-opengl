@@ -6,6 +6,7 @@ class ImageProcessingApp;
 class LightComponent;
 class Renderer;
 class AnimatorController;
+class HDRFilterComponent2;
 
 class MainGuiWindow : public GuiWindow {
 public:
@@ -27,4 +28,7 @@ protected:
 	std::weak_ptr<AnimatorController> m_animAC;
 	float m_speed = 0.f;
 	float m_hp = 1.f;
+
+	std::weak_ptr<HDRFilterComponent2> m_hdrFilter;
+	float m_exposure;
 };

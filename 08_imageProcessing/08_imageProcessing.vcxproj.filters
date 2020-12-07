@@ -264,6 +264,9 @@
     <ClCompile Include="..\common\SkyboxComponent.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\HDRFilter2.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h">
@@ -533,6 +536,9 @@
     <ClInclude Include="..\common\SkyboxComponent.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\HDRFilter2.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader">
@@ -593,6 +599,9 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\SkyBox.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\HDR2.shader">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

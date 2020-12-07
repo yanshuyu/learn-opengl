@@ -54,8 +54,10 @@ bool ImageProcessingApp::initailize() {
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent<FirstPersonCameraController>();
 	//camera->addComponent<GrayFilterComponent>();
+	camera->addComponent<HDRFilterComponent2>();
 	auto skyBox = camera->addComponent<SkyboxComponent>();
 	ASSERT(skyBox->load("sky_right.jpg", "sky_left.jpg", "sky_top.jpg", "sky_bottom.jpg", "sky_front.jpg", "sky_back.jpg"));
+
 
 	//camera->addComponent(ArcballCameraController::create());
 	//auto cameraController = camera->getComponent<ArcballCameraController>();

@@ -177,6 +177,7 @@
     <ClCompile Include="..\common\GuiMgr.cpp" />
     <ClCompile Include="..\common\GuiWindow.cpp" />
     <ClCompile Include="..\common\HDRFilter.cpp" />
+    <ClCompile Include="..\common\HDRFilter2.cpp" />
     <ClCompile Include="..\common\IFilter.cpp" />
     <ClCompile Include="..\common\IMesh.cpp" />
     <ClCompile Include="..\common\InputMgr.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="..\common\GuiMgr.h" />
     <ClInclude Include="..\common\GuiWindow.h" />
     <ClInclude Include="..\common\HDRFilter.h" />
+    <ClInclude Include="..\common\HDRFilter2.h" />
     <ClInclude Include="..\common\IFilter.h" />
     <ClInclude Include="..\common\IMesh.h" />
     <ClInclude Include="..\common\InputMgr.h" />
@@ -336,6 +338,7 @@
     <None Include="..\res\shader\GeometryPass.shader" />
     <None Include="..\res\shader\Gray.shader" />
     <None Include="..\res\shader\HDR.shader" />
+    <None Include="..\res\shader\HDR2.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />
