@@ -7,6 +7,7 @@ class LightComponent;
 class Renderer;
 class AnimatorController;
 class HDRFilterComponent2;
+class GaussianBlurFilterComponent;
 
 class MainGuiWindow : public GuiWindow {
 public:
@@ -30,5 +31,11 @@ protected:
 	float m_hp = 1.f;
 
 	std::weak_ptr<HDRFilterComponent2> m_hdrFilter;
+	bool m_hdrEnabled;
 	float m_exposure;
+
+	std::weak_ptr<GaussianBlurFilterComponent> m_blurFilter;
+	bool m_blurEnabled;
+	float m_sigma;
+	int m_blurKernel;
 };

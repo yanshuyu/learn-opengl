@@ -171,6 +171,7 @@
     <ClCompile Include="..\common\ForwardRenderer.cpp" />
     <ClCompile Include="..\common\FrameAllocator.cpp" />
     <ClCompile Include="..\common\FrameBuffer.cpp" />
+    <ClCompile Include="..\common\GaussianBlurFilter.cpp" />
     <ClCompile Include="..\common\Geometry3D.cpp" />
     <ClCompile Include="..\common\GLApplication.cpp" />
     <ClCompile Include="..\common\GrayFilter.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="..\common\ForwardRenderer.h" />
     <ClInclude Include="..\common\FrameAllocator.h" />
     <ClInclude Include="..\common\FrameBuffer.h" />
+    <ClInclude Include="..\common\GaussianBlurFilter.h" />
     <ClInclude Include="..\common\Geometry3D.h" />
     <ClInclude Include="..\common\GLApplication.h" />
     <ClInclude Include="..\common\GrayFilter.h" />
@@ -335,6 +337,7 @@
     <None Include="..\res\shader\DirectionalLightDeferred.shader" />
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
     <None Include="..\res\shader\FullScreenQuad.shader" />
+    <None Include="..\res\shader\GaussianBlur.shader" />
     <None Include="..\res\shader\GeometryPass.shader" />
     <None Include="..\res\shader\Gray.shader" />
     <None Include="..\res\shader\HDR.shader" />

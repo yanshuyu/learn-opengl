@@ -49,3 +49,4 @@
 #include"HDRFilter.h"
 #include"HDRFilter2.h"
 #include"GrayFilter.h"
+#include"GaussianBlurFilter.h"

@@ -55,6 +55,8 @@ bool ImageProcessingApp::initailize() {
 	camera->addComponent<FirstPersonCameraController>();
 	//camera->addComponent<GrayFilterComponent>();
 	camera->addComponent<HDRFilterComponent2>();
+	camera->addComponent<GaussianBlurFilterComponent>();
+
 	auto skyBox = camera->addComponent<SkyboxComponent>();
 	ASSERT(skyBox->load("sky_right.jpg", "sky_left.jpg", "sky_top.jpg", "sky_bottom.jpg", "sky_front.jpg", "sky_back.jpg"));
 
