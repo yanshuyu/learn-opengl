@@ -495,6 +495,9 @@ void DeferredRenderer::onWindowResize(float w, float h) {
 
 	m_geometryBufferTarget.resize({ w, h });
 	m_frameTarget.resize({ w, h });
+
+	Texture* dsTex = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
+	m_frameTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil);
 }
 
 
@@ -507,7 +510,7 @@ void DeferredRenderer::onShadowMapResolutionChange(float w, float h) {
 
 bool DeferredRenderer::setupRenderTargets() {
 	// world position
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, RenderTarget::Slot::Color, 0)) {
+	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 0)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -528,7 +531,7 @@ bool DeferredRenderer::setupRenderTargets() {
 
 
 	// world normal
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, RenderTarget::Slot::Color, 1)) {
+	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 1)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -548,7 +551,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 	// diffuse color
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, RenderTarget::Slot::Color, 2)) {
+	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 2)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -569,7 +572,7 @@ bool DeferredRenderer::setupRenderTargets() {
 
 
 	// specular color
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, RenderTarget::Slot::Color, 3)) {
+	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 3)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -590,7 +593,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 	// emissive color
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, RenderTarget::Slot::Color, 4)) {
+	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 4)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -611,7 +614,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 	// depth/stcencil
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, Texture::Format::Depth_Stencil, Texture::FormatDataType::UInt_24_8, RenderTarget::Slot::Depth_Stencil)) {
+	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -640,7 +643,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 
-	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA16F, Texture::Format::RGBA, Texture::FormatDataType::Float, RenderTarget::Slot::Color)) {
+	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

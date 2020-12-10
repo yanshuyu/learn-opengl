@@ -21,7 +21,7 @@ PointLightShadowMapping::~PointLightShadowMapping() {
 }
 
 bool PointLightShadowMapping::initialize() {
-	if (!m_shadowTarget.attachTextureCube(Texture::Format::Depth24, Texture::Format::Depth, Texture::FormatDataType::Float, RenderTarget::Slot::Depth)) {
+	if (!m_shadowTarget.attachTextureCube(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

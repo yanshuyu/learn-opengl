@@ -29,7 +29,7 @@ bool SpotLightShadowMapping::initialize() {
 	m_shadowUBO->loadData(nullptr, sizeof(ShadowBlock), Buffer::Usage::DynamicDraw);
 	m_shadowUBO->unbind();
 
-	if (!m_shadowTarget.attachTexture2D(Texture::Format::Depth24, Texture::Format::Depth, Texture::FormatDataType::Float, RenderTarget::Slot::Depth)) {
+	if (!m_shadowTarget.attachTexture2D(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

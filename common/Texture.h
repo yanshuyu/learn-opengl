@@ -163,11 +163,18 @@ public:
 
 	static int maximumAvaliableTextureUnit();
 
-	bool loadImage2DFromFile(const std::string& file, bool genMipMap = true);
-	bool loadImage2DFromMemory(Format internalFmt, Format srcFmt, FormatDataType srcFmtDataType, size_t width, size_t height, const void* data, bool genMipMap = false);
-	bool loadCubeMapFromFiles(const std::string& right, const std::string& left, const std::string& top, const std::string& bottom, const std::string& front, const std::string& back, bool genMipMap = false);	
+	// load functions can accept unsized/sized internal(gpu) format, unsized external(cpu) format
+	bool loadImage2DFromFile(const std::string& file, bool flipUV = true, bool genMipMap = true);
+	bool loadImage2DFromMemory(Format gpuFmt, Format cpuFmt, FormatDataType fmtDataType, size_t width, size_t height, const void* data, bool genMipMap = false);
+	bool loadCubeMapFromFiles(const std::string& right, const std::string& left, const std::string& top, const std::string& bottom, const std::string& front, const std::string& back, bool flipUV = false, bool genMipMap = false);	
 	bool loadCubeMapFromMemory(Format gpuFmt, Format cpuFmt, FormatDataType cpuFmtDataType, float w, float h, const void* right = nullptr, const void* left = nullptr, const void* top = nullptr, const void* bottom = nullptr, const void* front = nullptr, const void* back = nullptr, bool genMipMap = false);
-	bool loadImage2DArrayFromMemory(Format gpuFmt, Format cpuFmt, FormatDataType cpuFmtDataType, size_t width, size_t height, size_t numLayer, const void* data, bool genMipMap = false);
+
+	// all alloc storage functions must provided sized internal format
+	void allocStorage2D(Format fmt, size_t width, size_t height, size_t numlevels = 1);
+	void allocStorage2DArray(Format fmt, size_t layers, size_t width, size_t height, size_t numlevels = 1);
+	void allocStorageCube(Format fmt, size_t width, size_t height, size_t numlevels = 1);
+	void allocStorageCubeArray(Format fmt, size_t layers, size_t width, size_t height, size_t numlevels = 1);
+	void allocStorage3D(Format fmt, size_t depth, size_t width, size_t height, size_t numlevels = 0);
 
 	bool bind(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;
 	void unbind() const;
@@ -195,16 +202,13 @@ public:
 		return m_format;
 	}
 
-	inline Format getCpuFormat() const {
-		return m_cpuFormat;
-	}
-
-	inline FormatDataType getCpuFormatDataType() {
-		return m_cpuFormatDataType;
-	}
 
 	inline size_t getLayerCount() const {
 		return m_numLayer;
+	}
+
+	inline size_t getDepth() const {
+		return m_depth;
 	}
 
 	inline int getHandler() const {
@@ -219,9 +223,9 @@ private:
 	int m_width;
 	int m_height;
 	int m_numLayer;
+	int m_depth;
 	Format m_format;
-	Format m_cpuFormat;
-	FormatDataType m_cpuFormatDataType;
+
 	mutable Unit m_bindedUnit;
 	mutable Target m_bindedTarget;
 	GLuint m_handler;

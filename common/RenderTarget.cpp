@@ -13,51 +13,36 @@ RenderTarget::~RenderTarget() {
 
 
 
-bool RenderTarget::attachTexture2D(Texture::Format gpuFmt, Texture::Format cpuFmt, Texture::FormatDataType dataType, Slot slot, size_t index) {
+bool RenderTarget::attachTexture2D(Texture::Format fmt, Slot slot, size_t index) {
 	if (_hasAttactment(slot, index))
 		return false;
 
 	auto tex = std::unique_ptr<Texture>( new Texture());
-	tex->bind();
-
-	if (!tex->loadImage2DFromMemory(gpuFmt, cpuFmt, dataType, m_renderSize.x, m_renderSize.y, nullptr))
-		return false;
-	
-	tex->unbind();
+	tex->allocStorage2D(fmt, m_renderSize.x, m_renderSize.y);
 	
 	return _attachTexture(std::move(tex), slot, index);
 }
 
 
-bool RenderTarget::attchTexture2DArray(Texture::Format gpuFmt, Texture::Format cpuFmt, Texture::FormatDataType dataType, size_t numLayer, Slot slot, size_t index) {
+bool RenderTarget::attchTexture2DArray(Texture::Format fmt, size_t numLayer, Slot slot, size_t index) {
 	if (_hasAttactment(slot, index))
 		return false;
 
 	auto tex = std::unique_ptr<Texture>(new Texture);
-	tex->bind(Texture::Unit::Defualt, Texture::Target::Texture_2D_Array);
-
-	if (!tex->loadImage2DArrayFromMemory(gpuFmt, cpuFmt, dataType, m_renderSize.x, m_renderSize.y, numLayer, nullptr))
-		return false;
-
-	tex->unbind();
+	tex->allocStorage2DArray(fmt, numLayer, m_renderSize.x, m_renderSize.y);
 
 	return _attachTexture(std::move(tex), slot, index);
 }
 
 
-bool RenderTarget::attachTextureCube(Texture::Format gpuFmt, Texture::Format cpuFmt, Texture::FormatDataType dataType, Slot slot, size_t index) {
+bool RenderTarget::attachTextureCube(Texture::Format fmt, Slot slot, size_t index) {
 	if (_hasAttactment(slot, index))
 		return false;
 
-	auto cube = std::unique_ptr<Texture>(new Texture);
-	cube->bind(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
+	auto texCube = std::unique_ptr<Texture>(new Texture);
+	texCube->allocStorageCube(fmt, m_renderSize.x, m_renderSize.y);
 
-	if (!cube->loadCubeMapFromMemory(gpuFmt, cpuFmt, dataType, m_renderSize.x, m_renderSize.y))
-		return false;
-
-	cube->unbind();
-
-	return _attachTexture(std::move(cube), slot, index);
+	return _attachTexture(std::move(texCube), slot, index);
 }
 
 
@@ -125,14 +110,14 @@ Texture* RenderTarget::getAttachedTexture(Slot slot, size_t index) {
 bool RenderTarget::resize(const glm::vec2& sz) {
 	m_renderSize = sz;
 
-	for (auto& attacment : m_deptpStencilProxy) {
-		detachTexture(attacment.first);
+	for (auto& attachment : m_deptpStencilProxy) {
+		m_frameBuffer.addTextureAttachment(0, attachment.first);
+	}
+
+	for (auto& attachment : m_colorProxy) {
+		m_frameBuffer.addTextureAttachment(0, Slot::Color, attachment.first);
 	}
 	m_deptpStencilProxy.clear();
-
-	for (auto& attacment : m_colorProxy) {
-		detachTexture(Slot::Color, attacment.first);
-	}
 	m_colorProxy.clear();
 
 	auto oldDepthStencilAttachments = std::move(m_deptpStencilAttachments);
@@ -140,10 +125,10 @@ bool RenderTarget::resize(const glm::vec2& sz) {
 		auto& slot = attachment.first;
 		auto& texture = attachment.second;
 		if (texture->getLayerCount() > 1) {
-			if (!attchTexture2DArray(texture->getFormat(), texture->getCpuFormat(), texture->getCpuFormatDataType(), texture->getLayerCount(), slot))
+			if (!attchTexture2DArray(texture->getFormat(), texture->getLayerCount(), slot))
 				return false;
 		} else {
-			if (!attachTexture2D(texture->getFormat(), texture->getCpuFormat(), texture->getCpuFormatDataType(), slot))
+			if (!attachTexture2D(texture->getFormat(), slot))
 				return false;
 		}
 	}
@@ -154,10 +139,10 @@ bool RenderTarget::resize(const glm::vec2& sz) {
 		auto idx = attachment.first;
 		auto& texture = attachment.second;
 		if (texture->getLayerCount() > 1) {
-			if (!attchTexture2DArray(texture->getFormat(), texture->getCpuFormat(), texture->getCpuFormatDataType(), texture->getLayerCount(), Slot::Color, idx))
+			if (!attchTexture2DArray(texture->getFormat(), texture->getLayerCount(), Slot::Color, idx))
 				return false;
 		} else {
-			if (!attachTexture2D(texture->getFormat(), texture->getCpuFormat(), texture->getCpuFormatDataType(), Slot::Color, idx))
+			if (!attachTexture2D(texture->getFormat(), Slot::Color, idx))
 				return false;
 		}
 	}

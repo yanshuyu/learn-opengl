@@ -32,7 +32,7 @@ bool DirectionalLightShadowMapping::initialize() {
 		return false;
 	}
 	
-	if (!m_shadowTarget.attchTexture2DArray(Texture::Format::Depth24, Texture::Format::Depth, Texture::FormatDataType::Float, m_cascadeSplitPercents.size() + 1, RenderTarget::Slot::Depth)) {
+	if (!m_shadowTarget.attchTexture2DArray(Texture::Format::Depth24, m_cascadeSplitPercents.size() + 1, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

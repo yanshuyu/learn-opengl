@@ -16,9 +16,9 @@ public:
 	RenderTarget(const glm::vec2& renderSz);
 	~RenderTarget();
 
-	bool attachTexture2D(Texture::Format gpuGmt, Texture::Format cpuFmt,Texture::FormatDataType dataType, Slot slot, size_t index = 0);
-	bool attchTexture2DArray(Texture::Format gpuFmt, Texture::Format cpuFmt, Texture::FormatDataType dataType, size_t numLayer, Slot slot, size_t index = 0);
-	bool attachTextureCube(Texture::Format gpuFmt, Texture::Format cpuFmt, Texture::FormatDataType dataType, Slot slot, size_t index = 0);
+	bool attachTexture2D(Texture::Format fmt, Slot slot, size_t index = 0);
+	bool attchTexture2DArray(Texture::Format fmt, size_t numLayer, Slot slot, size_t index = 0);
+	bool attachTextureCube(Texture::Format fmt, Slot slot, size_t index = 0);
 	bool attachProxyTexture(Texture* texture, Slot slot, size_t index = 0);
 
 	void detachTexture(Slot slot, size_t index = 0);
