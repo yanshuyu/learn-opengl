@@ -30,8 +30,8 @@ uniform vec3 u_AmbientGround;
 
 
 vec3 calcAmibientLight() {
-	float k = texture(u_NormalMap, f_uv).y * 0.5 + 0.5;
-	return mix(u_AmbientGround, u_AmbientSky, k);
+	vec3 normalW = (texture(u_NormalMap, f_uv).xyz - 0.5) * 2;
+	return mix(u_AmbientGround, u_AmbientSky, normalW.y * 0.5 + 0.5);
 }
 
 

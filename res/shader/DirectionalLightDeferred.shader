@@ -138,7 +138,7 @@ out vec4 frag_color;
 
 void main() {
 	vec3 posW = texture(u_posW, f_uv).xyz;
-	vec3 normalW = texture(u_nromalW, f_uv).xyz;
+	vec3 normalW = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
 	vec3 diffuse = texture(u_diffuse, f_uv).rgb;
 	vec3 specular = texture(u_specular, f_uv).rgb;
 	vec3 emissive = texture(u_emissive, f_uv).rgb;

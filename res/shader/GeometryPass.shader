@@ -104,15 +104,15 @@ void main() {
 	vec3 sTex = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
 	vec3 eTex = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
 
-	o_posW = vec4(fs_in.pos_W, 1.f);
-	o_normalW = vec4(fs_in.normal_W, 0.f);
+	vec3 normalW = fs_in.normal_W;
 	if (u_hasNormalMap) {
-		vec3 normal = texture(u_normalMap, fs_in.uv).xyz;
+		vec3 normal = (texture(u_normalMap, fs_in.uv).xyz - 0.5) * 2;
 		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
-		normal = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
-		o_normalW = vec4(normal, 0.f);
+		normalW = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
 	}
 
+	o_posW = vec4(fs_in.pos_W, 1.f);
+	o_normalW = vec4(normalW * 0.5 + 0.5, 0.f);
 	o_diffuse = vec4(dTex * u_diffuseFactor.rgb, u_diffuseFactor.a);
 	o_specular = vec4(sTex * u_specularFactor.rgb, u_specularFactor.a);
 	o_emissive = vec4(eTex * u_emissiveColor, 0.f);

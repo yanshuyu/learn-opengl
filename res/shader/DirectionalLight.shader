@@ -199,16 +199,15 @@ void main() {
 	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, fs_in.uv).rgb) : vec3(1.f);
 	vec3 specularTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
 	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
-	
-	vec3 normal = fs_in.normal_W;
+	vec3 normalW = fs_in.normal_W;
+
 	if (u_hasNormalMap) {
-		normal = texture(u_normalMap, fs_in.uv).xyz;
-		normal = normal * 2.f - 1.f;
+		vec3 normal = (texture(u_normalMap, fs_in.uv).xyz - 0.5) * 2;
 		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
-		normal = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W)* normal);
+		normalW = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W)* normal);
 	}
 
-	frag_color = calcDirectionalLight(normal, diffuseTexColor, specularTexColor, emissiveTexColor);
+	frag_color = calcDirectionalLight(normalW, diffuseTexColor, specularTexColor, emissiveTexColor);
 }
 
 

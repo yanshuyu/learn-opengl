@@ -571,7 +571,7 @@ bool DeferredRenderer::setupRenderTargets() {
 
 
 	// world normal
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 1)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 1)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

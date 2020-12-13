@@ -467,6 +467,7 @@ AmbientPassRenderTaskExecutor::AmbientPassRenderTaskExecutor(IRenderTechnique* r
 
 void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) {
 	std::shared_ptr<Texture> diffuseMap;
+	std::shared_ptr<Texture> normalMap;
 	task.vao->bind();
 
 	// set model matrix
@@ -498,6 +499,16 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 		}
 	}
 
+	if (shader->hasUniform("u_NormalMap")) {
+		bool hasNormalMap = task.material->hasNormalTexture();
+		shader->setUniform1("u_HasNormalMap", int(hasNormalMap));
+		if (hasNormalMap) {
+			normalMap = task.material->m_normalMap.lock();
+			normalMap->bind(Texture::Unit::NormalMap);
+			shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
+		}
+	}
+
 	if (task.primitive == PrimitiveType::Triangle) {
 		if (task.indexCount > 0) {
 			GLCALL(glDrawElements(GL_TRIANGLES, task.indexCount, GL_UNSIGNED_INT, 0));
@@ -517,4 +528,6 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 	task.vao->unbind();
 	if (diffuseMap)
 		diffuseMap->unbind();
+	if (normalMap)
+		normalMap->unbind();
 }
