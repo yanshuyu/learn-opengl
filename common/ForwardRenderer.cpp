@@ -15,7 +15,7 @@ const std::string ForwardRenderer::s_identifier = "ForwardRenderer";
 
 
 ForwardRenderer::ForwardRenderer(Renderer* renderer): RenderTechniqueBase(renderer)
-, m_frameTarget(renderer->getRenderSize())
+, m_outputTarget(renderer->getRenderSize())
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
@@ -74,7 +74,7 @@ bool ForwardRenderer::intialize() {
 	m_taskExecutors[RenderPass::UnlitPass] = std::unique_ptr<RenderTaskExecutor>(new UlitPassRenderTaskExecutror(this));
 	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(this));
 	m_taskExecutors[RenderPass::ShadowPass] = std::unique_ptr<RenderTaskExecutor>(new ShadowPassRenderTaskExecutor(this));
-
+	m_taskExecutors[RenderPass::AmbientPass] = std::unique_ptr<RenderTaskExecutor>(new AmbientPassRenderTaskExecutor(this));
 
 	for (auto& executor : m_taskExecutors) {
 		if (!executor.second->initialize()) {
@@ -88,21 +88,21 @@ bool ForwardRenderer::intialize() {
 	//m_renderer->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
 	//m_renderer->setColorMask(true);
 
-	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA16F,RenderTarget::Slot::Color)) {
+	if (!m_outputTarget.attachTexture2D(Texture::Format::RGBA16F,RenderTarget::Slot::Color)) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG	
 		return false;
 	}
 
-	if (!m_frameTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
+	if (!m_outputTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
 		return false;
 	}
 	
-	if (!m_frameTarget.isValid()) {
+	if (!m_outputTarget.isValid()) {
 #ifdef _DEBUG
 		 ASSERT(false);
 #endif // _DEBUG
@@ -124,7 +124,7 @@ void ForwardRenderer::cleanUp() {
 
 
 void ForwardRenderer::beginFrame() {
-	m_renderer->pushRenderTarget(&m_frameTarget);
+	m_renderer->pushRenderTarget(&m_outputTarget);
 	m_renderer->clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 }
 
@@ -173,6 +173,7 @@ void ForwardRenderer::drawGeometryPass(const Scene_t& scene) {
 
 
 void ForwardRenderer::drawOpaquePass(const Scene_t& scene) {
+	/*
 	if (scene.numLights <= 0) {
 		drawUnlitScene(scene);
 	}
@@ -180,8 +181,15 @@ void ForwardRenderer::drawOpaquePass(const Scene_t& scene) {
 		for (size_t i = 0; i < scene.numLights; i++) {
 			drawLightScene(scene, scene.lights[i]);
 		}
+	} */
+
+	// draw lights
+	for (size_t i = 0; i < scene.numLights; i++) {
+		drawLightScene(scene, scene.lights[i]);
 	}
 
+	// draw ambient light
+	drawAmbientScene(scene);
 }
 
 
@@ -336,6 +344,37 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, const Light_t& light)
 }
 
 
+void ForwardRenderer::drawAmbientScene(const Scene_t& scene) {
+	if (scene.ambinetSky == glm::vec3(0.f) && scene.ambinetGround == glm::vec3(0.f))
+		return;
+
+	auto shader = ShaderProgramManager::getInstance()->getProgram("HemiSphericalAmbientLight");
+	if (shader.expired()) {
+		shader = ShaderProgramManager::getInstance()->addProgram("HemiSphericalAmbientLight");
+		ASSERT(!shader.expired());
+	}
+
+	m_pass = RenderPass::AmbientPass;
+	m_passShader = shader.lock();
+	m_renderer->pushShaderProgram(m_passShader.get());
+	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
+	
+	glm::mat4 vp = scene.mainCamera->projMatrix * scene.mainCamera->viewMatrix;
+	m_passShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+	m_passShader->setUniform3v("u_AmbientSky", (float*)&scene.ambinetSky[0]);
+	m_passShader->setUniform3v("u_AmbientGround", (float*)&scene.ambinetGround[0]);
+	
+	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
+		render(scene.opaqueItems[i]);
+	}
+
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
+	m_pass = RenderPass::None;
+	m_passShader = nullptr;
+}
+
+
 void ForwardRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light) {
 	m_pass = RenderPass::ShadowPass;
 	m_renderer->pushGPUPipelineState(&m_shadowPassPipelineState);
@@ -390,7 +429,7 @@ void ForwardRenderer::render(const MeshRenderItem_t& task) {
 
 
 void ForwardRenderer::onWindowResize(float w, float h) {
-	bool ok = m_frameTarget.resize({ w, h });
+	bool ok = m_outputTarget.resize({ w, h });
 #ifdef _DEBUG
 	ASSERT(ok);
 #endif // _DEBUG

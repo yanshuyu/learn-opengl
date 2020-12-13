@@ -65,6 +65,7 @@ void DepthPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& render
 		}
 	}
 
+	renderTask.vao->unbind();
 }
 
 
@@ -74,6 +75,7 @@ UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(IRenderTechnique* rt) :
 
 void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	std::shared_ptr<Texture> strongDiffuseMap;
+	renderTask.vao->bind();
 
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
 		if (shader->hasUniform("u_ModelMat")) {
@@ -116,8 +118,6 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 
 	} 
 
-	renderTask.vao->bind();
-
 	// draw
 	if (renderTask.primitive == PrimitiveType::Triangle) {
 		if (renderTask.indexCount > 0) {
@@ -136,6 +136,10 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
 		}
 	}
+
+	renderTask.vao->unbind();
+	if (strongDiffuseMap)
+		strongDiffuseMap->unbind();
 }
 
 
@@ -257,6 +261,16 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
 		}
 	}
+
+	renderTask.vao->unbind();
+	if (strongDiffuseMap)
+		strongDiffuseMap->unbind();
+	if (strongNormalMap)
+		strongNormalMap->unbind();
+	if (strongSpecularMap)
+		strongSpecularMap->unbind();
+	if (strongEmissiveMap)
+		strongEmissiveMap->unbind();
 }
 
 
@@ -379,7 +393,16 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
 		}
 	}
-	
+
+	renderTask.vao->unbind();
+	if (strongDiffuseMap)
+		strongDiffuseMap->unbind();
+	if (strongNormalMap)
+		strongNormalMap->unbind();
+	if (strongSpecularMap)
+		strongSpecularMap->unbind();
+	if (strongEmissiveMap)
+		strongEmissiveMap->unbind();
 }
 
 void GeometryPassRenderTaskExecutor::release() {
@@ -423,13 +446,75 @@ void ShadowPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& rende
 		}
 
 	}
-	else if (renderTask.primitive == PrimitiveType::Line) {
-		if (renderTask.indexCount > 0) {
-			GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+	//else if (renderTask.primitive == PrimitiveType::Line) {
+	//	if (renderTask.indexCount > 0) {
+	//		GLCALL(glDrawElements(GL_LINES, renderTask.indexCount, GL_UNSIGNED_INT, 0));
+	//	}
+	//	else {
+	//		GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
+	//	}
+	//}
+
+	renderTask.vao->unbind();
+}
+
+
+
+AmbientPassRenderTaskExecutor::AmbientPassRenderTaskExecutor(IRenderTechnique* rt): RenderTaskExecutor(rt) {
+
+}
+
+
+void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) {
+	std::shared_ptr<Texture> diffuseMap;
+	task.vao->bind();
+
+	// set model matrix
+	if (shader->hasUniform("u_ModelMat")) {
+		shader->setUniformMat4v("u_ModelMat", (float*)&task.modelMatrix[0][0]);
+	}
+
+	if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
+		if (task.boneCount <= 0) {
+			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
 		}
 		else {
-			GLCALL(glDrawArrays(GL_LINES, 0, renderTask.vertexCount));
+#ifdef _DEBUG
+			ASSERT(task.boneCount <= MAX_NUM_BONE);
+#endif // _DEBUG
+			int  numBone = MIN(task.boneCount, MAX_NUM_BONE);
+			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(task.bonesTransform[0]), numBone);
+			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
 		}
 	}
-	
+
+	if (shader->hasUniform("u_DiffuseMap")) {
+		bool hasDiffuse = task.material->hasDiffuseTexture();
+		shader->setUniform1("u_HasDiffuseMap", int(hasDiffuse));
+		if (hasDiffuse) {
+			diffuseMap = task.material->m_diffuseMap.lock();
+			diffuseMap->bind(Texture::Unit::DiffuseMap);
+			shader->setUniform1("u_DiffuseMap", int(Texture::Unit::DiffuseMap));
+		}
+	}
+
+	if (task.primitive == PrimitiveType::Triangle) {
+		if (task.indexCount > 0) {
+			GLCALL(glDrawElements(GL_TRIANGLES, task.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_TRIANGLES, 0, task.vertexCount));
+		}
+	} else if (task.primitive == PrimitiveType::Line) {
+		if (task.indexCount > 0) {
+			GLCALL(glDrawElements(GL_LINES, task.indexCount, GL_UNSIGNED_INT, 0));
+		}
+		else {
+			GLCALL(glDrawArrays(GL_LINES, 0, task.vertexCount));
+		}
+	}
+
+	task.vao->unbind();
+	if (diffuseMap)
+		diffuseMap->unbind();
 }

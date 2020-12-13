@@ -613,5 +613,11 @@
     <None Include="..\res\shader\GaussianBlur.shader">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\HemiSphericalAmbientLight.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\HemiSphericalAmibentLightDefferred.shader">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

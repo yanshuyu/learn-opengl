@@ -116,6 +116,11 @@ public:
 		m_skyBox = skyBox;
 	}
 
+	inline void setEnviromentLight(const glm::vec3& sky, const glm::vec3& ground) {
+		m_ambientSky = sky;
+		m_ambientGround = ground;
+	}
+
 	void flush(); // render all submited tasks
 
 
@@ -164,7 +169,7 @@ protected:
 		GLCALL(glViewport(vp.x, vp.y, vp.width, vp.height));
 	}
 
-	Scene_t& makeScene();
+	void syncScene();
 
 	// clipping states
 	void setCullFaceMode(CullFaceMode mode);
@@ -223,7 +228,7 @@ protected:
 	FrameVector<const FilterComponent*> m_filters;
 	Camera_t m_mainCamera;	
 	SkyBox_t m_skyBox;
-
+	Scene_t m_scene;
 
 	//post processing
 	PostProcessingManager m_postProcessingMgr;
@@ -231,4 +236,8 @@ protected:
 	// render settings
 	glm::vec2 m_renderSize;
 	glm::vec2 m_shadowMapResolution;
+
+	glm::vec3 m_ambientSky;
+	glm::vec3 m_ambientGround;
+
 };

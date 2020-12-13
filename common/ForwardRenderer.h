@@ -38,7 +38,7 @@ public:
 	void render(const MeshRenderItem_t& task) override;
 	
 	inline Texture* getRenderedFrame() override {
-		return m_frameTarget.getAttachedTexture(RenderTarget::Slot::Color);
+		return m_outputTarget.getAttachedTexture(RenderTarget::Slot::Color);
 	}
 
 	void drawDepthPass(const Scene_t& scene) override;
@@ -55,6 +55,7 @@ public:
 
 protected:
 	void drawUnlitScene(const Scene_t& scene);
+	void drawAmbientScene(const Scene_t& scene);
 	void drawLightScene(const Scene_t& scene, const Light_t& light);
 	void drawLightShadow(const Scene_t& scene, const Light_t& light);
 
@@ -65,7 +66,7 @@ protected:
 	GPUPipelineState m_unlitPassPipelineState;
 	
 	// default frame rener target (input frame for post processing)
-	RenderTarget m_frameTarget;
+	RenderTarget m_outputTarget;
 	
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 

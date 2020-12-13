@@ -195,6 +195,9 @@ struct Scene_t {
 
 	SkyBox_t* skyBox;
 
+	glm::vec3 ambinetSky;
+	glm::vec3 ambinetGround;
+
 	Scene_t();
 	void clear();
 
@@ -210,6 +213,7 @@ enum class RenderPass {
 	UnlitPass,
 	ShadowPass,
 	LightPass,
+	AmbientPass,
 	TransparencyPass,
 };
 

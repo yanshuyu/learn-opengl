@@ -18,8 +18,8 @@ const std::string DeferredRenderer::s_identifier = "DeferredRenderer";
 
 
 DeferredRenderer::DeferredRenderer(Renderer* renderer): RenderTechniqueBase(renderer)
-, m_geometryBufferTarget(renderer->getRenderSize())
-, m_frameTarget(renderer->getRenderSize())
+, m_gBufferTarget(renderer->getRenderSize())
+, m_outputTarget(renderer->getRenderSize())
 , m_directionalLightUBO(nullptr)
 , m_pointLightUBO(nullptr)
 , m_spotLightUBO(nullptr)
@@ -117,13 +117,13 @@ void DeferredRenderer::cleanUp() {
 
 	m_shadowMappings.clear();
 
-	m_geometryBufferTarget.detachAllTexture();
-	m_frameTarget.detachAllTexture();
+	m_gBufferTarget.detachAllTexture();
+	m_outputTarget.detachAllTexture();
 }
 
 
 void DeferredRenderer::beginFrame() {
-	m_renderer->pushRenderTarget(&m_geometryBufferTarget);
+	m_renderer->pushRenderTarget(&m_gBufferTarget);
 	m_renderer->clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 }
 
@@ -209,17 +209,23 @@ void DeferredRenderer::drawGeometryPass(const Scene_t& scene) {
 
 
 void DeferredRenderer::drawOpaquePass(const Scene_t& scene) {
-	m_renderer->pushRenderTarget(&m_frameTarget);
+	m_renderer->pushRenderTarget(&m_outputTarget);
 	m_renderer->clearScreen(ClearFlags::Color);
 
-	if (scene.numLights <= 0) {
-		drawUnlitScene(scene);
+	//if (scene.numLights <= 0) {
+	//	drawUnlitScene(scene);
+	//}
+	//else {
+	//	for (size_t i = 0; i < scene.numLights; i++) {
+	//		drawLightScene(scene, scene.lights[i]);
+	//	}
+	//}
+
+	for (size_t i = 0; i < scene.numLights; i++) {
+		drawLightScene(scene, scene.lights[i]);
 	}
-	else {
-		for (size_t i = 0; i < scene.numLights; i++) {
-			drawLightScene(scene, scene.lights[i]);
-		}
-	}
+
+	drawAmbientScene(scene);
 
 	m_renderer->popRenderTarget();
 }
@@ -236,8 +242,8 @@ void DeferredRenderer::drawUnlitScene(const Scene_t& scene) {
 	m_passShader = unlitShader.lock();
 	m_renderer->pushShaderProgram(m_passShader.get());
 
-	Texture* diffuse = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
-	Texture* emissive = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
+	Texture* diffuse = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
+	Texture* emissive = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
 	
 #ifdef _DEBUG
 	ASSERT(diffuse && emissive);
@@ -374,11 +380,11 @@ void DeferredRenderer::drawLightScene(const Scene_t& scene, const Light_t& light
 	}
 
 	// set g-buffers
-	Texture* pos = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 0);
-	Texture* normal = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
-	Texture* diffuse = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
-	Texture* specular = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
-	Texture* emissive = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
+	Texture* pos = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 0);
+	Texture* normal = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
+	Texture* diffuse = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
+	Texture* specular = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
+	Texture* emissive = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
 
 #ifdef _DEBUG
 	ASSERT(pos&& normal&& diffuse&& specular&& emissive);
@@ -430,6 +436,43 @@ void DeferredRenderer::drawLightScene(const Scene_t& scene, const Light_t& light
 }
 
 
+void DeferredRenderer::drawAmbientScene(const Scene_t& scene) {
+	if (scene.ambinetSky == glm::vec3(0.f) && scene.ambinetGround == glm::vec3(0.f))
+		return;
+
+	auto shader = ShaderProgramManager::getInstance()->getProgram("HemiSphericalAmibentLightDefferred");
+	Texture* normalTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
+	Texture* diffuseTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
+	ASSERT(normalTex && diffuseTex);
+
+	if (shader.expired()) {
+		shader = ShaderProgramManager::getInstance()->addProgram("HemiSphericalAmibentLightDefferred");
+		ASSERT(!shader.expired());
+	}
+
+	m_pass = RenderPass::AmbientPass;
+	m_passShader = shader.lock();
+	m_renderer->pushShaderProgram(m_passShader.get());
+	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
+
+	m_passShader->setUniform3v("u_AmbientSky", (float*)&scene.ambinetSky[0]);
+	m_passShader->setUniform3v("u_AmbientGround", (float*)&scene.ambinetGround[0]);
+	normalTex->bind(Texture::Unit::NormalMap);
+	m_passShader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
+	diffuseTex->bind(Texture::Unit::DiffuseMap);
+	m_passShader->setUniform1("u_DiffuseMap", int(Texture::Unit::DiffuseMap));
+
+	m_renderer->drawFullScreenQuad();
+
+	normalTex->unbind();
+	diffuseTex->unbind();
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
+	m_pass = RenderPass::None;
+	m_passShader = nullptr;
+}
+
+
 void DeferredRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light) {
 	m_pass = RenderPass::ShadowPass;
 	m_renderer->pushGPUPipelineState(&m_shadowPassPipelineState);
@@ -464,7 +507,7 @@ void DeferredRenderer::drawLightShadow(const Scene_t& scene, const Light_t& ligh
 
 
 void DeferredRenderer::render(const SkyBox_t& skyBox) {
-	m_renderer->pushRenderTarget(&m_frameTarget);
+	m_renderer->pushRenderTarget(&m_outputTarget);
 	__super::render(skyBox);
 	m_renderer->popRenderTarget();
 }
@@ -490,11 +533,11 @@ void DeferredRenderer::onWindowResize(float w, float h) {
 	if (w <= 0 || h <= 0)
 		return;
 
-	m_geometryBufferTarget.resize({ w, h });
-	m_frameTarget.resize({ w, h });
+	m_gBufferTarget.resize({ w, h });
+	m_outputTarget.resize({ w, h });
 
-	Texture* dsTex = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
-	m_frameTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil);
+	Texture* dsTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
+	m_outputTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil);
 }
 
 
@@ -507,7 +550,7 @@ void DeferredRenderer::onShadowMapResolutionChange(float w, float h) {
 
 bool DeferredRenderer::setupRenderTargets() {
 	// world position
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 0)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 0)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -515,7 +558,7 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 	
-	Texture* buffer = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 0);
+	Texture* buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 0);
 #ifdef _DEBUG
 	ASSERT(buffer);
 #endif 
@@ -528,7 +571,7 @@ bool DeferredRenderer::setupRenderTargets() {
 
 
 	// world normal
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 1)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 1)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -536,7 +579,7 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 	
-	buffer = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
+	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
 #ifdef _DEBUG
 	ASSERT(buffer);
 #endif 
@@ -548,7 +591,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 	// diffuse color
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 2)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 2)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -556,7 +599,7 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 
-	buffer = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
+	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
 #ifdef _DEBUG
 	ASSERT(buffer);
 #endif 
@@ -569,7 +612,7 @@ bool DeferredRenderer::setupRenderTargets() {
 
 
 	// specular color
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 3)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 3)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -577,7 +620,7 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 
-	buffer = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
+	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
 #ifdef _DEBUG
 	ASSERT(buffer);
 #endif 
@@ -590,7 +633,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 	// emissive color
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 4)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 4)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -598,7 +641,7 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 
-	buffer = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
+	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
 #ifdef _DEBUG
 	ASSERT(buffer);
 #endif 
@@ -611,7 +654,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 	// depth/stcencil
-	if (!m_geometryBufferTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
+	if (!m_gBufferTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -619,7 +662,7 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 
-	buffer = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
+	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
 #ifdef _DEBUG
 	ASSERT(buffer);
 #endif 
@@ -630,9 +673,9 @@ bool DeferredRenderer::setupRenderTargets() {
 		buffer->unbind();
 	}
 
-	m_geometryBufferTarget.setDrawLocations({ 0, 1, 2, 3, 4 });
+	m_gBufferTarget.setDrawLocations({ 0, 1, 2, 3, 4 });
 
-	if (!m_geometryBufferTarget.isValid()) {
+	if (!m_gBufferTarget.isValid()) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif
@@ -640,7 +683,7 @@ bool DeferredRenderer::setupRenderTargets() {
 	}
 
 
-	if (!m_frameTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color)) {
+	if (!m_outputTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -648,8 +691,8 @@ bool DeferredRenderer::setupRenderTargets() {
 		return false;
 	}
 
-	Texture* dsTex = m_geometryBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
-	if (!m_frameTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil)) {
+	Texture* dsTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
+	if (!m_outputTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);

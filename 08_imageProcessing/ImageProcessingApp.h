@@ -15,6 +15,9 @@ private:
 	void onWindowResized(int width, int height) override;
 
 private:
+	void _loadScene();
+
+private:
 	std::unique_ptr<Scene> m_scene;
 	std::unique_ptr<Renderer> m_renderer;
 

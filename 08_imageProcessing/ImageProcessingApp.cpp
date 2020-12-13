@@ -21,8 +21,12 @@ bool ImageProcessingApp::initailize() {
 	m_renderer = std::unique_ptr<Renderer>(new Renderer(glm::vec2(m_wndWidth, m_wndHeight)));
 	m_renderer->setRenderMode(Renderer::Mode::Forward);
 	ASSERT(m_renderer->isValid());
+	
 	m_scene->setRenderer(m_renderer.get());
+	m_scene->setEnviromentLight({ 0.f, 0.f, 0.1f }, { 0.f, 0.1f, 0.f });
 
+	_loadScene();
+	
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto meshMgr = MeshManager::getInstance();
 	auto matMgr = MaterialManager::getInstance();
@@ -38,9 +42,9 @@ bool ImageProcessingApp::initailize() {
 	cube->m_transform.setPosition({ -40.f, 0.f, 10.f });
 
 	// plane
-	auto planeMat = matMgr->addMaterial("PlaneMaterial").lock();
-	planeMat->m_shininess = 0.1f;
-	m_scene->addPlane(250, 250, planeMat);
+	//auto planeMat = matMgr->addMaterial("PlaneMaterial").lock();
+	//planeMat->m_shininess = 0.1f;
+	//m_scene->addPlane(250, 250, planeMat);
 
 	// model
 	auto obj = m_scene->addModel("Alien_Animal.fbx");
@@ -58,7 +62,7 @@ bool ImageProcessingApp::initailize() {
 	camera->addComponent<GaussianBlurFilterComponent>();
 
 	auto skyBox = camera->addComponent<SkyboxComponent>();
-	ASSERT(skyBox->load("sky_right.jpg", "sky_left.jpg", "sky_top.jpg", "sky_bottom.jpg", "sky_front.jpg", "sky_back.jpg"));
+	ASSERT(skyBox->load("sky_right.png", "sky_left.png", "sky_top.png", "sky_bottom.png", "sky_front.png", "sky_back.png"));
 
 
 	//camera->addComponent(ArcballCameraController::create());
@@ -104,4 +108,47 @@ void ImageProcessingApp::onWindowResized(int width, int height) {
 	__super::onWindowResized(width, height);
 	m_scene->onWindowResize(width, height);
 	m_renderer->onWindowResize(width, height);
+}
+
+
+
+void ImageProcessingApp::_loadScene() {
+	auto meshMgr = MeshManager::getInstance();
+	auto texMgr = TextureManager::getInstance();
+	auto mtlMgr = MaterialManager::getInstance();
+
+	SceneObject* gameObj;
+	
+	// terrain
+	gameObj = m_scene->addModel("terrain.obj");
+	gameObj->m_transform.setScale({ 10, 1, 10 });
+	auto meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
+	meshRenderer->clearMaterials();
+	meshRenderer->addMaterial(mtlMgr->addMaterial("terrain_mtl"));
+	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("terrain_diffuse.png");
+	meshRenderer->materialAt(0).lock()->m_specularMap = texMgr->addTexture("terrain_specular.png");
+	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
+	
+	// brige
+	gameObj = m_scene->addModel("bridge.obj");
+	gameObj->m_transform.setPosition({ 0, 2, 0 });
+	gameObj->m_transform.setScale({ 10, 10, 10 });
+	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
+	meshRenderer->clearMaterials();
+	meshRenderer->addMaterial(mtlMgr->addMaterial("bridge_mtl"));
+	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("bridge_diffuse.png");
+	meshRenderer->materialAt(0).lock()->m_specularColor = { 0, 0, 0 };
+
+
+	// house
+	gameObj = m_scene->addModel("house.obj");
+	gameObj->m_transform.setPosition({ 0, 0, 0 });
+	gameObj->m_transform.setScale({ 10, 10, 10 });
+	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
+	meshRenderer->clearMaterials();
+	meshRenderer->addMaterial(mtlMgr->addMaterial("house_mtl"));
+	meshRenderer->addMaterial(mtlMgr->getMaterial("house_mtl"));
+	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("house_diffuse.png");
+	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	
 }

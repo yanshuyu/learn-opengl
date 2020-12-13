@@ -59,6 +59,15 @@ glm::vec2 Scene::getRenderSize() const {
 	return glm::vec2(0.f);
 }
 
+
+void Scene::setEnviromentLight(const glm::vec3& sky, const glm::vec3& ground) {
+	m_ambientSky = sky;
+	m_ambientGround = ground;
+	if (auto renderer = getRenderer())
+		renderer->setEnviromentLight(m_ambientSky, m_ambientGround);
+}
+
+
 void Scene::render() {
 	Renderer* renderer = m_renderContext.getRenderer();
 	if (!renderer) {

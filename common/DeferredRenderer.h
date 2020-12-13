@@ -39,7 +39,7 @@ public:
 	void render(const SkyBox_t& skyBox) override;
 	
 	inline Texture* getRenderedFrame() override {
-		return m_frameTarget.getAttachedTexture(RenderTarget::Slot::Color);
+		return m_outputTarget.getAttachedTexture(RenderTarget::Slot::Color);
 	}
 
 	void beginFrame() override;
@@ -61,6 +61,7 @@ public:
 protected:
 	bool setupRenderTargets();
 	void drawUnlitScene(const Scene_t& scene);
+	void drawAmbientScene(const Scene_t& scene);
 	void drawLightScene(const Scene_t& scene, const Light_t& light);
 	void drawLightShadow(const Scene_t& scene, const Light_t& light);
 
@@ -74,8 +75,8 @@ private:
 	GPUPipelineState m_unlitPassPipelineState;
 
 	// geometry buffers
-	RenderTarget m_geometryBufferTarget;
-	RenderTarget m_frameTarget;
+	RenderTarget m_gBufferTarget;
+	RenderTarget m_outputTarget;
 
 	// light ubo
 	std::unique_ptr<Buffer> m_directionalLightUBO;

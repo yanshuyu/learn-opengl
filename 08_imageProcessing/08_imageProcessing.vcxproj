@@ -342,6 +342,8 @@
     <None Include="..\res\shader\Gray.shader" />
     <None Include="..\res\shader\HDR.shader" />
     <None Include="..\res\shader\HDR2.shader" />
+    <None Include="..\res\shader\HemiSphericalAmbientLight.shader" />
+    <None Include="..\res\shader\HemiSphericalAmibentLightDefferred.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />

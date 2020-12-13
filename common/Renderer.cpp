@@ -20,7 +20,7 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_viewports()
 , m_renderMode(Mode::None)
 , m_renderTechnique(nullptr)
-, m_clearColor({0.f, 0.f, 0.f, 1.f})
+, m_clearColor({ 0.f, 0.f, 0.f, 1.f })
 , m_clearDepth(1.f)
 , m_clearStencil(0.f)
 , m_quadVAO(nullptr)
@@ -36,6 +36,7 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_filters(&_frameAlloc)
 , m_mainCamera()
 , m_skyBox()
+, m_scene()
 , m_postProcessingMgr(this) {
 	if (mode != Mode::None)
 		setRenderMode(mode);
@@ -266,21 +267,20 @@ void Renderer::onWindowResize(float w, float h) {
 	m_postProcessingMgr.onRenderSizeChange(w, h);
 }
 
-Scene_t& Renderer::makeScene() {
-	static Scene_t scene;
-	scene.clear();
-	scene.opaqueItems = m_opaqueItems.data();
-	scene.numOpaqueItems = m_opaqueItems.size();
-	scene.transparentItems = m_transparentItems.data();
-	scene.numTransparentItems = m_transparentItems.size();
-	scene.lights = m_lights.data();
-	scene.numLights = m_lights.size();
-	scene.assistCameras = m_assistCameras.data();
-	scene.numAssistCameras = m_assistCameras.size();
-	scene.mainCamera = &m_mainCamera;
-	scene.skyBox = m_skyBox ? &m_skyBox : nullptr;
-
-	return scene;
+void Renderer::syncScene() {
+	m_scene.clear();
+	m_scene.opaqueItems = m_opaqueItems.data();
+	m_scene.numOpaqueItems = m_opaqueItems.size();
+	m_scene.transparentItems = m_transparentItems.data();
+	m_scene.numTransparentItems = m_transparentItems.size();
+	m_scene.lights = m_lights.data();
+	m_scene.numLights = m_lights.size();
+	m_scene.assistCameras = m_assistCameras.data();
+	m_scene.numAssistCameras = m_assistCameras.size();
+	m_scene.mainCamera = &m_mainCamera;
+	m_scene.skyBox = m_skyBox ? &m_skyBox : nullptr;
+	m_scene.ambinetSky = m_ambientSky;
+	m_scene.ambinetGround = m_ambientGround;
 }
 
 
@@ -299,8 +299,8 @@ void Renderer::flush() {
 	setStencilMask(0xffffffff);
 	clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 	
-	auto& scene = makeScene();
-	m_renderTechnique->render(scene);
+	syncScene();
+	m_renderTechnique->render(m_scene);
 	
 	Texture* finalFrame = m_renderTechnique->getRenderedFrame();
 	if (m_filters.size() > 0)

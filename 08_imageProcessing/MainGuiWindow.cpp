@@ -66,10 +66,18 @@ void MainGuiWindow::render() {
 		m_application->m_renderer->setRenderMode(Renderer::Mode(m_renderMode + 1));
 	
 	ImGui::Separator();
+	ImGui::Text("Lightting Setting");
+	
+	static float envSkyColor[3] = { m_application->m_scene->getEnviromentLight().first.r, m_application->m_scene->getEnviromentLight().first.g, m_application->m_scene->getEnviromentLight().first.b };
+	static float envGroundColor[3] = { m_application->m_scene->getEnviromentLight().second.r, m_application->m_scene->getEnviromentLight().second.g, m_application->m_scene->getEnviromentLight().second.b };
+	
+	if (ImGui::ColorEdit3("Ambient Sky", envSkyColor))
+		m_application->m_scene->setEnviromentLight({ envSkyColor[0], envSkyColor[1], envSkyColor[2] }, { envGroundColor[0], envGroundColor[1], envGroundColor[2] });
+
+	if (ImGui::ColorEdit3("Amibient Ground", envGroundColor))
+		m_application->m_scene->setEnviromentLight({ envSkyColor[0], envSkyColor[1], envSkyColor[2] }, { envGroundColor[0], envGroundColor[1], envGroundColor[2] });
 
 	if (!m_dirLight.expired() || !m_spotLight.expired()) {
-		ImGui::Text("Lightting Setting");
-
 		if (!m_dirLight.expired()) {
 			auto light = m_dirLight.lock();			
 			static bool enabled = light->m_isEnable;
@@ -78,6 +86,7 @@ void MainGuiWindow::render() {
 			static float intensity = light->getIntensity();
 			static const char* shadowTypeLables[3] = { "No Shadow", "Hard Shadow", "Soft Shadow" };
 			static int shadowType = int(light->getShadowType());
+			static float shadowStren = light->getShadowStrength();
 			static float shadowBias = light->getShadowBias();
 			
 			ImGui::PushID("Direction Light");
@@ -98,6 +107,9 @@ void MainGuiWindow::render() {
 
 			if (ImGui::Combo("Shadow Type", &shadowType, shadowTypeLables, IM_ARRAYSIZE(shadowTypeLables)))
 				light->setShadowType(ShadowType(shadowType));
+
+			if (ImGui::SliderFloat("Shadow Strength", &shadowStren, 0.1f, 1.f))
+				light->setShadowStrength(shadowStren);
 
 			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
 				light->setShadowBias(shadowBias);

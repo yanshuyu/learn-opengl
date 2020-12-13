@@ -203,6 +203,9 @@ void Scene_t::reset() {
 	mainCamera = nullptr;
 
 	skyBox = nullptr;
+
+	ambinetSky = glm::vec3(0);
+	ambinetGround = glm::vec3(0);
 }
 
 

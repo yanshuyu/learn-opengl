@@ -77,3 +77,10 @@ public:
 
 	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
 };
+
+
+class AmbientPassRenderTaskExecutor : public RenderTaskExecutor {
+public:
+	AmbientPassRenderTaskExecutor(IRenderTechnique* rt);
+	void executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) override;
+};

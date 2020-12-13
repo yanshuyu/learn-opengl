@@ -85,6 +85,12 @@ public:
 		return m_renderContext.getRenderer();
 	}
 
+	void setEnviromentLight(const glm::vec3& sky, const glm::vec3& ground);
+
+	inline std::pair<glm::vec3, glm::vec3> getEnviromentLight() const {
+		return std::pair<glm::vec3, glm::vec3>(m_ambientSky, m_ambientGround);
+	}
+
 	glm::vec2 getRenderSize() const;
 
 	void render();
@@ -148,4 +154,7 @@ private:
 	CameraComponent* m_mainCamera;
 	
 	RenderContext m_renderContext;
+
+	glm::vec3 m_ambientGround;
+	glm::vec3 m_ambientSky;
 };
