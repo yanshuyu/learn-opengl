@@ -22,7 +22,11 @@ public:
 
 	void removeFromOwner() const;
 
-	SceneObject* owner() const {
+	inline SceneObject* owner() const {
+		return m_owner;
+	}
+
+	inline SceneObject* getGameObject() const {
 		return m_owner;
 	}
 

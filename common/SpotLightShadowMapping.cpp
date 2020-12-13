@@ -51,11 +51,13 @@ bool SpotLightShadowMapping::initialize() {
 #endif // _DEBUG
 	if (shadowMap) {
 		shadowMap->bind();
-		shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+		shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Liner);
+		shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Liner);
 		shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
 		shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
 		shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
+		shadowMap->setCompareMode(Texture::CompareMode::Compare_Ref_To_Texture);
+		shadowMap->setCompareFunc(Texture::CompareFunc::Less);
 		shadowMap->unbind();
 	}
 
@@ -68,7 +70,10 @@ void SpotLightShadowMapping::cleanUp() {
 	m_lightCamera = Camera_t();
 }
 
-void SpotLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
+void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
+	if (!light.isCastShadow())
+		return;
+
 	m_lightCamera = makeLightCamera(light);
 
 	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
@@ -92,19 +97,15 @@ void SpotLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_
 	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
 		m_renderTech->render(scene.opaqueItems[i]);
 	}
-}
 
-
-void SpotLightShadowMapping::endShadowPhase() {
-	auto renderer = m_renderTech->getRenderer();
-	renderer->popRenderTarget();
 	renderer->popViewport();
+	renderer->popRenderTarget();
 	renderer->popShadrProgram();
 	m_shader = nullptr;
 }
 
 
-void SpotLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {
+void SpotLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (shader->hasUniform("u_shadowMap")) {
 		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
 		if (light.isCastShadow()) {
@@ -128,7 +129,7 @@ void SpotLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPro
 }
 
 
-void SpotLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {
+void SpotLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
 		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
 			shadowMap->unbind();
@@ -151,7 +152,7 @@ void SpotLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 Camera_t SpotLightShadowMapping::makeLightCamera(const Light_t& light) {
 	Camera_t cam;
 	cam.viewMatrix = glm::lookAt(light.position, light.position + light.direction, glm::vec3(0.f, 1.f, 0.f));
-	cam.projMatrix = glm::perspective(light.outterCone * 1.9f, 1.f, 1.f, light.range);
+	cam.projMatrix = glm::perspective(light.outterCone * 3.f, 1.f, 1.f, light.range);
 	cam.near = 1.f;
 	cam.far = light.range;
 	cam.position = light.position;

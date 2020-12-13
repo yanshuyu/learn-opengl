@@ -265,9 +265,7 @@ void DeferredRenderer::drawUnlitScene(const Scene_t& scene) {
 
 
 void DeferredRenderer::drawLightScene(const Scene_t& scene, const Light_t& light) {
-	if (light.isCastShadow()) {
-		drawLightShadow(scene, light);
-	}
+	drawLightShadow(scene, light);
 
 	m_pass = RenderPass::LightPass;
 	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
@@ -362,7 +360,7 @@ void DeferredRenderer::drawLightScene(const Scene_t& scene, const Light_t& light
 		return;
 	}
 
-	m_shadowMappings[light.type]->beginLighttingPhase(light, m_passShader.get());
+	m_shadowMappings[light.type]->beginRenderLight(light, m_passShader.get());
 
 	// set camera position
 	if (m_passShader->hasUniform("u_cameraPosW")) {
@@ -414,7 +412,7 @@ void DeferredRenderer::drawLightScene(const Scene_t& scene, const Light_t& light
 
 	m_renderer->drawFullScreenQuad();
 
-	m_shadowMappings[light.type]->endLighttingPhase(light, m_passShader.get());
+	m_shadowMappings[light.type]->endRenderLight(light, m_passShader.get());
 
 	if (lightUBO)
 		lightUBO->unbind();
@@ -456,8 +454,7 @@ void DeferredRenderer::drawLightShadow(const Scene_t& scene, const Light_t& ligh
 		m_shadowMappings.insert(std::make_pair(light.type, std::unique_ptr<IShadowMapping>(shadowMapping)));
 	}
 
-	m_shadowMappings[light.type]->beginShadowPhase(scene, light);
-	m_shadowMappings[light.type]->endShadowPhase();
+	m_shadowMappings[light.type]->renderShadow(scene, light);
 
 	m_renderer->popGPUPipelineState();
 	m_renderer->setColorMask(true);

@@ -57,7 +57,10 @@ void PointLightShadowMapping::cleanUp() {
 	m_shadowTarget.detachAllTexture();
 }
 
-void PointLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
+void PointLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
+	if (!light.isCastShadow())
+		return;
+
 	auto shader = ShaderProgramManager::getInstance()->getProgram("PointLightShadowPass");
 	if (shader.expired())
 		shader = ShaderProgramManager::getInstance()->addProgram("PointLightShadowPass.shader");
@@ -84,17 +87,15 @@ void PointLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light
 	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
 		m_renderTech->render(scene.opaqueItems[i]);
 	}
-}
 
-void PointLightShadowMapping::endShadowPhase() {
-	auto renderer = m_renderTech->getRenderer();
-	renderer->popRenderTarget();
 	renderer->popViewport();
+	renderer->popRenderTarget();
 	renderer->popShadrProgram();
 	m_shader = nullptr;
 }
 
-void PointLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {		
+
+void PointLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgram* shader) {		
 	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
 		if (light.shadowType == ShadowType::NoShadow) {
 			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
@@ -122,7 +123,7 @@ void PointLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderPr
 	}
 }
 
-void PointLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {
+void PointLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
 		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
 			shadowMap->unbind();

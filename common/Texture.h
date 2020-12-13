@@ -154,6 +154,24 @@ public:
 		Repeat = GL_REPEAT,
 		Mirrored_Clamp_To_Egde = GL_MIRROR_CLAMP_TO_EDGE,
 	};
+
+	enum class CompareMode  {
+		Compare_Ref_To_Texture = GL_COMPARE_REF_TO_TEXTURE,
+		None = GL_NONE,
+	};
+
+	enum class CompareFunc {
+		LEqual = GL_LEQUAL,
+		GEqual = GL_GEQUAL,
+		Less = GL_LESS,
+		Greater = GL_GREATER,
+		Equal = GL_EQUAL,
+		NoEqual = GL_NOTEQUAL,
+		Always = GL_ALWAYS,
+		Never = GL_NEVER,
+	};
+
+
 public:
 	Texture();
 	virtual ~Texture();
@@ -174,7 +192,7 @@ public:
 	void allocStorage2DArray(Format fmt, size_t layers, size_t width, size_t height, size_t numlevels = 1);
 	void allocStorageCube(Format fmt, size_t width, size_t height, size_t numlevels = 1);
 	void allocStorageCubeArray(Format fmt, size_t layers, size_t width, size_t height, size_t numlevels = 1);
-	void allocStorage3D(Format fmt, size_t depth, size_t width, size_t height, size_t numlevels = 0);
+	void allocStorage3D(Format fmt, size_t depth, size_t width, size_t height, size_t numlevels = 1);
 
 	bool bind(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;
 	void unbind() const;
@@ -183,6 +201,15 @@ public:
 	void setFilterMode(FilterType type, FilterMode mode);
 	void setWrapMode(WrapType type, WrapMode mode);
 	void setBorderColor(glm::vec4 color);
+
+	inline void setCompareMode(CompareMode cm) {
+		GLCALL(glTextureParameteri(m_handler, GL_TEXTURE_COMPARE_MODE, GLint(cm)));
+	}
+
+	inline void setCompareFunc(CompareFunc cf) {
+		GLCALL(glTextureParameteri(m_handler, GL_TEXTURE_COMPARE_FUNC, GLint(cf)));
+	}
+
 
 	void getPiexls(int level, Texture::Format piexlFmt, Texture::FormatDataType fmtDataType, size_t bufferSz, void* piexls);
 

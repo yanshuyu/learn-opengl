@@ -12,10 +12,9 @@ public:
 
 	virtual bool initialize() = 0;
 	virtual	void cleanUp() {};
-	virtual void beginShadowPhase(const Scene_t& scene, const Light_t& light) = 0;
-	virtual void endShadowPhase() = 0;
-	virtual void beginLighttingPhase(const Light_t& light, ShaderProgram* shader) = 0;
-	virtual void endLighttingPhase(const Light_t& light, ShaderProgram* shader) = 0;
+	virtual void renderShadow(const Scene_t& scene, const Light_t& light) = 0;
+	virtual void beginRenderLight(const Light_t& light, ShaderProgram* shader) = 0;
+	virtual void endRenderLight(const Light_t& light, ShaderProgram* shader) = 0;
 	virtual void onShadowMapResolutionChange(float w, float h) = 0;
 
 	inline IRenderTechnique* getRenderTechnique() const {

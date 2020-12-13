@@ -66,9 +66,6 @@
     <ClCompile Include="..\common\Mesh.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\MeshGroup.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\MeshMgr.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -215,9 +212,6 @@
     <ClInclude Include="..\common\Mesh.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\MeshGroup.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\MeshMgr.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -347,9 +341,6 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\PointLightDeferred.shader">
-      <Filter>shader</Filter>
-    </None>
-    <None Include="..\res\shader\SolidColor.shader">
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\SpotLight.shader">

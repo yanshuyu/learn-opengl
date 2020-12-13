@@ -56,7 +56,10 @@ void DirectionalLightShadowMapping::cleanUp() {
 	m_shadowTarget.detachAllTexture();
 }
 
-void DirectionalLightShadowMapping::beginShadowPhase(const Scene_t& scene, const Light_t& light) {
+void DirectionalLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
+	if (!light.isCastShadow())
+		return;
+
 	calcViewFrumstumCascades(light, *scene.mainCamera);
 	
 	auto shader = ShaderProgramManager::getInstance()->getProgram("DirectionalLightShadowPass");
@@ -85,18 +88,15 @@ void DirectionalLightShadowMapping::beginShadowPhase(const Scene_t& scene, const
 	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
 		m_renderTech->render(scene.opaqueItems[i]);
 	}
-}
 
-
-void DirectionalLightShadowMapping::endShadowPhase() {
-	Renderer* renderer = m_renderTech->getRenderer();
-	renderer->popRenderTarget();
 	renderer->popViewport();
+	renderer->popRenderTarget();
 	renderer->popShadrProgram();
 	m_shader = nullptr;
 }
 
-void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, ShaderProgram* shader) {
+
+void DirectionalLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgram* shader) {
 
 	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
 		switch (light.shadowType)
@@ -145,7 +145,7 @@ void DirectionalLightShadowMapping::beginLighttingPhase(const Light_t& light, Sh
 	
 }
 
-void DirectionalLightShadowMapping::endLighttingPhase(const Light_t& light, ShaderProgram* shader) {
+void DirectionalLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
 		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
 		if (shadowMap)

@@ -124,6 +124,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -167,7 +169,6 @@
     <ClCompile Include="..\common\Material.cpp" />
     <ClCompile Include="..\common\MaterialMgr.cpp" />
     <ClCompile Include="..\common\Mesh.cpp" />
-    <ClCompile Include="..\common\MeshGroup.cpp" />
     <ClCompile Include="..\common\MeshMgr.cpp" />
     <ClCompile Include="..\common\MeshRenderComponent.cpp" />
     <ClCompile Include="..\common\NoticificationCenter.cpp" />
@@ -219,7 +220,6 @@
     <ClInclude Include="..\common\Material.h" />
     <ClInclude Include="..\common\MaterialMgr.h" />
     <ClInclude Include="..\common\Mesh.h" />
-    <ClInclude Include="..\common\MeshGroup.h" />
     <ClInclude Include="..\common\MeshMgr.h" />
     <ClInclude Include="..\common\MeshRenderComponent.h" />
     <ClInclude Include="..\common\Notification.h" />
@@ -266,7 +266,6 @@
     <None Include="..\res\shader\DepthPass.shader" />
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
     <None Include="..\res\shader\PointLightShadowPass.shader" />
-    <None Include="..\res\shader\SolidColor.shader" />
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />
     <None Include="..\res\shader\TextureDebugViewer.shader" />

@@ -8,6 +8,7 @@
 MainGuiWindow::MainGuiWindow(const std::string& title, ImageProcessingApp* app): GuiWindow(title)
 , m_application(app)
 , m_dirLight()
+, m_spotLight()
 , m_animAC()
 , m_hdrFilter()
 , m_blurFilter() {
@@ -17,10 +18,14 @@ MainGuiWindow::MainGuiWindow(const std::string& title, ImageProcessingApp* app):
 
 bool MainGuiWindow::initialize() {
 	auto obj = m_application->m_scene->findObjectWithTagRecursive(Scene::Tag::DirectionalLight);
-	
 	if (obj) {
 		m_dirLight = obj->getComponent<LightComponent>();
 		m_renderMode = int(m_application->m_renderer->getRenderMode()) - 1;
+	}
+
+	obj = m_application->m_scene->findObjectWithTagRecursive(Scene::Tag::SpotLight);
+	if (obj) {
+		m_spotLight = obj->getComponent<LightComponent>();
 	}
 	
 	obj = m_application->m_scene->findObjectWithTagRecursive(100);
@@ -55,41 +60,100 @@ void MainGuiWindow::render() {
 	ImGui::Separator();
 
 	ImGui::Text("Rendering Setting");
-	
+
 	static const char* modes[] = { "Forward", "Deffered" };
 	if (ImGui::Combo("Render Mode", &m_renderMode, modes, IM_ARRAYSIZE(modes)))
 		m_application->m_renderer->setRenderMode(Renderer::Mode(m_renderMode + 1));
+	
 	ImGui::Separator();
 
-	if (!m_dirLight.expired()) {
+	if (!m_dirLight.expired() || !m_spotLight.expired()) {
 		ImGui::Text("Lightting Setting");
 
-		if (ImGui::ColorEdit3("Light Color", m_lightColor) && !m_dirLight.expired())
-			m_dirLight.lock()->setColor({ m_lightColor[0], m_lightColor[1], m_lightColor[2] });
+		if (!m_dirLight.expired()) {
+			auto light = m_dirLight.lock();			
+			static bool enabled = light->m_isEnable;
+			static float lightColor[3] = { light->getColor().r, light->getColor().g, light->getColor().b };
+			static float rotation[3] = { light->owner()->m_transform.getRotation().x, light->owner()->m_transform.getRotation().y, light->owner()->m_transform.getRotation().z };
+			static float intensity = light->getIntensity();
+			static const char* shadowTypeLables[3] = { "No Shadow", "Hard Shadow", "Soft Shadow" };
+			static int shadowType = int(light->getShadowType());
+			static float shadowBias = light->getShadowBias();
+			
+			ImGui::PushID("Direction Light");
 
+			if (ImGui::Checkbox("Directional Light", &enabled)) {
+				light->m_isEnable = enabled;
+			}
 
-		if (ImGui::SliderAngle("Light Direction X", m_lightDirection) && !m_dirLight.expired()) {
-			auto curRotation = m_dirLight.lock()->owner()->m_transform.getRotation();
-			m_dirLight.lock()->owner()->m_transform.setRotation({ glm::degrees(m_lightDirection[0]),curRotation.y, curRotation.z });
+			if (ImGui::DragFloat3("Rotation", rotation, 1, -360, 360)) {
+				light->owner()->m_transform.setRotation({ rotation[0], rotation[1], rotation[2] });
+			}
+
+			if (ImGui::ColorEdit3("Color", lightColor))
+				light->setColor({ lightColor[0], lightColor[1], lightColor[2] });
+
+			if (ImGui::SliderFloat("Intensity", &intensity, 0.f, 10.f))
+				light->setIntensity(intensity);
+
+			if (ImGui::Combo("Shadow Type", &shadowType, shadowTypeLables, IM_ARRAYSIZE(shadowTypeLables)))
+				light->setShadowType(ShadowType(shadowType));
+
+			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
+				light->setShadowBias(shadowBias);
+
+			ImGui::PopID();
 		}
 
 
-		if (ImGui::SliderAngle("Light Direction Y", m_lightDirection + 1) && !m_dirLight.expired()) {
-			auto curRotation = m_dirLight.lock()->owner()->m_transform.getRotation();
-			m_dirLight.lock()->owner()->m_transform.setRotation({ curRotation.x, glm::degrees(m_lightDirection[1]), curRotation.z });
+		if (!m_spotLight.expired()) {
+			auto light = m_spotLight.lock();
+			static bool enabled = light->m_isEnable;
+
+			static float lightColor[3] = { light->getColor().r, light->getColor().g, light->getColor().b };
+			static float pos[3] = { light->owner()->m_transform.getPosition().x, light->owner()->m_transform.getPosition().y, light->owner()->m_transform.getPosition().z };
+			static float rotation[3] = { light->owner()->m_transform.getRotation().x, light->owner()->m_transform.getRotation().y, light->owner()->m_transform.getRotation().z };
+			static float angles[2] = { light->getSpotInnerAngle(), light->getSpotOutterAngle() };
+			static float intensity = light->getIntensity();
+			static float range = light->getRange();
+			static const char* shadowTypeLables[3] = { "No Shadow", "Hard Shadow", "Soft Shadow" };
+			static int shadowType = int(light->getShadowType());
+			static float shadowBias = light->getShadowBias();
+
+			ImGui::PushID("Spot Light");
+
+			if (ImGui::Checkbox("Spot Light", &enabled))
+				light->m_isEnable = enabled;
+
+			if (ImGui::ColorEdit3("Color", lightColor))
+				light->setColor({ lightColor[0], lightColor[1], lightColor[2] });
+
+			if (ImGui::InputFloat3("Position", pos, 2))
+				light->getGameObject()->m_transform.setPosition({ pos[0], pos[1], pos[2] });
+
+			if (ImGui::DragFloat3("Rotation", rotation, 1, -360, 360))
+				light->owner()->m_transform.setRotation({ rotation[0], rotation[1], rotation[2] });
+
+			if (ImGui::DragFloat2("Angles", angles, 1, 0, 180)) {
+				light->setSpotInnerAngle(angles[0]);
+				light->setSpotOutterAngle(angles[1]);
+			}
+
+			if (ImGui::SliderFloat("Range", &range, 0, 300))
+				light->setRange(range);
+
+			if (ImGui::SliderFloat("Intensity", &intensity, 0.f, 10.f))
+				light->setIntensity(intensity);
+
+			if (ImGui::Combo("Shadow Type", &shadowType, shadowTypeLables, IM_ARRAYSIZE(shadowTypeLables)))
+				light->setShadowType(ShadowType(shadowType));
+
+			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
+				light->setShadowBias(shadowBias);
+
+			ImGui::PopID();
 		}
 
-
-		if (ImGui::SliderAngle("Light Direction Z", m_lightDirection + 2) && !m_dirLight.expired()) {
-			auto curRotation = m_dirLight.lock()->owner()->m_transform.getRotation();
-			m_dirLight.lock()->owner()->m_transform.setRotation({ curRotation.x, curRotation.y, glm::degrees(m_lightDirection[2]) });
-		}
-
-		if (ImGui::SliderFloat("Light Intensity", &m_lightIntensity, 0.f, 3.f) && !m_dirLight.expired())
-			m_dirLight.lock()->setIntensity(m_lightIntensity);
-
-		if (ImGui::SliderFloat("Shadow Bias", &m_shadowBias, -0.1f, 0.1f) && !m_dirLight.expired())
-			m_dirLight.lock()->setShadowBias(m_shadowBias);
 		ImGui::Separator();
 	}
 

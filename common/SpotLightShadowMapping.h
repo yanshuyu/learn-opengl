@@ -15,10 +15,9 @@ public:
 
 	bool initialize() override;
 	void cleanUp() override;
-	void beginShadowPhase(const Scene_t& scene, const Light_t& light) override;
-	void endShadowPhase() override;
-	void beginLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
-	void endLighttingPhase(const Light_t& light, ShaderProgram* shader) override;
+	void renderShadow(const Scene_t& scene, const Light_t& light) override;
+	void beginRenderLight(const Light_t& light, ShaderProgram* shader) override;
+	void endRenderLight(const Light_t& light, ShaderProgram* shader) override;
 	void onShadowMapResolutionChange(float w, float h) override;
 
 private:

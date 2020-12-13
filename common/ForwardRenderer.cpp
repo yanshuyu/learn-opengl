@@ -216,9 +216,7 @@ void ForwardRenderer::drawUnlitScene(const Scene_t& scene) {
 
 
 void ForwardRenderer::drawLightScene(const Scene_t& scene, const Light_t& light) {
-	if (light.isCastShadow()) {
-		drawLightShadow(scene, light);
-	}
+	drawLightShadow(scene, light);
 
 	m_pass = RenderPass::LightPass;
 	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
@@ -307,7 +305,7 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, const Light_t& light)
 		break;
 	}
 
-	m_shadowMappings[light.type]->beginLighttingPhase(light, m_passShader.get());
+	m_shadowMappings[light.type]->beginRenderLight(light, m_passShader.get());
 
 	auto& camera = *scene.mainCamera;
 	// set view project matrix
@@ -325,7 +323,7 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, const Light_t& light)
 		render(scene.opaqueItems[i]);
 	}
 
-	m_shadowMappings[light.type]->endLighttingPhase(light, m_passShader.get());
+	m_shadowMappings[light.type]->endRenderLight(light, m_passShader.get());
 
 	if (lightUBO)
 		lightUBO->unbind();
@@ -362,8 +360,7 @@ void ForwardRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light
 		m_shadowMappings.insert(std::make_pair(light.type, std::unique_ptr<IShadowMapping>(shadowMapping)));
 	}
 
-	m_shadowMappings[light.type]->beginShadowPhase(scene, light);
-	m_shadowMappings[light.type]->endShadowPhase();
+	m_shadowMappings[light.type]->renderShadow(scene, light);
 
 	m_renderer->popGPUPipelineState();
 	m_renderer->setColorMask(true);

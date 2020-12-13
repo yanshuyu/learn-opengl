@@ -69,10 +69,14 @@ void Scene::render() {
 	}
 
 	for (auto& camera : m_cameras) {
+		if (!camera->m_isEnable)
+			continue;
 		renderer->submitCamera(camera->makeCamera(renderer->getRenderSize()), camera == m_mainCamera);
 	}
 
 	for (auto& light : m_lights) {
+		if (!light->m_isEnable)
+			continue;
 		renderer->submitLight(light->makeLight());
 	}
 
