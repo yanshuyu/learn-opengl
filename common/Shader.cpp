@@ -93,6 +93,9 @@ std::string ShaderType2Str(Shader::Type shaderType) {
 
 	case Shader::Type::FragmentShader:
 		return "FragmentShader";
+	
+	case Shader::Type::ComputeShader:
+		return "ComputeShader";
 
 	default:
 		return "Unknown";

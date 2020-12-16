@@ -10,6 +10,7 @@ public:
 		VertexShader = GL_VERTEX_SHADER,
 		GeometryShader = GL_GEOMETRY_SHADER,
 		FragmentShader = GL_FRAGMENT_SHADER,
+		ComputeShader = GL_COMPUTE_SHADER,
 	};
 
 public:

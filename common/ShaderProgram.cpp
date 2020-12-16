@@ -25,76 +25,35 @@ bool ShaderProgram::compileAndLink() {
 	if (m_file.empty())
 		return false;
 
-	std::string vsrc;
-	std::string gsrc;
-	std::string fsrc;
-	if (!parseShaderSource(vsrc, gsrc, fsrc))
+	auto shaderSrcs = parseShaderSource(m_file);
+	if (shaderSrcs.empty())
 		return false;
 
-//#if _DEBUG
-//	std::stringstream msg;
-//	if (!vsrc.empty())
-//		msg << "\"" << m_name << "\"" << " parsed vs: \n" << vsrc << std::endl;
-//	
-//	if (!gsrc.empty())
-//		msg << "\"" << m_name << "\"" << " parsed gs: \n" << gsrc << std::endl;
-//
-//	if (!fsrc.empty())
-//		msg << "\"" << m_name << "\"" << " parsed fs: \n" << fsrc << std::endl;
-//	
-//	if (!msg.str().empty())
-//		CONSOLELOG(msg.str());
-//#endif
-
-	std::unique_ptr<Shader> vs = nullptr;
-	std::unique_ptr<Shader> gs = nullptr;
-	std::unique_ptr<Shader> fs = nullptr;
-
-	if (!vsrc.empty()) {
-		vs.reset(new Shader(vsrc, Shader::Type::VertexShader));
-		if (!vs->compile()) {
-			std::stringstream msg;
-			msg << "[Shader Load error] VS Compile error: " << vs->getInfoLog() << std::endl;
-			CONSOLELOG(msg.str());
-			return false;
-		}
-	}
-
-	if (!gsrc.empty()) {
-		gs.reset(new Shader(gsrc, Shader::Type::GeometryShader));
-		if (!gs->compile()) {
-			std::stringstream msg;
-			msg << "[Shader Load error] GS Compile error: " << gs->getInfoLog() << std::endl;
-			CONSOLELOG(msg.str());
-			return false;
-		}
-	}
-
-	if (!fsrc.empty()) {
-		fs.reset(new Shader(fsrc, Shader::Type::FragmentShader));
-		if (!fs->compile()) {
-			std::stringstream msg;
-			msg << "[Shader Load error] FS Compile error: " << fs->getInfoLog() << std::endl;
-			CONSOLELOG(msg.str());
-			return false;
-		}
-	}
-
 	GLCALL(m_handler = glCreateProgram());
-	
 	if (m_handler == 0)
 		return false;
 
-	if (vs) {
-		GLCALL(glAttachShader(m_handler, vs->getHandler()));
+	if (shaderSrcs.find(Shader::Type::ComputeShader) != shaderSrcs.end()) { // compute shader can't link with other shader type
+		for (auto pos = shaderSrcs.begin(); pos != shaderSrcs.end(); ) {
+			if (pos->first != Shader::Type::ComputeShader)
+				pos = shaderSrcs.erase(pos);
+			else
+				pos++;
+		}
 	}
-	if (gs) {
-		glAttachShader(m_handler, gs->getHandler());
+
+	for (auto& src : shaderSrcs) {
+		Shader shader(src.second, src.first);
+		if (!shader.compile()) {
+			std::stringstream msg;
+			msg << ShaderType2Str(src.first) << " Compile error: " << shader.getInfoLog() << std::endl;
+			CONSOLELOG(msg.str());
+			return false;
+		}
+
+		GLCALL(glAttachShader(m_handler, shader.getHandler()));
 	}
-	if (fs) {
-		GLCALL(glAttachShader(m_handler, fs->getHandler()));
-	}
-	
+
 	GLCALL(glLinkProgram(m_handler));
 
 	GLint linked = GL_FALSE;
@@ -139,6 +98,8 @@ void ShaderProgram::release() {
 		m_attributes.clear();
 		m_uniforms.clear();
 		m_uniformBlocks.clear();
+		m_shaderStorageBlocks.clear();
+		m_stageSubroutinesInfo.clear();
 	}
 }
 
@@ -185,6 +146,10 @@ bool ShaderProgram::hasUniformBlock(const std::string& name) const {
 	return getUniformBlockIndex(name) != -1;
 }
 
+bool ShaderProgram::hasShaderStorageBlock(const std::string& name) const {
+	return getShaderStorageBlockIndex(name) != -1;
+}
+
 bool ShaderProgram::hasSubroutineUniform(Shader::Type shaderStage, const std::string& name) const {
 	return getSubroutineUniform(shaderStage, name) != nullptr;
 }
@@ -217,6 +182,21 @@ void ShaderProgram::unbindUniformBlock(const std::string& name) {
 	int blockIdx = getUniformBlockIndex(name);
 	if (blockIdx != -1)
 		GLCALL(glUniformBlockBinding(m_handler, blockIdx, 0));
+}
+
+bool ShaderProgram::bindShaderStorageBlock(const std::string& name, size_t idx) {
+	int blockIdx = getShaderStorageBlockIndex(name);
+	if (blockIdx == -1)
+		return false;
+
+	GLCALL(glShaderStorageBlockBinding(m_handler, blockIdx, idx));
+	return true;
+}
+
+void ShaderProgram::unbindShaderStorageBlock(const std::string& name) {
+	int blockIdx = getShaderStorageBlockIndex(name);
+	if (blockIdx != -1)
+		GLCALL(glShaderStorageBlockBinding(m_handler, blockIdx, 0));
 }
 
 bool ShaderProgram::setSubroutineUniforms(Shader::Type shaderStage, const std::unordered_map<std::string, std::string>& mapping) {
@@ -276,13 +256,14 @@ const std::vector<ShaderProgram::SubroutineUniform>& ShaderProgram::getSubroutin
 	return info->second.subroutineUniforms;
 }
 
-bool ShaderProgram::parseShaderSource(std::string& vs, std::string& gs, std::string& fs) {
-	std::ifstream ifs(m_file);
+
+std::unordered_map<Shader::Type, std::string> ShaderProgram::parseShaderSource(const std::string& file) {
+	std::ifstream ifs(file);
 	if (!ifs.is_open())
-		return false;
+		return {};
 
 	std::string line;
-	std::stringstream srcs[3];
+	std::stringstream srcSessions[4];
 	int idx = -1;
 	while (std::getline(ifs, line)) {
 		if (line.find("#shader") != std::string::npos || line.find("#Shader") != std::string::npos) {
@@ -302,7 +283,7 @@ bool ShaderProgram::parseShaderSource(std::string& vs, std::string& gs, std::str
 				idx = 1;
 				continue;
 			}
-			else if (line.find("fragment") != std::string::npos
+			else if (line.find("fragment") != std::string::npos // fragment shader session
 				|| line.find("Fragment") != std::string::npos
 				|| line.find("FRAGMENT") != std::string::npos
 				|| line.find("fs") != std::string::npos
@@ -310,22 +291,42 @@ bool ShaderProgram::parseShaderSource(std::string& vs, std::string& gs, std::str
 				idx = 2;
 				continue;
 			}
+			else if (line.find("compute") != std::string::npos // compute shader session
+				|| line.find("Compute") != std::string::npos
+				|| line.find("COMPUTE") != std::string::npos
+				|| line.find("cs") != std::string::npos
+				|| line.find("CS") != std::string::npos) {
+				idx = 3;
+				continue;
+			}
 		}
 
 		if (idx != -1)
-			srcs[idx] << line << "\n";
+			srcSessions[idx] << line << "\n";
 	}
 
 	ifs.close();
-	vs.assign(srcs[0].str());
-	gs.assign(srcs[1].str());
-	fs.assign(srcs[2].str());
+	
+	std::unordered_map<Shader::Type, std::string> shaderSources;
+	std::string vs(srcSessions[0].str());
+	std::string gs(srcSessions[1].str());
+	std::string fs(srcSessions[2].str());
+	std::string cs(srcSessions[3].str());
+	
+	if (!vs.empty())
+		shaderSources[Shader::Type::VertexShader] = std::move(vs);
 
-	return !vs.empty()
-		|| !gs.empty()
-		|| !fs.empty();
+	if (!gs.empty())
+		shaderSources[Shader::Type::GeometryShader] = std::move(gs);
+
+	if (!fs.empty())
+		shaderSources[Shader::Type::FragmentShader] = std::move(fs);
+
+	if (!cs.empty())
+		shaderSources[Shader::Type::ComputeShader] = std::move(cs);
+
+	return shaderSources;
 }
-
 
 void ShaderProgram::queryProgramInfo() {
 	// vertex attributes
@@ -333,9 +334,8 @@ void ShaderProgram::queryProgramInfo() {
 	GLint attriMaxLen = 0;
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_ATTRIBUTES, &attriCount));
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attriMaxLen));
-
 	if (attriCount > 0) {
-		GLchar* nameBuffer = new GLchar[attriMaxLen];
+		std::vector<char> nameBuffer(attriMaxLen);
 		GLint outNameLen = 0;
 		GLenum attriType = GL_FLOAT;
 		GLint attriSz = 0;
@@ -349,13 +349,12 @@ void ShaderProgram::queryProgramInfo() {
 								attriMaxLen,
 								&outNameLen,
 								&attr.elementSize,
-								&attr.elemenTtype,
-								nameBuffer));
-			attr.name.assign(nameBuffer, outNameLen);
+								&attr.elementType,
+								&nameBuffer[0]));
+			attr.name.assign(nameBuffer.data(), outNameLen);
 			GLCALL(attr.location = glGetAttribLocation(m_handler, attr.name.c_str()));
 			m_attributes.push_back(attr);
 		}
-		delete[] nameBuffer;
 	}
 
 	
@@ -364,9 +363,8 @@ void ShaderProgram::queryProgramInfo() {
 	GLint uniformMaxLen = 0;
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_UNIFORMS, &uniformCount));
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniformMaxLen));
-
 	if (uniformCount > 0) {
-		GLchar* nameBuffer = new GLchar[uniformMaxLen];
+		std::vector<char> nameBuffer(uniformMaxLen);
 		GLint outNameLen = 0;
 		m_uniforms.reserve(uniformCount);
 
@@ -379,13 +377,16 @@ void ShaderProgram::queryProgramInfo() {
 									uniformMaxLen,
 									&outNameLen,
 									&uniform.elementSize,
-									&uniform.elemenTtype,
-									nameBuffer));
-			uniform.name.assign(nameBuffer, outNameLen);
+									&uniform.elementType,
+									&nameBuffer[0]));
+			uniform.name.assign(nameBuffer.data(), outNameLen);
 			GLCALL(uniform.location = glGetUniformLocation(m_handler, uniform.name.c_str()));
+			
+			if (uniform.location < 0)
+				continue;
+
 			m_uniforms.push_back(uniform);
 		}
-		delete[] nameBuffer;
 	}
 
 
@@ -394,38 +395,51 @@ void ShaderProgram::queryProgramInfo() {
 	GLint ubMaxLen = 0;
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_UNIFORM_BLOCKS, &ubCount));
 	GLCALL(glGetProgramiv(m_handler, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &ubMaxLen));
-
 	if (ubCount > 0) {
-		GLchar* nameBuffer = new GLchar[ubMaxLen];
+		std::vector<char> nameBuffer(ubMaxLen);
 		GLint outNameLen = 0;
 		m_uniformBlocks.reserve(ubCount);
 
 		for (size_t i = 0; i < ubCount; ++i) {
 			UniformBlock ub;
 			outNameLen = 0;
+			ub.index = i;
 
 			GLCALL(glGetActiveUniformBlockName(m_handler,
 											i,
 											ubMaxLen,
 											&outNameLen,
-											nameBuffer));
-			ub.name.assign(nameBuffer, outNameLen);
-			GLCALL(ub.index = glGetUniformBlockIndex(m_handler, ub.name.c_str()));
+											&nameBuffer[0]));
+			ub.name.assign(nameBuffer.data(), outNameLen);
+
 			GLCALL(glGetActiveUniformBlockiv(m_handler, i, GL_UNIFORM_BLOCK_DATA_SIZE, &ub.dataSize));
 
-			GLint compUniformCount = 0;
-			GLCALL(glGetActiveUniformBlockiv(m_handler, i, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, &compUniformCount));
-			ub.uniformIndices.resize(compUniformCount);
-			GLCALL(glGetActiveUniformBlockiv(m_handler, i, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, &ub.uniformIndices[0]));
+			GLint uniformCount = 0;
+			GLCALL(glGetActiveUniformBlockiv(m_handler, i, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, &uniformCount));
+			if (uniformCount <= 0)
+				continue;
+
+			ub.uniforms.reserve(uniformCount);
+			std::vector<int> uniformIndices(uniformCount);
+			GLCALL(glGetActiveUniformBlockiv(m_handler, i, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, &uniformIndices[0]));
+			
+			std::vector<char> nameBuffer(uniformMaxLen);
+			GLint outNameLen = 0;
+			for (auto idx : uniformIndices) {
+				Uniform uniform;
+				outNameLen = 0;
+				GLCALL(glGetActiveUniform(m_handler, idx, uniformMaxLen, &outNameLen, &uniform.elementSize, &uniform.elementType, &nameBuffer[0]));
+				uniform.name.assign(nameBuffer.data(), outNameLen);
+				ub.uniforms.push_back(uniform);
+			}
 
 			m_uniformBlocks.push_back(ub);
 		}
-		delete[] nameBuffer;
 	}
 	
 
 	// subroutines and subroutineuniforms
-	Shader::Type shaderStages[] = { Shader::Type::VertexShader, Shader::Type::GeometryShader, Shader::Type::FragmentShader };
+	Shader::Type shaderStages[] = { Shader::Type::VertexShader, Shader::Type::GeometryShader, Shader::Type::FragmentShader, Shader::Type::ComputeShader };
 	for (auto stage : shaderStages) {
 		StageSubroutineInfo stInfo;
 		stInfo.stage = stage;
@@ -433,7 +447,7 @@ void ShaderProgram::queryProgramInfo() {
 		int activeStCount = 0;
 		int maxStNameLen = 0;
 		GLCALL(glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINES, &activeStCount));
-		glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINE_MAX_LENGTH, &maxStNameLen);
+		GLCALL(glGetProgramStageiv(m_handler, int(stage), GL_ACTIVE_SUBROUTINE_MAX_LENGTH, &maxStNameLen));
 
 		if (activeStCount > 0) {
 			std::string name;
@@ -488,6 +502,29 @@ void ShaderProgram::queryProgramInfo() {
 			m_stageSubroutinesInfo[Shader::Type(stage)] = stInfo;
 	}
 
+	
+	// shader storage buffer (new shader interface query api)
+	int numSSBO = 0;
+	int ssboMaxNameLen = 0;
+	GLCALL(glGetProgramInterfaceiv(m_handler, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &numSSBO));
+	GLCALL(glGetProgramInterfaceiv(m_handler, GL_SHADER_STORAGE_BLOCK, GL_MAX_NAME_LENGTH, &ssboMaxNameLen));
+	if (numSSBO > 0) {
+		std::vector<char> nameBuffer(ssboMaxNameLen);
+		for (size_t i = 0; i < numSSBO; i++) {
+			ShaderStorageBlock ssbo;
+			ssbo.index = i;
+
+			GLsizei nameLen = 0;
+			GLCALL(glGetProgramResourceName(m_handler, GL_SHADER_STORAGE_BLOCK, i, ssboMaxNameLen, &nameLen, &nameBuffer[0]));
+			ssbo.name.assign(nameBuffer.data(), nameLen);
+
+			GLenum dataSizeProp = GL_BUFFER_DATA_SIZE;
+			GLCALL(glGetProgramResourceiv(m_handler, GL_SHADER_STORAGE_BLOCK, i, 1, &dataSizeProp, 1, nullptr, &ssbo.dataSize));
+
+			m_shaderStorageBlocks.push_back(ssbo);
+		}
+	}
+
 }
 
 
@@ -511,6 +548,18 @@ int ShaderProgram::getUniformBlockIndex(const std::string& name) const {
 	if (pos == m_uniformBlocks.end())
 		return -1;
 	
+	return pos->index;
+}
+
+
+int ShaderProgram::getShaderStorageBlockIndex(const std::string& name) const {
+	auto pos = std::find_if(m_shaderStorageBlocks.begin(), m_shaderStorageBlocks.end(), [&](const ShaderStorageBlock& ssbo) {
+		return ssbo.name == name;
+		});
+
+	if (pos == m_shaderStorageBlocks.end())
+		return -1;
+
 	return pos->index;
 }
 
@@ -583,7 +632,15 @@ bool ShaderProgram::setUniform1<int>(const std::string& name, int i1) const {
 	return true;
 }
 
+template<>
+bool ShaderProgram::setUniform1<unsigned>(const std::string& name, unsigned ui1) const {
+	int location = getUniformLocation(name);
+	if (location == -1)
+		return false;
 
+	GLCALL(glUniform1ui(location, ui1));
+	return true;
+}
 
 
 template<>
@@ -684,7 +741,7 @@ bool ShaderProgram::setUniform4<int>(const std::string& name, int i1, int i2, in
 
 
 template<>
-bool ShaderProgram::setUniform1v<float>(const std::string& name, float* data, size_t count) const {
+bool ShaderProgram::setUniform1v<float>(const std::string& name, const float* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -695,7 +752,7 @@ bool ShaderProgram::setUniform1v<float>(const std::string& name, float* data, si
 
 
 template<>
-bool ShaderProgram::setUniform1v<double>(const std::string& name, double* data, size_t count) const {
+bool ShaderProgram::setUniform1v<double>(const std::string& name, const double* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -706,7 +763,7 @@ bool ShaderProgram::setUniform1v<double>(const std::string& name, double* data, 
 
 
 template<>
-bool ShaderProgram::setUniform1v<int>(const std::string& name, int* data, size_t count) const {
+bool ShaderProgram::setUniform1v<int>(const std::string& name, const int* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -717,7 +774,7 @@ bool ShaderProgram::setUniform1v<int>(const std::string& name, int* data, size_t
 
 
 template<>
-bool ShaderProgram::setUniform2v<float>(const std::string& name, float* data, size_t count) const {
+bool ShaderProgram::setUniform2v<float>(const std::string& name, const float* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -727,7 +784,7 @@ bool ShaderProgram::setUniform2v<float>(const std::string& name, float* data, si
 };
 
 template<>
-bool ShaderProgram::setUniform2v<double>(const std::string& name, double* data, size_t count) const {
+bool ShaderProgram::setUniform2v<double>(const std::string& name, const double* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -737,7 +794,7 @@ bool ShaderProgram::setUniform2v<double>(const std::string& name, double* data, 
 };
 
 template<>
-bool ShaderProgram::setUniform2v<int>(const std::string& name, int* data, size_t count) const {
+bool ShaderProgram::setUniform2v<int>(const std::string& name, const int* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -747,7 +804,7 @@ bool ShaderProgram::setUniform2v<int>(const std::string& name, int* data, size_t
 };
 
 template<>
-bool ShaderProgram::setUniform3v<float>(const std::string& name, float* data, size_t count) const {
+bool ShaderProgram::setUniform3v<float>(const std::string& name, const float* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -757,7 +814,7 @@ bool ShaderProgram::setUniform3v<float>(const std::string& name, float* data, si
 };
 
 template<>
-bool ShaderProgram::setUniform3v<double>(const std::string& name, double* data, size_t count) const {
+bool ShaderProgram::setUniform3v<double>(const std::string& name, const double* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -767,7 +824,7 @@ bool ShaderProgram::setUniform3v<double>(const std::string& name, double* data, 
 };
 
 template<>
-bool ShaderProgram::setUniform3v<int>(const std::string& name, int* data, size_t count) const {
+bool ShaderProgram::setUniform3v<int>(const std::string& name, const int* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -778,7 +835,7 @@ bool ShaderProgram::setUniform3v<int>(const std::string& name, int* data, size_t
 
 
 template<>
-bool ShaderProgram::setUniform4v<float>(const std::string& name, float* data, size_t count) const {
+bool ShaderProgram::setUniform4v<float>(const std::string& name, const float* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -789,7 +846,7 @@ bool ShaderProgram::setUniform4v<float>(const std::string& name, float* data, si
 
 
 template<>
-bool ShaderProgram::setUniform4v<double>(const std::string& name, double* data, size_t count) const {
+bool ShaderProgram::setUniform4v<double>(const std::string& name, const double* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -800,7 +857,7 @@ bool ShaderProgram::setUniform4v<double>(const std::string& name, double* data, 
 
 
 template<>
-bool ShaderProgram::setUniform4v<int>(const std::string& name, int* data, size_t count) const {
+bool ShaderProgram::setUniform4v<int>(const std::string& name, const int* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -811,7 +868,7 @@ bool ShaderProgram::setUniform4v<int>(const std::string& name, int* data, size_t
 
 
 template<>
-bool ShaderProgram::setUniformMat4v<float>(const std::string& name, float* data, size_t count) const {
+bool ShaderProgram::setUniformMat4v<float>(const std::string& name, const float* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -819,7 +876,7 @@ bool ShaderProgram::setUniformMat4v<float>(const std::string& name, float* data,
 }
 
 template<>
-bool ShaderProgram::setUniformMat4v<double>(const std::string& name, double* data, size_t count) const {
+bool ShaderProgram::setUniformMat4v<double>(const std::string& name, const double* data, size_t count) const {
 	int location = getUniformLocation(name);
 	if (location == -1)
 		return false;
@@ -828,15 +885,15 @@ bool ShaderProgram::setUniformMat4v<double>(const std::string& name, double* dat
 
 
 std::ostream& operator << (std::ostream& o, const ShaderProgram::Attribute& a) {
-	o << "{ name: " << a.name << ", location: " << a.location << ", type: " << a.elemenTtype << ", size: " << a.elementSize << " }";
+	o << "{ name: " << a.name << ", location: " << a.location << ", type: " << a.elementType << ", size: " << a.elementSize << " }";
 	return o;
 }
 
 
 std::ostream& operator << (std::ostream& o, const ShaderProgram::UniformBlock& ub) {
-	o << "{ name: " << ub.name << ", index: " << ub.index << ", dataSize: " << ub.dataSize << ", uniformIndices: [ ";
-	std::ostream_iterator<int> oitr(o, ", ");
-	std::copy(ub.uniformIndices.begin(), ub.uniformIndices.end(), oitr);
+	o << "{ name: " << ub.name << ", index: " << ub.index << ", dataSize: " << ub.dataSize << ", uniforms: [ ";
+	std::ostream_iterator<ShaderProgram::Uniform> oitr(o, ", ");
+	std::copy(ub.uniforms.begin(), ub.uniforms.end(), oitr);
 	o << " ] }";
 	return o;
 }
@@ -856,7 +913,7 @@ std::ostream& operator << (std::ostream& o, const ShaderProgram::SubroutineUnifo
 }
 
 std::ostream& operator << (std::ostream& o, const ShaderProgram& program) {
-	o << "Shader program \"" << program.m_name << "(" << program.m_handler << ")" << "\" info:{\n" << "\tattributes: [ ";
+	o << "Shader program \"" << program.m_name << "(" << program.m_handler << ")" << "\" Interface info:{\n" << "\tattributes: [ ";
 	std::ostream_iterator<ShaderProgram::Attribute> aitr(o, "\n");
 	std::copy(program.m_attributes.begin(), program.m_attributes.end(), aitr);
 

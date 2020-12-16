@@ -3,6 +3,7 @@
 #include<iamgui/imgui.h>
 #include"AnimatorController.h"
 #include<common/HDRFilter2.h>
+#include<common/HDRFilter.h>
 #include<common/GaussianBlurFilter.h>
 
 MainGuiWindow::MainGuiWindow(const std::string& title, ImageProcessingApp* app): GuiWindow(title)
@@ -11,6 +12,7 @@ MainGuiWindow::MainGuiWindow(const std::string& title, ImageProcessingApp* app):
 , m_spotLight()
 , m_animAC()
 , m_hdrFilter()
+, m_hdrFilter2()
 , m_blurFilter() {
 
 }
@@ -35,10 +37,12 @@ bool MainGuiWindow::initialize() {
 
 	obj = m_application->m_scene->findObjectWithTagRecursive(Scene::Tag::Camera);
 	if (obj) {
-		m_hdrFilter = obj->getComponent<HDRFilterComponent2>();
-		if (!m_hdrFilter.expired()) {
-			m_hdrEnabled = m_hdrFilter.lock()->m_isEnable;
-			m_exposure = m_hdrFilter.lock()->getExposure();
+		m_hdrFilter = obj->getComponent<HDRFilterComponent>();
+
+		m_hdrFilter2 = obj->getComponent<HDRFilterComponent2>();
+		if (!m_hdrFilter2.expired()) {
+			m_hdrEnabled = m_hdrFilter2.lock()->m_isEnable;
+			m_exposure = m_hdrFilter2.lock()->getExposure();
 		}
 
 		m_blurFilter = obj->getComponent<GaussianBlurFilterComponent>();
@@ -183,6 +187,19 @@ void MainGuiWindow::render() {
 
 	if (!m_hdrFilter.expired()) {
 		auto hdrFilter = m_hdrFilter.lock();
+		
+		ImGui::PushID("HDR Filter");
+		
+		ImGui::Checkbox("HDR Filter", &hdrFilter->m_isEnable);
+		ImGui::SliderFloat("Exposure", &hdrFilter->m_exposure, 0.f, 1.f);
+		ImGui::SliderFloat("White", &hdrFilter->m_white, 0.f, 1.f);
+
+		ImGui::PopID();
+	}
+
+
+	if (!m_hdrFilter2.expired()) {
+		auto hdrFilter = m_hdrFilter2.lock();
 		if (ImGui::Checkbox("HDR Filter", &m_hdrEnabled))
 			hdrFilter->m_isEnable = m_hdrEnabled;
 

@@ -15,12 +15,12 @@ class ShaderProgram {
 
 public:
 	struct Attribute {
-		GLenum elemenTtype;
+		GLenum elementType;
 		std::string name;
 		int location;
 		int elementSize;
 
-		Attribute() : elemenTtype(0)
+		Attribute() : elementType(0)
 			, name()
 			, location(-1)
 			, elementSize(0) {
@@ -34,15 +34,27 @@ public:
 		std::string name;
 		int index;
 		int dataSize;
-		std::vector<int> uniformIndices;
+		std::vector<Uniform> uniforms;
 		
 		UniformBlock() : name()
 			, index(-1)
 			, dataSize(0)
-			, uniformIndices() {
+			, uniforms() {
 
 		}
 	};
+
+	struct ShaderStorageBlock {
+		std::string name;
+		int index;
+		int dataSize;
+		
+		ShaderStorageBlock() : name()
+			, index(-1)
+			, dataSize(0) {
+
+		}
+	}; 
 
 
 	struct Subroutine {
@@ -110,6 +122,7 @@ public:
 	bool hasAttribute(const std::string& name) const;
 	bool hasUniform(const std::string& name) const;
 	bool hasUniformBlock(const std::string& name) const;
+	bool hasShaderStorageBlock(const std::string& name) const;
 	bool hasSubroutineUniform(Shader::Type shaderStage, const std::string& name) const;
 
 	void bind() const;
@@ -118,6 +131,9 @@ public:
 
 	bool bindUniformBlock(const std::string& name, UniformBlockBindingPoint bp);
 	void unbindUniformBlock(const std::string& name);
+
+	bool bindShaderStorageBlock(const std::string& name, size_t idx);
+	void unbindShaderStorageBlock(const std::string& name);
 
 	bool setSubroutineUniforms(Shader::Type shaderStage, const std::unordered_map<std::string, std::string>& mapping);
 	const std::vector<Subroutine>& getSubroutines(Shader::Type shaderStage) const;
@@ -136,19 +152,19 @@ public:
 	bool setUniform4(const std::string& name, T t1, T t2, T t3, T t4) const;
 
 	template<typename T>
-	bool setUniform1v(const std::string& name, T* data, size_t count = 1) const;
+	bool setUniform1v(const std::string& name, const T* data, size_t count = 1) const;
 
 	template<typename T>
-	bool setUniform2v(const std::string& name, T* data, size_t count = 1) const;
+	bool setUniform2v(const std::string& name, const T* data, size_t count = 1) const;
 
 	template<typename T>
-	bool setUniform3v(const std::string& name, T* data, size_t count = 1) const;
+	bool setUniform3v(const std::string& name, const T* data, size_t count = 1) const;
 
 	template<typename T>
-	bool setUniform4v(const std::string& name, T* data, size_t count = 1) const;
+	bool setUniform4v(const std::string& name, const T* data, size_t count = 1) const;
 
 	template<typename T>
-	bool setUniformMat4v(const std::string& name, T* data, size_t count = 1) const;
+	bool setUniformMat4v(const std::string& name, const T* data, size_t count = 1) const;
 
 
 	inline const std::vector<Attribute>& getAttributes() const {
@@ -163,12 +179,17 @@ public:
 		return m_uniformBlocks;
 	}
 
+	inline const std::vector<ShaderStorageBlock> getShaderStorageBlocks() const {
+		return m_shaderStorageBlocks;
+	}
+
 protected:
-	bool parseShaderSource(std::string& vs, std::string& gs, std::string& fs);
+	std::unordered_map<Shader::Type, std::string> parseShaderSource(const std::string& file);
 	void queryProgramInfo();
 	int getUniformLocation(const std::string& name) const;
 	int getUniformBlockIndex(const std::string& name) const;
-	
+	int getShaderStorageBlockIndex(const std::string& name) const;
+
 	SubroutineUniform* getSubroutineUniform(Shader::Type shaderStage, const std::string& name) const;
 	Subroutine* getSubroutine(Shader::Type shaderStage, const std::string& name) const;
 	bool checkSubroutineCompatible(SubroutineUniform* su, Subroutine* st) const;
@@ -182,7 +203,7 @@ protected:
 	std::vector<Attribute> m_attributes;
 	std::vector<Uniform> m_uniforms;
 	std::vector<UniformBlock> m_uniformBlocks;
-
+	std::vector<ShaderStorageBlock> m_shaderStorageBlocks;
 	mutable std::unordered_map<Shader::Type, StageSubroutineInfo> m_stageSubroutinesInfo;
 };
 

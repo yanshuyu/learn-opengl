@@ -619,5 +619,11 @@
     <None Include="..\res\shader\HemiSphericalAmibentLightDefferred.shader">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\HDRHistogram.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\HDRAveLogLuminance.shader">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

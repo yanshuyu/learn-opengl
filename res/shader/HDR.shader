@@ -22,7 +22,7 @@ in vec2 frag_uv;
 out vec4 frag_color;
 
 uniform sampler2D u_hdrTexture;
-uniform float u_lumAve;
+uniform sampler2D u_aveLumTexture;
 uniform float u_exposure;
 uniform float u_white;
 
@@ -48,7 +48,7 @@ vec3 ToneMapping(vec3 hdrColor) {
 	
 	vec3 xyYColor = vec3(xyzColor.x / xyzSum, xyzColor.y / xyzSum, xyzColor.y);
 	
-	float L = (u_exposure * xyYColor.z) / u_lumAve;
+	float L = (u_exposure * xyYColor.z) / texture(u_aveLumTexture, vec2(0, 0)).r;
 	L = (L * (1 + L / (u_white * u_white))) / (1 + L); // new luminance
 
 	xyzColor.x = (L * xyYColor.x) / (xyYColor.y);

@@ -1,7 +1,8 @@
 #pragma once
 #include"IFilter.h"
 #include"RenderTarget.h"
-#include"FrameAllocator.h"
+#include"Buffer.h"
+#include"Texture.h"
 
 class HDRFilterComponent: public FilterComponent {
 	RTTI_DECLARATION(HDRFilterComponent)
@@ -36,13 +37,9 @@ public:
 
 	void apply(Texture* inputFrame, Texture* outputFrame, const FilterParamGroup* params) override;
 
-	void onRenderSizeChange(float w, float h) override;
-
-protected:
-	float calcLogAverageLuminance(Texture* frame);
-
 protected:
 	RenderTarget m_outputTarget;
-	FrameVector<Piexl, StdFrameAlloc<Piexl>> m_pixels;
-	FrameAllocator _frameAlloc;
+	Buffer m_histBuffer;
+	Buffer m_atomicCounter;
+	Texture m_aveLumTex;
 };

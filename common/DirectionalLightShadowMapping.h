@@ -31,6 +31,7 @@ public:
 
 private:
 	void calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
+	void _calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
 
 private:
 	RenderTarget m_shadowTarget;

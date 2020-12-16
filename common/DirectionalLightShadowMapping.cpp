@@ -5,6 +5,7 @@
 #include"Util.h"
 #include"ShaderProgamMgr.h"
 #include"Buffer.h"
+#include"Geometry3D.h"
 #include<glm/gtx/transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<sstream>
@@ -165,6 +166,19 @@ void DirectionalLightShadowMapping::onShadowMapResolutionChange(float w, float h
 void DirectionalLightShadowMapping::calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera) {
 	//split view frumstum to cascade
 	auto cascades = camera.viewFrustum.split(m_cascadeSplitPercents);
+	//auto vfCorners = Frustum::FromMatrix(camera.projMatrix).getCorners();
+	//ViewFrustum_t vf;
+	//vf.points[ViewFrustum_t::LBN] = vfCorners[0];
+	//vf.points[ViewFrustum_t::LTN] = vfCorners[1];
+	//vf.points[ViewFrustum_t::RTN] = vfCorners[2];
+	//vf.points[ViewFrustum_t::RBN] = vfCorners[3];
+
+	//vf.points[ViewFrustum_t::LBF] = vfCorners[4];
+	//vf.points[ViewFrustum_t::LTF] = vfCorners[5];
+	//vf.points[ViewFrustum_t::RTF] = vfCorners[6];
+	//vf.points[ViewFrustum_t::RBF] = vfCorners[7];
+
+	//auto cascades = vf.split(m_cascadeSplitPercents);
 
 	// store cascades far plane z pos in view clip space
 	m_cascadeFarProjZ.clear();
@@ -197,6 +211,12 @@ void DirectionalLightShadowMapping::calcViewFrumstumCascades(const Light_t& ligh
 		c.far = aabb.maximum.z;
 		m_cascadeCameras.push_back(c);
 	}
+}
+
+
+void DirectionalLightShadowMapping::_calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera) {
+	Frustum frustumViewSpace = Frustum::FromMatrix(camera.projMatrix);
+
 }
 
 

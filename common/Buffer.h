@@ -17,6 +17,7 @@ public:
 		TextureBuffer = GL_TEXTURE_BUFFER,
 		PixelPackBuffer = GL_PIXEL_PACK_BUFFER,
 		PixelUnpackBuffer = GL_PIXEL_UNPACK_BUFFER,
+		AtomicCounterBuffer = GL_ATOMIC_COUNTER_BUFFER,
 	};
 
 	enum class Usage {
@@ -34,8 +35,9 @@ public:
 	};
 
 	enum class MapAccess {
-		Write_Only = GL_WRITE_ONLY,
-		Read_Write = GL_READ_WRITE,
+		Read = GL_READ_ONLY,
+		Write = GL_WRITE_ONLY,
+		ReadWrite = GL_READ_WRITE,
 	};
 
 	enum class MapBitFiled {

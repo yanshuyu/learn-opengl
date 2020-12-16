@@ -12,7 +12,9 @@ Texture::Texture():m_handler(0)
 , m_depth(0)
 , m_format(Format::Unknown)
 , m_bindedUnit(Unit::Defualt)
-, m_bindedTarget(Target::Unknown) {
+, m_bindedTarget(Target::Unknown)
+, m_bindAsImage(false)
+, m_bindedImageUnit(-1) {
 	GLCALL(glGenTextures(1, &m_handler));
 }
 
@@ -256,12 +258,29 @@ bool Texture::bind(Unit unit, Target target)  const {
 	return true;
 }
 
+
 void Texture::unbind() const {
 	if (m_bindedTarget != Target::Unknown) {
 		GLCALL(glActiveTexture(GL_TEXTURE0 + int(m_bindedUnit)));
 		GLCALL(glBindTexture(int(m_bindedTarget), 0));
-		m_bindedUnit = Unit::Defualt;
 		m_bindedTarget = Target::Unknown;
+		m_bindedUnit = Unit::Defualt;
+	}
+}
+
+
+void Texture::bindToImageUnit(size_t unit, Format fmt, Access access, size_t level, bool bindAsArray, size_t layerToBind) {
+	GLCALL(glBindImageTexture(unit, m_handler, level, bindAsArray, layerToBind, GLenum(access), GLenum(fmt)));
+	m_bindAsImage = true;
+	m_bindedImageUnit = unit;
+}
+
+
+void Texture::unbindFromImageUnit() const {
+	if (m_bindAsImage) {
+		GLCALL(glBindImageTexture(m_bindedImageUnit, m_handler, 0, false, 0, GLenum(Access::Read), GLenum(m_format)));
+		m_bindAsImage = false;
+		m_bindedImageUnit = -1;
 	}
 }
 
@@ -310,6 +329,7 @@ Texture::Format Texture::getGenericFormat(size_t channelCnt) {
 void Texture::release() {
 	if (m_handler) {
 		unbind();
+		unbindFromImageUnit();
 		glDeleteTextures(1, &m_handler);
 		m_handler = 0;
 		m_width = 0;

@@ -17,6 +17,12 @@ public:
 		CubeMap,
 		ShadowMap,
 		Position,
+		Texture0,
+		Texture1,
+		Texture2,
+		Texture3,
+		Texture4,
+		Texture5,
 		MaxUnit,
 	};
 
@@ -171,6 +177,12 @@ public:
 		Never = GL_NEVER,
 	};
 
+	enum class Access {
+		Read = GL_READ_ONLY,
+		Write = GL_WRITE_ONLY,
+		ReadWrite = GL_READ_WRITE,
+	};
+
 
 public:
 	Texture();
@@ -196,6 +208,10 @@ public:
 
 	bool bind(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;
 	void unbind() const;
+
+	void bindToImageUnit(size_t unit, Format fmt, Access access, size_t level = 0, bool bindAsArray = false, size_t layerToBind = 0);
+	void unbindFromImageUnit() const;
+
 	void release();
 
 	void setFilterMode(FilterType type, FilterMode mode);
@@ -255,5 +271,9 @@ private:
 
 	mutable Unit m_bindedUnit;
 	mutable Target m_bindedTarget;
+
+	mutable bool m_bindAsImage;
+	mutable int m_bindedImageUnit;
+
 	GLuint m_handler;
 };

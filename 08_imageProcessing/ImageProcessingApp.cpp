@@ -17,6 +17,7 @@ bool ImageProcessingApp::initailize() {
 	if (!__super::initailize())
 		return false;
 
+	
 	m_scene = std::unique_ptr<Scene>(new Scene("image_processing_secene"));
 	m_renderer = std::unique_ptr<Renderer>(new Renderer(glm::vec2(m_wndWidth, m_wndHeight)));
 	m_renderer->setRenderMode(Renderer::Mode::Forward);
@@ -31,6 +32,7 @@ bool ImageProcessingApp::initailize() {
 	auto meshMgr = MeshManager::getInstance();
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
+	
 
 	// cube
 	auto cubeTexture = texMgr->addTexture("wall.jpg");
@@ -58,8 +60,8 @@ bool ImageProcessingApp::initailize() {
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent<FirstPersonCameraController>();
 	//camera->addComponent<GrayFilterComponent>();
-	camera->addComponent<HDRFilterComponent2>();
-	camera->addComponent<GaussianBlurFilterComponent>();
+	camera->addComponent<HDRFilterComponent>();
+	//camera->addComponent<GaussianBlurFilterComponent>();
 
 	auto skyBox = camera->addComponent<SkyboxComponent>();
 	ASSERT(skyBox->load("sky_right.png", "sky_left.png", "sky_top.png", "sky_bottom.png", "sky_front.png", "sky_back.png"));
