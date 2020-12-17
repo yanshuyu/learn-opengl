@@ -109,10 +109,11 @@ void HDRFilter::apply(Texture* inputFrame, Texture* outputFrame, const FilterPar
 	histShader->bindShaderStorageBlock("Hist", 0);
 
 	auto renderSz = m_manager->getRenderer()->getRenderSize();
-	m_manager->getRenderer()->dispatchCompute(renderSz.x / 16, renderSz.y / 16);
+	m_manager->getRenderer()->dispatchCompute(glm::ceil(renderSz.x / 16), glm::ceil(renderSz.y / 16));
 
+	unsigned numPix = (*(unsigned int*)m_atomicCounter.map(Buffer::MapAccess::Read));
+	m_atomicCounter.unmap();
 	m_atomicCounter.unbind();
-	//m_histBuffer.unbind();
 	inputFrame->unbindFromImageUnit();
 	m_manager->getRenderer()->popShadrProgram();
 
@@ -129,7 +130,7 @@ void HDRFilter::apply(Texture* inputFrame, Texture* outputFrame, const FilterPar
 
 	aveLumShader->setUniform1("u_OutAveLum", 0);
 	aveLumShader->bindShaderStorageBlock("Hist", 0);
-	aveLumShader->setUniform1("u_NumPixel", unsigned(renderSz.x * renderSz.y));
+	aveLumShader->setUniform1("u_NumPixel", numPix);
 
 	m_manager->getRenderer()->dispatchCompute(256);
 

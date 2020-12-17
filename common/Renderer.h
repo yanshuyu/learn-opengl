@@ -123,7 +123,7 @@ public:
 
 	void flush(); // render all submited tasks
 
-[]	// 
+	// 
 	// dispatch compute
 	//
 	inline void dispatchCompute(size_t numGroupX = 1, size_t numGroupY = 1, size_t numGroupZ = 1) {
