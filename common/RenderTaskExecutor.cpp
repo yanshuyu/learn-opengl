@@ -149,9 +149,6 @@ LightPassRenderTaskExecuter::LightPassRenderTaskExecuter(IRenderTechnique* rt) :
 }
 
 bool LightPassRenderTaskExecuter::initialize() {
-	if (m_renderer->identifier() == DeferredRenderer::s_identifier)
-		return true;
-
 	m_materialUBO.reset(new Buffer());
 	m_materialUBO->bind(Buffer::Target::UniformBuffer);
 	bool ok = m_materialUBO->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::StaticDraw);
@@ -168,7 +165,7 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 	std::shared_ptr<Texture> strongSpecularMap;
 	std::shared_ptr<Texture> strongEmissiveMap;
 
-	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
+//	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
 		if (shader->hasUniform("u_ModelMat")) {
 			glm::mat4 m = renderTask.modelMatrix;
 			shader->setUniformMat4v("u_ModelMat", &m[0][0]);
@@ -239,9 +236,8 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 				shader->setUniform1("u_emissiveMap", int(Texture::Unit::EmissiveMap));
 			}
 		}
-	}
+//	}
 
-	// derferred renderer need to do nothing, just commit draw command
 
 	// draw
 	if (renderTask.primitive == PrimitiveType::Triangle) {

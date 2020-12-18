@@ -61,8 +61,10 @@ public:
 protected:
 	bool setupRenderTargets();
 	void drawUnlitScene(const Scene_t& scene);
-	void drawAmbientScene(const Scene_t& scene);
-	void drawLightScene(const Scene_t& scene, const Light_t& light);
+	void drawSolidsLights(const Scene_t& scene);
+	void drawSolidsAmbient(const Scene_t& scene);
+	void drawCutOutsLights(const Scene_t& scene);
+	void drawCutOutsAmbient(const Scene_t& scene);
 	void drawLightShadow(const Scene_t& scene, const Light_t& light);
 
 private:
@@ -73,6 +75,8 @@ private:
 	GPUPipelineState m_shadowPassPipelineState;
 	GPUPipelineState m_lightPassPipelineState;
 	GPUPipelineState m_unlitPassPipelineState;
+	GPUPipelineState m_cutOutPipelineState1;
+	GPUPipelineState m_cutOutPipelineState2;
 
 	// geometry buffers
 	RenderTarget m_gBufferTarget;

@@ -90,9 +90,6 @@ bool ForwardRenderer::intialize() {
 		}
 	}
 
-	//m_renderer->pushGPUPipelineState(&GPUPipelineState::s_defaultState);
-	//m_renderer->setColorMask(true);
-
 	if (!m_outputTarget.attachTexture2D(Texture::Format::RGBA16F,RenderTarget::Slot::Color)) {
 #ifdef _DEBUG
 		ASSERT(false);
@@ -218,11 +215,18 @@ void ForwardRenderer::drawUnlitScene(const Scene_t& scene) {
 
 
 void ForwardRenderer::drawLightScene(const Scene_t& scene, bool useCutOut) {
+	if (scene.numLights <= 0)
+		return;
+
+	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
+
 	for (size_t lightIdx = 0; lightIdx < scene.numLights; lightIdx++) {
 		auto& light = scene.lights[lightIdx];
+		
 		drawLightShadow(scene, light);
-		m_pass = RenderPass::LightPass;
+
 		Buffer* lightUBO = nullptr;
+		m_pass = RenderPass::LightPass;
 
 		switch (light.type) {
 		case LightType::DirectioanalLight: {
@@ -320,14 +324,12 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, bool useCutOut) {
 		}
 
 		m_shadowMappings[light.type]->beginRenderLight(light, m_passShader.get());
-		m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
 
 		if (!useCutOut) { // render opaques
 			for (size_t i = 0; i < scene.numOpaqueItems; i++) {
 				render(scene.opaqueItems[i]);
 			}
 		}  else { // render cutouts
-
 			if (lightIdx == 0) m_renderer->pushGPUPipelineState(&m_cutOutPipelineState);
 
 			for (size_t i = 0; i < scene.numCutOutItems; i++) {
@@ -344,10 +346,11 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, bool useCutOut) {
 
 		m_passShader->unbindUniformBlock("LightBlock");
 		m_renderer->popShadrProgram();
-		m_renderer->popGPUPipelineState();
 		m_passShader = nullptr;
 		m_pass = RenderPass::None;
 	}
+
+	m_renderer->popGPUPipelineState();
 }
 
 
@@ -375,9 +378,11 @@ void ForwardRenderer::drawAmbientScene(const Scene_t& scene) {
 		render(scene.opaqueItems[i]);
 	}
 
+	if (scene.numLights <= 0) m_renderer->pushGPUPipelineState(&m_cutOutPipelineState);
 	for (size_t i = 0; i < scene.numCutOutItems; i++) {
 		render(scene.cutOutItems[i]);
 	}
+	if (scene.numLights <= 0) m_renderer->pushGPUPipelineState(&m_cutOutPipelineState);
 
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
