@@ -181,6 +181,9 @@ struct MeshRenderItem_t {
 struct Scene_t {
 	MeshRenderItem_t* opaqueItems;
 	size_t numOpaqueItems;
+
+	MeshRenderItem_t* cutOutItems;
+	size_t numCutOutItems;
 	
 	MeshRenderItem_t* transparentItems;
 	size_t numTransparentItems;

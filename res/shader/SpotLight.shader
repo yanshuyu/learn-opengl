@@ -186,7 +186,12 @@ out vec4 frag_color;
 
 
 void main() {
-	vec3 diffuseTexColor = u_hasDiffuseMap ? sRGB2RGB(texture(u_diffuseMap, fs_in.uv).rgb) : vec3(1.f);
+	vec4 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, fs_in.uv) : vec4(1.f);
+	if (diffuseTexColor.a < 0.05f)
+		discard;
+	
+	diffuseTexColor.rgb = sRGB2RGB(diffuseTexColor.rgb);
+
 	vec3 specTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
 	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
 	vec3 normalW = fs_in.normal_W;
@@ -197,5 +202,5 @@ void main() {
 		normalW = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
 	}
 	
-	frag_color = calcSpotLight(normalW,  diffuseTexColor, specTexColor, emissiveTexColor);
+	frag_color = calcSpotLight(normalW,  diffuseTexColor.rgb, specTexColor, emissiveTexColor);
 }

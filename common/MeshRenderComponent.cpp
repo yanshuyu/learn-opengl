@@ -99,8 +99,14 @@ void MeshRenderComponent::render(RenderContext* context) {
 		task.indexCount = mesh->indicesCount();
 		task.primitive = mesh->getPrimitiveType();
 		task.material = mat;
-		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform(); 
-		context->getRenderer()->submitOpaqueItem(task);
+		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform();
+		auto layer = getGameObject()->getLayer();
+		if (layer == SceneLayer::Default) {
+			context->getRenderer()->submitOpaqueItem(task);
+		}
+		else if (layer == SceneLayer::CutOut) {
+			context->getRenderer()->submitCutOutItem(task);
+		}
 	}
 }
 

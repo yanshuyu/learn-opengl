@@ -51,7 +51,12 @@ void SkinMeshRenderComponent::render(RenderContext* context) {
 		task.bonesTransform = m_bonesTransform.data();
 		task.boneCount = m_bonesTransform.size();
 
-		context->getRenderer()->submitOpaqueItem(task);
+		auto layer = getGameObject()->getLayer();
+		if (layer == SceneLayer::Default) {
+			context->getRenderer()->submitOpaqueItem(task);
+		} else if(layer == SceneLayer::CutOut) {
+			context->getRenderer()->submitCutOutItem(task);
+		}
 	}
 }
 

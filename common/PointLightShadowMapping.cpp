@@ -88,6 +88,10 @@ void PointLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& 
 		m_renderTech->render(scene.opaqueItems[i]);
 	}
 
+	for (size_t i = 0; i < scene.numCutOutItems; i++) {
+		m_renderTech->render(scene.cutOutItems[i]);
+	}
+
 	renderer->popViewport();
 	renderer->popRenderTarget();
 	renderer->popShadrProgram();

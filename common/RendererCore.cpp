@@ -190,6 +190,9 @@ void Scene_t::clear() {
 void Scene_t::reset() {
 	opaqueItems = nullptr;
 	numOpaqueItems = 0;
+
+	cutOutItems = nullptr;
+	numCutOutItems = 0;
 	
 	transparentItems = nullptr;
 	numTransparentItems = 0;

@@ -10,8 +10,9 @@
 class Renderer;
 class Scene;
 
-enum class Layer {
+enum class SceneLayer {
 	Default,
+	CutOut,
 	Transparency,
 };
 
@@ -152,11 +153,11 @@ public:
 		return m_tag;
 	}
 
-	inline Layer getLayer() const {
+	inline SceneLayer getLayer() const {
 		return m_layer;
 	}
 
-	inline void setLayer(Layer layer) {
+	inline void setLayer(SceneLayer layer) {
 		m_layer = layer;
 	}
 
@@ -179,7 +180,7 @@ public:
 private:
 	ID m_id;
 	ID m_tag;
-	Layer m_layer;
+	SceneLayer m_layer;
 	std::string m_name;
 	SceneObject* m_parent;
 	Scene* m_parentScene;

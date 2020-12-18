@@ -30,6 +30,7 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_shadowMapResolution(1024, 1024)
 , _frameAlloc()
 , m_opaqueItems(&_frameAlloc)
+, m_cutOutItems(&_frameAlloc)
 , m_transparentItems(&_frameAlloc)
 , m_lights(&_frameAlloc)
 , m_assistCameras(&_frameAlloc)
@@ -271,6 +272,8 @@ void Renderer::syncScene() {
 	m_scene.clear();
 	m_scene.opaqueItems = m_opaqueItems.data();
 	m_scene.numOpaqueItems = m_opaqueItems.size();
+	m_scene.cutOutItems = m_cutOutItems.data();
+	m_scene.numCutOutItems = m_cutOutItems.size();
 	m_scene.transparentItems = m_transparentItems.data();
 	m_scene.numTransparentItems = m_transparentItems.size();
 	m_scene.lights = m_lights.data();
@@ -310,6 +313,7 @@ void Renderer::flush() {
 	
 	// clen up flushed renderables
 	m_opaqueItems.clear();
+	m_cutOutItems.clear();
 	m_transparentItems.clear();
 	m_lights.clear();
 	m_assistCameras.clear();

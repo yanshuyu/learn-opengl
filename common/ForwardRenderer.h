@@ -56,7 +56,7 @@ public:
 protected:
 	void drawUnlitScene(const Scene_t& scene);
 	void drawAmbientScene(const Scene_t& scene);
-	void drawLightScene(const Scene_t& scene, const Light_t& light);
+	void drawLightScene(const Scene_t& scene, bool useCutOut);
 	void drawLightShadow(const Scene_t& scene, const Light_t& light);
 
 protected:
@@ -64,6 +64,7 @@ protected:
 	GPUPipelineState m_shadowPassPipelineState;
 	GPUPipelineState m_lightPassPipelineState;
 	GPUPipelineState m_unlitPassPipelineState;
+	GPUPipelineState m_cutOutPipelineState;
 	
 	// default frame rener target (input frame for post processing)
 	RenderTarget m_outputTarget;

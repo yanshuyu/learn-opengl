@@ -90,7 +90,12 @@ vec3 calcAmibientLight() {
 
 
 void main() {
-	vec3 mainColor = u_HasDiffuseMap ? texture(u_DiffuseMap, fs_in.uv).rgb : vec3(1.f);
-	frag_color = vec4(calcAmibientLight() * mainColor, 1.f);
+	vec4 mainColor = u_HasDiffuseMap ? texture(u_DiffuseMap, fs_in.uv) : vec4(1.f);
+	if (mainColor.a < 0.05f)
+		discard;
+
+	mainColor.rgb *= mainColor.rgb; // sRGB to RGb
+
+	frag_color = vec4(calcAmibientLight() * mainColor.rgb, 1.f);
 }
 

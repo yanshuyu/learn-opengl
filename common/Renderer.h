@@ -104,6 +104,10 @@ public:
 		m_opaqueItems.push_back(item);
 	}
 
+	inline void submitCutOutItem(const MeshRenderItem_t& item) {
+		m_cutOutItems.push_back(item);
+	}
+
 	inline void submitTransparentItem(const MeshRenderItem_t& item) {
 		m_transparentItems.push_back(item);
 	}
@@ -229,6 +233,7 @@ protected:
 	// renderable scene
 	FrameAllocator _frameAlloc;
 	FrameVector<MeshRenderItem_t> m_opaqueItems;
+	FrameVector<MeshRenderItem_t> m_cutOutItems;
 	FrameVector<MeshRenderItem_t> m_transparentItems;
 	FrameVector<Light_t> m_lights;
 	FrameVector<Camera_t> m_assistCameras;
