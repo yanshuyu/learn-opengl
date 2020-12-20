@@ -29,6 +29,11 @@ bool MainGuiWindow::initialize() {
 	if (obj) {
 		m_spotLight = obj->getComponent<LightComponent>();
 	}
+
+	obj = m_application->m_scene->findObjectWithTagRecursive(Scene::Tag::PointLight);
+	if (obj) {
+		m_pointLight = obj->getComponent<LightComponent>();
+	}
 	
 	obj = m_application->m_scene->findObjectWithTagRecursive(100);
 	if (obj) {
@@ -81,7 +86,7 @@ void MainGuiWindow::render() {
 	if (ImGui::ColorEdit3("Amibient Ground", envGroundColor))
 		m_application->m_scene->setEnviromentLight({ envSkyColor[0], envSkyColor[1], envSkyColor[2] }, { envGroundColor[0], envGroundColor[1], envGroundColor[2] });
 
-	if (!m_dirLight.expired() || !m_spotLight.expired()) {
+	if (!m_dirLight.expired() || !m_spotLight.expired() || !m_pointLight.expired()) {
 		if (!m_dirLight.expired()) {
 			auto light = m_dirLight.lock();			
 			static bool enabled = light->m_isEnable;
@@ -141,19 +146,55 @@ void MainGuiWindow::render() {
 			if (ImGui::Checkbox("Spot Light", &enabled))
 				light->m_isEnable = enabled;
 
-			if (ImGui::ColorEdit3("Color", lightColor))
-				light->setColor({ lightColor[0], lightColor[1], lightColor[2] });
-
 			if (ImGui::InputFloat3("Position", pos, 2))
 				light->getGameObject()->m_transform.setPosition({ pos[0], pos[1], pos[2] });
 
 			if (ImGui::DragFloat3("Rotation", rotation, 1, -360, 360))
 				light->owner()->m_transform.setRotation({ rotation[0], rotation[1], rotation[2] });
 
+			if (ImGui::ColorEdit3("Color", lightColor))
+				light->setColor({ lightColor[0], lightColor[1], lightColor[2] });
+
 			if (ImGui::DragFloat2("Angles", angles, 1, 0, 180)) {
 				light->setSpotInnerAngle(angles[0]);
 				light->setSpotOutterAngle(angles[1]);
 			}
+
+			if (ImGui::SliderFloat("Range", &range, 0, 300))
+				light->setRange(range);
+
+			if (ImGui::SliderFloat("Intensity", &intensity, 0.f, 10.f))
+				light->setIntensity(intensity);
+
+			if (ImGui::Combo("Shadow Type", &shadowType, shadowTypeLables, IM_ARRAYSIZE(shadowTypeLables)))
+				light->setShadowType(ShadowType(shadowType));
+
+			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
+				light->setShadowBias(shadowBias);
+
+			ImGui::PopID();
+		}
+
+
+		if (!m_pointLight.expired()) {
+			auto light = m_pointLight.lock();
+			static float lightColor[3] = { light->getColor().r, light->getColor().g, light->getColor().b };
+			static float pos[3] = { light->owner()->m_transform.getPosition().x, light->owner()->m_transform.getPosition().y, light->owner()->m_transform.getPosition().z };
+			static float range = light->getRange();
+			static float intensity = light->getIntensity();
+			static const char* shadowTypeLables[3] = { "No Shadow", "Hard Shadow", "Soft Shadow" };
+			static int shadowType = int(light->getShadowType());
+			static float shadowBias = light->getShadowBias();
+
+			ImGui::PushID("Point Light");
+
+			ImGui::Checkbox("Point Light", &light->m_isEnable);
+
+			if (ImGui::InputFloat3("Position", pos, 2))
+				light->getGameObject()->m_transform.setPosition({ pos[0], pos[1], pos[2] });
+
+			if (ImGui::ColorEdit3("Color", lightColor))
+				light->setColor({ lightColor[0], lightColor[1], lightColor[2] });
 
 			if (ImGui::SliderFloat("Range", &range, 0, 300))
 				light->setRange(range);

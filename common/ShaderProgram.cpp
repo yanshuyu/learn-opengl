@@ -1,10 +1,12 @@
 #include"ShaderProgram.h"
 #include"Util.h"
+#include<filesystem>
 #include<fstream>
 #include<sstream>
 #include<algorithm>
 #include<iterator>
 #include<memory>
+
 
 
 ShaderProgram::ShaderProgram(const std::string& name, const std::string& file):m_name(name)
@@ -301,6 +303,14 @@ std::unordered_map<Shader::Type, std::string> ShaderProgram::parseShaderSource(c
 			}
 		}
 
+		if (line.find("#include") != std::string::npos) { // include another glsl source file session
+#ifdef _DEBUG
+			ASSERT(idx != -1);
+#endif // _DEBUG
+
+			line = parseIncludedSource(line);
+		}
+
 		if (idx != -1)
 			srcSessions[idx] << line << "\n";
 	}
@@ -327,6 +337,49 @@ std::unordered_map<Shader::Type, std::string> ShaderProgram::parseShaderSource(c
 
 	return shaderSources;
 }
+
+
+std::string ShaderProgram::parseIncludedSource(const std::string& includeExp) {
+	auto beg = includeExp.find_first_of('"');
+	auto end = includeExp.find_last_of('"');
+	if (beg == std::string::npos || end == std::string::npos)
+		return "";
+		
+	std::string relPath = includeExp.substr(beg + 1, end - beg - 1);
+	std::filesystem::path curPath(m_file);
+	curPath = curPath.parent_path();
+	curPath /= relPath;
+
+	if (!std::filesystem::exists(curPath)) {
+		std::stringstream err;
+		err << "Included file \"" << curPath.string() << "\" not exit!" << "\n";
+		CONSOLELOG(err.str());
+		return "";
+	}
+
+	std::ifstream fs(curPath.string());
+	if (!fs.is_open()) {
+		std::stringstream err;
+		err << "Failed to open Included file \"" << curPath.string() << "\"" << "\n" ;
+		CONSOLELOG(err.str());
+		return "";
+	}
+
+	std::stringstream srcBuffer;
+	std::string line;
+	while (std::getline(fs, line)) {
+		if (line.find("#include") != std::string::npos) {
+			line = parseIncludedSource(line);
+		}
+
+		srcBuffer << line << "\n";
+	}
+
+	fs.close();
+	
+	return srcBuffer.str();
+}
+
 
 void ShaderProgram::queryProgramInfo() {
 	// vertex attributes

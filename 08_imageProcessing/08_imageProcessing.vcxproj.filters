@@ -625,5 +625,8 @@
     <None Include="..\res\shader\HDRAveLogLuminance.shader">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\Transform.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

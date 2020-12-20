@@ -20,18 +20,16 @@ public:
 
 protected: 
 	ImageProcessingApp* m_application;
-	std::weak_ptr<LightComponent> m_dirLight;
-
 	int m_renderMode = 0;
-
+	std::weak_ptr<LightComponent> m_dirLight;
 	std::weak_ptr<LightComponent> m_spotLight;
+	std::weak_ptr<LightComponent> m_pointLight;
 
 	std::weak_ptr<AnimatorController> m_animAC;
 	float m_speed = 0.f;
 	float m_hp = 1.f;
 
 	std::weak_ptr<HDRFilterComponent> m_hdrFilter;
-
 	std::weak_ptr<HDRFilterComponent2> m_hdrFilter2;
 	bool m_hdrEnabled;
 	float m_exposure;

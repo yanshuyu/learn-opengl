@@ -354,6 +354,7 @@
     <None Include="..\res\shader\SpotLight.shader" />
     <None Include="..\res\shader\SpotLightDeferred.shader" />
     <None Include="..\res\shader\TextureDebugViewer.shader" />
+    <None Include="..\res\shader\Transform.glsl" />
     <None Include="..\res\shader\Unlit.shader" />
     <None Include="..\res\shader\UnlitDeferred.shader" />
   </ItemGroup>

@@ -185,6 +185,7 @@ public:
 
 protected:
 	std::unordered_map<Shader::Type, std::string> parseShaderSource(const std::string& file);
+	std::string parseIncludedSource(const std::string& includeExp);
 	void queryProgramInfo();
 	int getUniformLocation(const std::string& name) const;
 	int getUniformBlockIndex(const std::string& name) const;
