@@ -12,9 +12,8 @@
 SpotLightShadowMapping::SpotLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution)
 : IShadowMapping(rt)
 , m_shadowTarget(shadowMapResolution)
-, m_shadowUBO(nullptr) 
 , m_shader()
-, m_lightCamera()
+, m_lightVP(1.f)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
 , m_shadowMapResolution(shadowMapResolution) {
 }
@@ -24,11 +23,6 @@ SpotLightShadowMapping::~SpotLightShadowMapping() {
 }
 
 bool SpotLightShadowMapping::initialize() {
-	m_shadowUBO.reset(new Buffer());
-	m_shadowUBO->bind(Buffer::Target::UniformBuffer);
-	m_shadowUBO->loadData(nullptr, sizeof(ShadowBlock), Buffer::Usage::DynamicDraw);
-	m_shadowUBO->unbind();
-
 	if (!m_shadowTarget.attachTexture2D(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
@@ -66,15 +60,14 @@ bool SpotLightShadowMapping::initialize() {
 
 void SpotLightShadowMapping::cleanUp() {
 	m_shadowTarget.detachAllTexture();
-	m_shadowUBO.release();
-	m_lightCamera = Camera_t();
+	m_lightVP = glm::mat4(1.f);
 }
 
 void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
 	if (!light.isCastShadow())
 		return;
 
-	m_lightCamera = makeLightCamera(light);
+	updateLightMatrix(light);
 
 	auto preZShader = ShaderProgramManager::getInstance()->getProgram("DepthPass");
 	if (preZShader.expired())
@@ -90,8 +83,7 @@ void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& l
 
 	// set view project matrix
 	if (m_shader->hasUniform("u_VPMat")) {
-		glm::mat4 vp = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;
-		m_shader->setUniformMat4v("u_VPMat", &vp[0][0]);
+		m_shader->setUniformMat4v("u_VPMat", &m_lightVP[0][0]);
 	}
 	
 	for (size_t i = 0; i < scene.numOpaqueItems; i++) {
@@ -110,6 +102,23 @@ void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& l
 
 
 void SpotLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgram* shader) {
+	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
+		switch (light.shadowType)
+		{
+		case ShadowType::NoShadow:
+			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
+			break;
+		case ShadowType::HardShadow:
+			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "hardShadow"} });
+			break;
+		case ShadowType::SoftShadow:
+			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "softShadow"} });
+			break;
+		default:
+			break;
+		}
+	}
+	
 	if (shader->hasUniform("u_shadowMap")) {
 		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
 		if (light.isCastShadow()) {
@@ -118,17 +127,16 @@ void SpotLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgra
 				shadowMap->bind(Texture::Unit::ShadowMap);
 				shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
 			}
-
-			static ShadowBlock shadowBlock;
-			shadowBlock.lightVP = m_lightCamera.projMatrix * m_lightCamera.viewMatrix;
-			shadowBlock.depthBias = light.shadowBias;
-			shadowBlock.shadowStrength = light.shadowStrength;
-			shadowBlock.shadowType = int(light.shadowType);
-			m_shadowUBO->bind(Buffer::Target::UniformBuffer);
-			m_shadowUBO->loadSubData(&shadowBlock, 0, sizeof(shadowBlock));
-			m_shadowUBO->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::ShadowBlock));
-			shader->bindUniformBlock("ShadowBlock", ShaderProgram::UniformBlockBindingPoint::ShadowBlock);
 		}
+
+		if (shader->hasUniform("u_shadowStrength"))
+			shader->setUniform1("u_shadowStrength", light.shadowStrength);
+
+		if (shader->hasUniform("u_shadowBias"))
+			shader->setUniform1("u_shadowBias", light.shadowBias);
+
+		if (shader->hasUniform("u_lightVP"))
+			shader->setUniformMat4v("u_lightVP", &m_lightVP[0][0]);
 	}
 }
 
@@ -137,8 +145,6 @@ void SpotLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram*
 	if (light.isCastShadow()) {
 		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
 			shadowMap->unbind();
-
-		m_shadowUBO->unbind();
 	}
 }
 
@@ -153,14 +159,9 @@ void SpotLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 }
 
 
-Camera_t SpotLightShadowMapping::makeLightCamera(const Light_t& light) {
-	Camera_t cam;
-	cam.viewMatrix = glm::lookAt(light.position, light.position + light.direction, glm::vec3(0.f, 1.f, 0.f));
-	cam.projMatrix = glm::perspective(light.outterCone * 3.f, 1.f, 1.f, light.range);
-	cam.near = 1.f;
-	cam.far = light.range;
-	cam.position = light.position;
-	
-	return cam;
+void SpotLightShadowMapping::updateLightMatrix(const Light_t& light) {
+	auto v = glm::lookAt(light.position, light.position + light.direction, glm::vec3(0.f, 1.f, 0.f));
+	auto p = m_lightVP * glm::perspective(light.outterCone, 1.f, 0.1f, light.range * 1.5f);
+	m_lightVP = p * v;
 }
 

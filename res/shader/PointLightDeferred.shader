@@ -17,6 +17,7 @@ void main() {
 
 #shader fragment
 #version 450 core
+#include "Phong.glsl"
 
 const float diskRadius = 0.05f;
 
@@ -31,7 +32,7 @@ const vec3 sampleOffsetDirections[20] = {
 
 
 in vec2 f_uv;
-
+out vec4 frag_color;
 
 
 layout(location = 0) uniform sampler2D u_posW;
@@ -47,15 +48,13 @@ layout(location = 7) uniform samplerCube u_shadowMap;
 layout(location = 8) uniform float u_shadowStrength;
 layout(location = 9) uniform float u_shadowBias;
 
-subroutine float ShadowAttenType(vec3 posW);
-subroutine uniform ShadowAttenType u_shadowAtten;
-
-
 layout(std140) uniform LightBlock{
 	vec4 u_lightPos; // (w for range)
 	vec4 u_lightColor; //(a for intensity)
 };
 
+subroutine float ShadowAttenType(vec3 posW);
+subroutine uniform ShadowAttenType u_shadowAtten;
 
 subroutine(ShadowAttenType)
 float noShadow(vec3 posW) {
@@ -70,7 +69,7 @@ float hardShadow(vec3 posW) {
 		return 1.f;
 
 	float closestDepth = texture(u_shadowMap, l2v).r;
-	return depth - u_shadowBias > closestDepth ? (1.f - u_shadowStrength) : 1.f;
+	return depth + u_shadowBias > closestDepth ? (1.f - u_shadowStrength) : 1.f;
 }
 
 subroutine(ShadowAttenType)
@@ -83,47 +82,39 @@ float softShadow(vec3 posW) {
 	float shadow = 0.f;
 	for (int i = 0; i < 20; i++) {
 		float closestDepth = texture(u_shadowMap, l2v + sampleOffsetDirections[i] * diskRadius).r;
-		shadow += depth - u_shadowBias > closestDepth ? 1.f : 0.f;
+		shadow += depth + u_shadowBias > closestDepth ? 1.f : 0.f;
 	}
 
 	return mix(1.f - u_shadowStrength, 1.f, 1.f - shadow / 20.f);
 }
 
-vec4 calcPointLight(in vec3 diffuse,
-					in vec3 specular,
-					in vec3 emissive,
-					in float shininess,
-					in vec3 posW,
-					in vec3 normalW) {
-	// diffuse
-	vec3 toLight = u_lightPos.xyz - posW;
-	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, length(toLight));
-	toLight = normalize(toLight);
-	float dotL = clamp(dot(toLight, normalW), 0.f, 1.f);
-	vec3 d = u_lightColor.rgb * diffuse  * u_lightColor.a * dotL * rangeAtten;
 
-	//specular
-	vec3 toView = normalize(u_cameraPosW - posW);
-	float dotV = clamp(dot(normalize(toLight + toView), normalW), 0.f, 1.f);
-	vec3 s = u_lightColor.rgb * specular * u_lightColor.a * pow(dotV, shininess) * rangeAtten;
+vec3 PhongShading(vec3 P) {
+	vec4 specular = texture(u_specular, f_uv);
+	vec3 kd = texture(u_diffuse, f_uv).rgb;
+	vec3 ks = specular.rgb;
+	float shinness = specular.a * u_maxShininess;
 
-	float shadowAtten = u_shadowAtten(posW);
+	vec3 l = u_lightPos.xyz - P;
+	float distance = length(l);
+	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance);
+	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten;
+	vec3 L = l / distance;
+	vec3 N = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
+	vec3 V = normalize(u_cameraPosW - P);
 
-	return vec4((d + s) * shadowAtten + emissive, 1.f);
+	return Phong(I, L, N, V, kd, ks, shinness);
 }
 
 
-out vec4 frag_color;
-
 void main() {
-	vec3 posW = texture(u_posW, f_uv).xyz;
-	vec3 normalW = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
-	vec3 diffuse = texture(u_diffuse, f_uv).rgb;
-	vec3 specular = texture(u_specular, f_uv).rgb;
-	vec3 emissive = texture(u_emissive, f_uv).rgb;
-	float shininess = texture(u_specular, f_uv).a * u_maxShininess;
+	vec3 P = texture(u_posW, f_uv).xyz;
+	vec3 C = PhongShading(P);
+	vec3 E = texture(u_emissive, f_uv).rgb;
 
-	frag_color = calcPointLight(diffuse, specular, emissive, shininess, posW, normalW);
+	float shadowAtte = u_shadowAtten(P);
+
+	frag_color = vec4(C * shadowAtte + E, 1.f);
 }
 
 

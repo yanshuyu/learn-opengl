@@ -21,14 +21,14 @@ public:
 	void onShadowMapResolutionChange(float w, float h) override;
 
 private:
-	Camera_t makeLightCamera(const Light_t& light);
+	void updateLightMatrix(const Light_t& light);
 
 private:
 	RenderTarget m_shadowTarget;
-	std::unique_ptr<Buffer> m_shadowUBO;
 	std::shared_ptr<ShaderProgram> m_shader;
-
-	Camera_t m_lightCamera;
+	
 	Viewport_t m_shadowViewport;;
 	glm::vec2 m_shadowMapResolution;
+
+	glm::mat4 m_lightVP;
 };

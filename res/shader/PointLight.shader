@@ -40,6 +40,7 @@ void main() {
 
 #shader fragment
 #version 450 core
+#include "Phong.glsl"
 
 const float diskRadius = 0.05f;
 
@@ -59,6 +60,7 @@ in VS_OUT{
 	vec2 uv;
 } fs_in;
 
+out vec4 frag_color;
 
 layout(location = 2) uniform sampler2D u_diffuseMap;
 layout(location = 3) uniform bool u_hasDiffuseMap;
@@ -78,8 +80,6 @@ layout(location = 11) uniform samplerCube u_shadowMap;
 layout(location = 12) uniform float u_shadowStrength;
 layout(location = 13) uniform float u_shadowBias;
 
-subroutine float ShadowAttenType(vec3 posW);
-subroutine uniform ShadowAttenType u_shadowAtten;
 
 layout(std140) uniform LightBlock{
 	vec4 u_lightPos; // (w for range)
@@ -98,25 +98,29 @@ vec3 sRGB2RGB(in vec3 color) {
 	return color * color;
 }
 
+
+subroutine float ShadowAttenType();
+subroutine uniform ShadowAttenType u_shadowAtten;
+
 subroutine (ShadowAttenType)
-float noShadow(vec3 posW) {
+float noShadow() {
 	return 1.f;
 }
 
 subroutine (ShadowAttenType)
-float hardShadow(vec3 posW) {
-	vec3 l2v = posW - u_lightPos.xyz;
+float hardShadow() {
+	vec3 l2v = fs_in.pos_W - u_lightPos.xyz;
 	float depth = length(l2v) / u_lightPos.w;
 	if (depth > 1.f)
 		return 0.f;
 
 	float closestDepth = texture(u_shadowMap, l2v).r;
-	return depth - u_shadowBias > closestDepth ? (1.f - u_shadowStrength) : 1.f;
+	return depth + u_shadowBias > closestDepth ? (1.f - u_shadowStrength) : 1.f;
 }
 
 subroutine (ShadowAttenType)
-float softShadow(vec3 posW) {
-	vec3 l2v = posW - u_lightPos.xyz;
+float softShadow() {
+	vec3 l2v = fs_in.pos_W - u_lightPos.xyz;
 	float depth = length(l2v) / u_lightPos.w;
 	if (depth > 1.f)
 		return 0.f;
@@ -124,54 +128,51 @@ float softShadow(vec3 posW) {
 	float shadow = 0.f;
 	for (int i = 0; i < 20; i++) {
 		float closestDepth = texture(u_shadowMap, l2v + sampleOffsetDirections[i] * diskRadius).r;
-		shadow += depth - u_shadowBias > closestDepth ? 1.f : 0.f;
+		shadow += depth + u_shadowBias > closestDepth ? 1.f : 0.f;
 	}
 
 	return mix(1.f - u_shadowStrength, 1.f, 1.f - shadow / 20.f);
 }
 
 
-vec4 calcPointLight(in vec3 normal , in vec3 diffuseTexColor, in vec3 specularTexColor, in vec3 emissiveTexColor) {
-	// diffuse
-	vec3 toLight = u_lightPos.xyz - fs_in.pos_W;
-	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, length(toLight));
-	toLight = normalize(toLight);
-	float dotL = clamp( dot(toLight, normal), 0.f, 1.f );
-	vec3 diffuse = u_lightColor.rgb * u_diffuseFactor.rgb * diffuseTexColor * u_lightColor.a * dotL * rangeAtten;
-
-	//specular
-	vec3 toView = normalize(u_cameraPosW - fs_in.pos_W);
-	float dotV = clamp( dot(normalize( toLight + toView), normal), 0.f, 1.f);
-	vec3 specular = u_lightColor.rgb * u_specularFactor.rgb * specularTexColor * u_lightColor.a * pow(dotV, u_specularFactor.a) * rangeAtten;
-
-	// emissive
-	vec3 emissive = emissiveTexColor * u_emissiveColor;
-
-	float shadowAtten = u_shadowAtten(fs_in.pos_W);
-
-	return vec4((diffuse + specular) * shadowAtten + emissive, 1.f);
-}
-
-
-out vec4 frag_color;
-
-
-void main() {
+vec3 PhongShading() {
 	vec4 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, fs_in.uv) : vec4(1.f);
-	if (diffuseTexColor.a < 0.05f)
+	if (diffuseTexColor.a < 0.05f) {
 		discard;
+		return vec3(0.f);
+	}
 
 	diffuseTexColor.rgb = sRGB2RGB(diffuseTexColor.rgb);
+	vec3 specularTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
 
-	vec3 sepcTexColor = u_hasSpecularMap ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
-	vec3 emissiveTexColor = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
-	vec3 normalW = fs_in.normal_W;
+	vec3 kd = diffuseTexColor.rgb * u_diffuseFactor.rgb;
+	vec3 ks = specularTexColor * u_specularFactor.rgb;
+	float shinness = u_specularFactor.a;
 
+	vec3 l = u_lightPos.xyz - fs_in.pos_W;
+	float distance = length(l);
+	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance);
+	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten;
+	vec3 L = l / distance;
+	vec3 V = normalize(u_cameraPosW - fs_in.pos_W);
+	vec3 N = fs_in.normal_W;
 	if (u_hasNormalMap) {
 		vec3 normal = (texture(u_normalMap, fs_in.uv).xyz - 0.5) * 2;
 		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
-		normalW = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W)* normal);
+		N = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
 	}
 
-	frag_color = calcPointLight(normalW, diffuseTexColor.rgb, sepcTexColor, emissiveTexColor);
+	return Phong(I, L, N, V, kd, ks, shinness);
+}
+
+
+
+void main() {
+	vec3 C = PhongShading();
+	vec3 E = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
+	E *= u_emissiveColor;
+
+	float shadowAtte = u_shadowAtten();
+
+	frag_color = vec4(C * shadowAtte + E, 1.f);
 }

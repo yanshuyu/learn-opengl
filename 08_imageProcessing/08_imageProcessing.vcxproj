@@ -347,6 +347,8 @@
     <None Include="..\res\shader\HemiSphericalAmbientLight.shader" />
     <None Include="..\res\shader\HemiSphericalAmibentLightDefferred.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
+    <None Include="..\res\shader\PBR.glsl" />
+    <None Include="..\res\shader\Phong.glsl" />
     <None Include="..\res\shader\PointLight.shader" />
     <None Include="..\res\shader\PointLightDeferred.shader" />
     <None Include="..\res\shader\PointLightShadowPass.shader" />

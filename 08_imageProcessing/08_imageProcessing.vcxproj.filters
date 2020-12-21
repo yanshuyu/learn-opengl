@@ -628,5 +628,11 @@
     <None Include="..\res\shader\Transform.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\PBR.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\Phong.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -139,6 +139,7 @@ void MainGuiWindow::render() {
 			static float range = light->getRange();
 			static const char* shadowTypeLables[3] = { "No Shadow", "Hard Shadow", "Soft Shadow" };
 			static int shadowType = int(light->getShadowType());
+			static float shadowStren = light->getShadowStrength();
 			static float shadowBias = light->getShadowBias();
 
 			ImGui::PushID("Spot Light");
@@ -169,6 +170,9 @@ void MainGuiWindow::render() {
 			if (ImGui::Combo("Shadow Type", &shadowType, shadowTypeLables, IM_ARRAYSIZE(shadowTypeLables)))
 				light->setShadowType(ShadowType(shadowType));
 
+			if (ImGui::SliderFloat("Shadow Strength", &shadowStren, 0.1f, 1.f))
+				light->setShadowStrength(shadowStren);
+
 			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
 				light->setShadowBias(shadowBias);
 
@@ -184,6 +188,7 @@ void MainGuiWindow::render() {
 			static float intensity = light->getIntensity();
 			static const char* shadowTypeLables[3] = { "No Shadow", "Hard Shadow", "Soft Shadow" };
 			static int shadowType = int(light->getShadowType());
+			static float shadowStren = light->getShadowStrength();
 			static float shadowBias = light->getShadowBias();
 
 			ImGui::PushID("Point Light");
@@ -204,6 +209,9 @@ void MainGuiWindow::render() {
 
 			if (ImGui::Combo("Shadow Type", &shadowType, shadowTypeLables, IM_ARRAYSIZE(shadowTypeLables)))
 				light->setShadowType(ShadowType(shadowType));
+
+			if (ImGui::SliderFloat("Shadow Strength", &shadowStren, 0.1f, 1.f))
+				light->setShadowStrength(shadowStren);
 
 			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
 				light->setShadowBias(shadowBias);

@@ -17,27 +17,28 @@ void main() {
 
 #shader fragment
 #version 450 core
-
-#define HARD_SHADOW 1
-#define SOFT_SHADOW	2
+#include "Phong.glsl"
 
 const int PCFCornelSize = 5;
 
 in vec2 f_uv;
+out vec4 frag_color;
 
 
-layout(location = 0) uniform sampler2D u_posW;
-layout(location = 1) uniform sampler2D u_nromalW;
-layout(location = 2) uniform sampler2D u_diffuse;
-layout(location = 3) uniform sampler2D u_specular;
-layout(location = 4) uniform sampler2D u_emissive;
+uniform sampler2D u_posW;
+uniform sampler2D u_nromalW;
+uniform sampler2D u_diffuse;
+uniform sampler2D u_specular;
+uniform sampler2D u_emissive;
+uniform float u_maxShininess;
 
-layout(location = 5) uniform float u_maxShininess;
-layout(location = 6) uniform vec3 u_cameraPosW;
+uniform sampler2D u_shadowMap;
+uniform bool u_hasShadowMap;
+uniform float u_shadowStrength;
+uniform	float u_shadowBias;
 
-layout(location = 7) uniform sampler2D u_shadowMap;
-layout(location = 8) uniform bool u_hasShadowMap;
-
+uniform	mat4 u_lightVP;
+uniform vec3 u_cameraPosW;
 
 layout(std140) uniform LightBlock{
 	vec4 u_lightPos; // (wfor range)
@@ -47,86 +48,77 @@ layout(std140) uniform LightBlock{
 };
 
 
-layout(std140) uniform ShadowBlock{
-	mat4 u_lightVP;
-	float u_shadowStrength;
-	float u_shadowBias;
-	int u_shadowType;
-};
+subroutine float ShadowAttenType(vec3 P);
+subroutine uniform ShadowAttenType u_shadowAtten;
+
+subroutine(ShadowAttenType)
+float noShadow(vec3 P) {
+	return 1.f;
+}
+
+subroutine(ShadowAttenType)
+float hardShadow(vec3 P) {
+	vec4 posProj = u_lightVP * vec4(P, 1.f);
+	vec3 posNDC = posProj.xyz / posProj.w;
+	posNDC = posNDC * 0.5f + 0.5f;
+	if (posNDC.z > 1.f)
+		return 0.f;
+
+	float depth = texture(u_shadowMap, posNDC.xy).r;
+	bool inShaow = posNDC.z + u_shadowBias > depth;
+	return inShaow ? 1.f - u_shadowStrength : 1.f;
+}
 
 
-out vec4 frag_color;
+subroutine(ShadowAttenType)
+float softShadow(vec3 P) {
+	vec4 posProj = u_lightVP * vec4(P, 1.f);
+	vec3 posNDC = posProj.xyz / posProj.w;
+	posNDC = posNDC * 0.5f + 0.5f;
+	if (posNDC.z > 1.f)
+		return 0.f;
 
-
-float calcShadowAtten(in vec3 posW, in vec3 normalW) {
-	float shadowAtten = 1.f;
-	vec4 posL = u_lightVP * vec4(posW, 1.f);
-	vec3 posProj = posL.xyz / posL.w;
-	posProj = posProj * 0.5f + 0.5f;
-	float bias = mix(1.f, 2.f, 1.f - clamp(dot(u_toLight, normalW), 0.f, 1.f)) * u_shadowBias;
-
-	if (u_hasShadowMap) {
-		if (u_shadowType == HARD_SHADOW) {
-			float depthL = texture(u_shadowMap, posProj.xy).r;
-			bool inShaow = posProj.z + bias > depthL;
-			shadowAtten = inShaow ? 1.f - u_shadowStrength : 1.f;
-		
-		} else if (u_shadowType == SOFT_SHADOW) {
-			vec2 texelSize = 1.f / textureSize(u_shadowMap, 0);
-			int halfCornelSize = PCFCornelSize / 2;
-			int shadowArea = 0;
-			
-			for (int x = -halfCornelSize; x <= halfCornelSize; x++) {
-				for (int y = -halfCornelSize; y <= halfCornelSize; y++) {
-					float depthL = texture(u_shadowMap, posProj.xy + vec2(x, y) * texelSize).r;
-					shadowArea += posProj.z + bias > depthL ? 1 : 0;
-				}
-			}
-
-			shadowAtten = mix(1.f - u_shadowStrength, 1.f, 1.f - shadowArea / float(PCFCornelSize * PCFCornelSize));
+	vec2 texelSize = 1.f / textureSize(u_shadowMap, 0);
+	int halfCornelSize = PCFCornelSize / 2;
+	int shadowArea = 0;
+	for (int x = -halfCornelSize; x <= halfCornelSize; x++) {
+		for (int y = -halfCornelSize; y <= halfCornelSize; y++) {
+			float depth = texture(u_shadowMap, posNDC.xy + vec2(x, y) * texelSize).r;
+			shadowArea += posNDC.z + u_shadowBias > depth ? 1 : 0;
 		}
 	}
 
-	return shadowAtten;
-}
-
-
-vec4 calcSpotLight(in vec3 diffuse,
-					in vec3 specular,
-					in vec3 emissive,
-					in float shininess,
-					in vec3 posW,
-					in vec3 normalW) {
-	// diffuse
-	vec3 toLight = normalize(u_toLight);
-	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance(u_lightPos.xyz, posW));
-	float angleAtten =  smoothstep(u_angles.x, u_angles.y, acos(clamp(dot(normalize(posW - u_lightPos.xyz), -toLight), 0.f, 1.f)));
-
-	float dotL = clamp(dot(toLight, normalW), 0.f, 1.f);
-	vec3 d = u_lightColor.rgb * diffuse * u_lightColor.a * dotL * rangeAtten * angleAtten;
-
-	//specular
-	vec3 toView = normalize(u_cameraPosW - posW);
-	float dotV = clamp(dot(normalize(toLight + toView), normalW), 0.f, 1.f);
-	vec3 s = u_lightColor.rgb * specular * u_lightColor.a * pow(dotV, shininess) * rangeAtten * angleAtten;
-
-	// shadow
-	float shadowAtten = calcShadowAtten(posW, normalW);
-
-	return vec4((d + s) * shadowAtten + emissive, 1.f);
+	return mix(1.f - u_shadowStrength, 1.f, 1.f - shadowArea / float(PCFCornelSize * PCFCornelSize));
 }
 
 
 
+vec3 PhongShading(vec3 P) {
+	vec4 specular = texture(u_specular, f_uv);
+	vec3 kd = texture(u_diffuse, f_uv).rgb;
+	vec3 ks = specular.rgb;
+	float shinness = specular.a * u_maxShininess;
+
+	vec3 l = u_lightPos.xyz - P;
+	float distance = length(l);
+	vec3 L = l / distance;
+	vec3 V = normalize(u_cameraPosW - P);
+	vec3 N = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
+
+	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance);
+	float angleAtten = smoothstep(u_angles.x * 0.5f, u_angles.y * 0.5f, acos(dot(L, u_toLight)));
+	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten * angleAtten;
+
+	return Phong(I, L, N, V, kd, ks, shinness);
+}
 void main() {
-	vec3 posW = texture(u_posW, f_uv).xyz;
-	vec3 normalW = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
-	vec3 diffuse = texture(u_diffuse, f_uv).rgb;
-	vec3 specular = texture(u_specular, f_uv).rgb;
-	vec3 emissive = texture(u_emissive, f_uv).rgb;
-	float shininess = texture(u_specular, f_uv).a * u_maxShininess;
+	vec3 P = texture(u_posW, f_uv).xyz;
+	vec3 C = PhongShading(P);
+	vec3 E = texture(u_emissive, f_uv).rgb;
+	
+	float shadowAtten = u_shadowAtten(P);
 
-	frag_color = calcSpotLight(diffuse, specular, emissive, shininess, posW, normalW);
+	frag_color = vec4(C * shadowAtten + E, 1.f);
 }
 
 

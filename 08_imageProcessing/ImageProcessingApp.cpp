@@ -58,12 +58,12 @@ bool ImageProcessingApp::initailize() {
 	//auto cameraController = camera->getComponent<ArcballCameraController>();
 	//cameraController.lock()->setPosition({ 0.f, 4.f, 16.f });
 
-	//auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 0.8f }, 80.f, 1.f, ShadowType::NoShadow);
-	//pointLight->m_transform.setPosition({-20.f, 40.f, -10.f});
+	auto pointLight = m_scene->addPointLight({ 1.f, 1.f, 0.8f }, 80.f, 1.f, ShadowType::NoShadow);
+	pointLight->m_transform.setPosition({-20.f, 40.f, -10.f});
 
-	//auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 0.8f }, 45.f, 65.f, 80.f, 1.f, ShadowType::NoShadow);
-	//spotLight->m_transform.setPosition({ -15.f, 40.f, 10.f });
-	//spotLight->m_transform.setRotation({ -45.f, 0.f, 0.f });
+	auto spotLight = m_scene->addSpotLight({ 1.f, 1.f, 0.8f }, 45.f, 65.f, 80.f, 1.f, ShadowType::NoShadow);
+	spotLight->m_transform.setPosition({ -15.f, 40.f, 10.f });
+	spotLight->m_transform.setRotation({ -45.f, 0.f, 0.f });
 	
 	// light
 	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
