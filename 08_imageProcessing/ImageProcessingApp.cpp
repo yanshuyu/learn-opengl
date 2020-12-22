@@ -106,16 +106,18 @@ void ImageProcessingApp::_loadScene() {
 	auto mtlMgr = MaterialManager::getInstance();
 
 	SceneObject* gameObj;
-	
+	PhongMaterial* mtl;
+
 	// terrain
 	gameObj = m_scene->addModel("terrain.obj");
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	auto meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("terrain_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("terrain_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_specularMap = texMgr->addTexture("terrain_specular.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
+	meshRenderer->addMaterial(mtlMgr->addMaterial("terrain_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("terrain_diffuse.png");
+	mtl->m_specularMap = texMgr->addTexture("terrain_specular.png");
+	mtl->m_shininess = 0.9;
 	
 	// brige
 	gameObj = m_scene->addModel("bridge.obj");
@@ -123,9 +125,10 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("bridge_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("bridge_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0, 0, 0 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("bridge_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("bridge_diffuse.png");
+	mtl->m_specularColor = { 0, 0, 0 };
 
 
 	// house
@@ -134,10 +137,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("house_mtl"));
+	meshRenderer->addMaterial(mtlMgr->addMaterial("house_mtl", MaterialType::Phong));
 	meshRenderer->addMaterial(mtlMgr->getMaterial("house_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("house_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("house_diffuse.png");
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	// barrel
@@ -145,10 +149,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("barrel_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("barrel_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("barrel_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("barrel_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//rocks
@@ -156,10 +161,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("rock_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("rocks_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("rock_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("rocks_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//fences
@@ -167,10 +173,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("fence_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("fence_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("fence_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("fence_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//path edge
@@ -178,10 +185,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("pathedge_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("pathedge_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("pathedge_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("pathedge_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//lantern
@@ -189,10 +197,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("lantern_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("lantern_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("lantern_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("lantern_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//flowers
@@ -201,20 +210,22 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("flower_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("flower_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("flower_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("flower_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 	//mushroom
 	gameObj = m_scene->addModel("mushroom.obj");
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("mushroom_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("mushroom_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("mushroom_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("mushroom_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 	
 
 	//trees
@@ -223,10 +234,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("tree_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("tree_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("tree_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("tree_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//cute trees
@@ -234,10 +246,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("cutetree_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("cutetree_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("cutetree_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("cutetree_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//bush
@@ -246,10 +259,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("bush_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("bush_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("bush_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("bush_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 
 
 	//bench
@@ -257,10 +271,11 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("bench_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("bench_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("bench_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("bench_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 	meshRenderer->addMaterial(mtlMgr->getMaterial("bench_mtl"));
 
 
@@ -270,9 +285,10 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->m_transform.setScale({ 10, 10, 10 });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	meshRenderer->clearMaterials();
-	meshRenderer->addMaterial(mtlMgr->addMaterial("herbstall_mtl"));
-	meshRenderer->materialAt(0).lock()->m_diffuseMap = texMgr->addTexture("herbstall_diffuse.png");
-	meshRenderer->materialAt(0).lock()->m_shininess = 0.9;
-	meshRenderer->materialAt(0).lock()->m_specularColor = { 0.1, 0.1, 0.1 };
+	meshRenderer->addMaterial(mtlMgr->addMaterial("herbstall_mtl", MaterialType::Phong));
+	mtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	mtl->m_albedoMap = texMgr->addTexture("herbstall_diffuse.png");
+	mtl->m_shininess = 0.9;
+	mtl->m_specularColor = { 0.1, 0.1, 0.1 };
 	
 }

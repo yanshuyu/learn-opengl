@@ -22,6 +22,14 @@ public:
 		else
 			return nullptr;
 	}
+
+	template<typename T>
+	const T* asType() const {
+		if (isType(T::s_typeId))
+			return static_cast<const T*>(this);
+		else
+			return nullptr;
+	}
 };
 
 

@@ -1,7 +1,6 @@
 #include"RendererCore.h"
 #include"VertexArray.h"
 #include"Mesh.h"
-#include"Material.h"
 #include<glm/gtc/matrix_transform.hpp>
 #include<vector>
 #include<algorithm>

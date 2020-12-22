@@ -5,6 +5,7 @@
 #include"Mesh.h"
 #include"MaterialMgr.h"
 #include"TextureMgr.h"
+#include"PhongMaterial.h"
 #include<assimp/Importer.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<queue>
@@ -312,7 +313,7 @@ void MeshLoader::loadMeshes(const aiScene* aScene, const aiNode* node, Model* mo
 		mesh->setTransform(glm::transpose(glm::make_mat4(&transform[0][0])));
 		model->addMesh(mesh);
 		if (options & Option::LoadMaterials) {
-			Material* mat = loadMaterial(aScene, aMesh);
+			IMaterial* mat = loadMaterial(aScene, aMesh);
 			if (mat) {
 				mat->setName(model->getName() + "_" + mat->getName());
 				if (MaterialManager::getInstance()->addMaterial(mat))
@@ -427,7 +428,7 @@ void MeshLoader::loadBoneWeights<SkinVertex_t>(std::vector<SkinVertex_t>& vertic
 }
 
 
-Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
+IMaterial* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 	if (!aScene->HasMaterials())
 		return nullptr;
 
@@ -457,7 +458,7 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 	aMat->Get(AI_MATKEY_OPACITY, aiOpacity);
 	aMat->Get(AI_MATKEY_SHININESS, aiShininess);
 	aMat->Get(AI_MATKEY_NAME, aiName);
-
+	
 	if (aMat->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 		aiString path;
 		aMat->GetTexture(aiTextureType_DIFFUSE, 0, &path);
@@ -486,8 +487,8 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 		hasEmissiveMap = !emissiveTextureName.empty();
 	}
 
-	auto mat = new Material();
-	mat->m_diffuseColor = glm::vec3(aiDiffuseColor.r, aiDiffuseColor.g, aiDiffuseColor.b);
+	auto mat = new PhongMaterial("");
+	mat->m_mainColor = glm::vec3(aiDiffuseColor.r, aiDiffuseColor.g, aiDiffuseColor.b);
 	mat->m_specularColor = glm::vec3(aiSpecularColor.r, aiSpecularColor.g, aiSpecularColor.b);
 	mat->m_emissiveColor = glm::vec3(aiEmissiveColor.r, aiEmissiveColor.g, aiEmissiveColor.b);
 	mat->m_opacity = aiOpacity;
@@ -498,8 +499,8 @@ Material* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) {
 	mat->setName(name);
 
 	if (hasDiffuseMap) {
-		mat->m_diffuseMap = loadTexture(diffuseTextureName);
-		if (mat->m_diffuseMap.expired()) {
+		mat->m_albedoMap = loadTexture(diffuseTextureName);
+		if (mat->m_albedoMap.expired()) {
 #ifdef _DEBUG	
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";

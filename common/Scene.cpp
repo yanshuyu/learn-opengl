@@ -150,42 +150,42 @@ SceneObject* Scene::addModel(const std::string& file, const std::string& name) {
 	return obj;
 }
 
-SceneObject* Scene::addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat) {
+SceneObject* Scene::addGrid(float w, float d, float spacing, std::weak_ptr<IMaterial> mat) {
 	SceneObject* grid = addObject("Grid");
 	auto gridMesh = MeshManager::getInstance()->createGrid(w, d, spacing);
 	auto meshRenderComp = MeshRenderComponent::create();
 	meshRenderComp->setMeshes(gridMesh);
 	grid->addComponent(meshRenderComp);
 
-	if (mat)
+	if (!mat.expired())
 		meshRenderComp->addMaterial(mat);
 	
 	return grid;
 }
 
 
-SceneObject* Scene::addPlane(float w, float d, std::shared_ptr<Material> mat) {
+SceneObject* Scene::addPlane(float w, float d, std::weak_ptr<IMaterial> mat) {
 	SceneObject* plane = addObject("Plane");
 	auto planeMesh = MeshManager::getInstance()->createPlane(w, d);
 	auto meshRenderComp = MeshRenderComponent::create();
 	meshRenderComp->setMeshes(planeMesh);
 	plane->addComponent(meshRenderComp);
 
-	if (mat)
+	if (!mat.expired())
 		meshRenderComp->addMaterial(mat);
 
-	return nullptr;
+	return plane;
 }
 
 
-SceneObject* Scene::addCube(std::shared_ptr<Material> mat) {
+SceneObject* Scene::addCube(std::weak_ptr<IMaterial> mat) {
 	SceneObject* cube = addObject("Cube");
 	auto cubeMesh = MeshManager::getInstance()->createCube();
 	auto meshRenderComp = MeshRenderComponent::create();
 	meshRenderComp->setMeshes(cubeMesh);
 	cube->addComponent(meshRenderComp);
 
-	if (mat)
+	if (!mat.expired())
 		meshRenderComp->addMaterial(mat);
 
 	return  cube;

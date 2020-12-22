@@ -44,9 +44,9 @@ public:
 	void addObject(std::unique_ptr<SceneObject>&& object);
 	
 	SceneObject* addModel( const std::string& file, const std::string& name = "");
-	SceneObject* addGrid(float w, float d, float spacing, std::shared_ptr<Material> mat = nullptr);
-	SceneObject* addPlane(float w, float d, std::shared_ptr<Material> mat = nullptr);
-	SceneObject* addCube(std::shared_ptr<Material> mat = nullptr);
+	SceneObject* addGrid(float w, float d, float spacing, std::weak_ptr<IMaterial> mat = std::weak_ptr<IMaterial>());
+	SceneObject* addPlane(float w, float d, std::weak_ptr<IMaterial> mat = std::weak_ptr<IMaterial>());
+	SceneObject* addCube(std::weak_ptr<IMaterial> mat = std::weak_ptr<IMaterial>());
 	SceneObject* addCamera(const glm::vec3& pos = glm::vec3(0.f), const glm::vec3& rot = glm::vec3(0.f), const glm::vec3& bgColor = glm::vec3(0.f));
 
 	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f, ShadowType shadowType = ShadowType::HardShadow);

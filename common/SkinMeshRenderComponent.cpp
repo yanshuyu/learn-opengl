@@ -38,9 +38,9 @@ void SkinMeshRenderComponent::render(RenderContext* context) {
 
 	for (size_t i = 0; i < model->meshCount(); i++) {
 		MeshRenderItem_t task;
-		std::shared_ptr<Material> strongMat = materialAt(i).expired() ? nullptr : materialAt(i).lock();
+		std::shared_ptr<IMaterial> mtl = materialAt(i).expired() ? nullptr : materialAt(i).lock();
 		auto mesh = model->meshAt(i);
-		auto mat = strongMat ? strongMat.get() : MaterialManager::getInstance()->defaultMaterial();
+		auto mat = mtl ? mtl.get() : MaterialManager::getInstance()->defaultPhongMaterial();
 
 		task.vao = mesh->vertexArray();
 		task.vertexCount = mesh->verticesCount();

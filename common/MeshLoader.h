@@ -36,7 +36,7 @@ protected:
 	const aiNode* findSkeletonRootNode(const aiNode* node, const std::unordered_map<std::string, aiBone*>& bones);
 
 	void loadMeshes(const aiScene* aScene, const aiNode* node, Model* model, int options, const aiMatrix4x4& parentTransform);
-	Material* loadMaterial(const aiScene* aScene, const aiMesh* mesh);
+	IMaterial* loadMaterial(const aiScene* aScene, const aiMesh* mesh);
 	std::weak_ptr<Texture> loadTexture(const std::string& name);
 	
 	template<typename Vertex>

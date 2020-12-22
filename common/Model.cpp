@@ -1,6 +1,5 @@
 #include"Model.h"
 #include"Util.h"
-#include"Material.h"
 #include"Skeleton.h"
 #include"AnimationClip.h"
 #include"TextureMgr.h"
@@ -89,18 +88,18 @@ std::vector<AnimationClip*> Model::getAnimations() const {
 	return animations;
 }
 
-bool Model::addEmbededMaterial(const IMesh* mesh, const Material* mat) {
+bool Model::addEmbededMaterial(const IMesh* mesh, const IMaterial* mat) {
 	return m_embededMaterials.insert({ mesh->id(), mat->getName() }).second;
 }
 
-std::weak_ptr<Material> Model::embededMaterialForMesh(const IMesh* mesh) {
+std::weak_ptr<IMaterial> Model::embededMaterialForMesh(const IMesh* mesh) {
 	return embededMaterialForMesh(mesh->id());
 }
 
-std::weak_ptr<Material> Model::embededMaterialForMesh(ID meshId) {
+std::weak_ptr<IMaterial> Model::embededMaterialForMesh(ID meshId) {
 	auto pos = m_embededMaterials.find(meshId);
 	if (pos == m_embededMaterials.end())
-		return std::weak_ptr<Material>();
+		return std::weak_ptr<IMaterial>();
 
 	return MaterialManager::getInstance()->getMaterial(pos->second);
 }

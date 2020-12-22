@@ -1,6 +1,6 @@
 #pragma once
 #include"RenderableComponent.h"
-#include"Material.h"
+#include"IMaterial.h"
 #include"Model.h"
 #include"RendererCore.h"
 
@@ -37,13 +37,13 @@ public:
 	//
 	//material managment
 	//
-	void addMaterial(std::weak_ptr<Material> m);
-	void setMaterialAt(size_t index, std::weak_ptr<Material> m);
-	std::weak_ptr<Material> materialAt(size_t index) const;
+	void addMaterial(std::weak_ptr<IMaterial> mtl);
+	void setMaterialAt(size_t index, std::weak_ptr<IMaterial> mtl);
+	std::weak_ptr<IMaterial> materialAt(size_t index) const;
 	void swapMaterial(size_t formIndex, size_t toIndex);
 	void moveMaterial(size_t srcIndex, size_t dstIndex);
 
-	inline const std::vector<std::weak_ptr<Material>>& materials() const {
+	inline const std::vector<std::weak_ptr<IMaterial>>& materials() const {
 		return m_materials;
 	}
 
@@ -65,5 +65,5 @@ protected:
 	
 protected:
 	std::weak_ptr<Model> m_meshes;
-	std::vector<std::weak_ptr<Material>> m_materials;
+	std::vector<std::weak_ptr<IMaterial>> m_materials;
 };  

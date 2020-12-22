@@ -5,7 +5,7 @@
 
 class VertexArray;
 class Texture;
-class Material;
+class IMaterial;
 class Renderer;
 
 typedef unsigned int Index_t;
@@ -165,7 +165,7 @@ struct SkyBox_t {
 
 struct MeshRenderItem_t {
 	const VertexArray* vao;
-	const Material* material;
+	const IMaterial* material;
 	const glm::mat4* bonesTransform;
 	size_t indexCount;
 	size_t vertexCount;

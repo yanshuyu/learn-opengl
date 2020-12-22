@@ -27,6 +27,8 @@
 
 // renderring & animation
 #include"Transform.h"
+#include"PhongMaterial.h"
+#include"PBRMaterial.h"
 #include"Model.h"
 #include"Scene.h"
 #include"SceneObject.h"

@@ -1,5 +1,5 @@
 #pragma once
-#include"Material.h"
+#include"IMaterial.h"
 #include"Singleton.h"
 #include<unordered_map>
 #include<memory>
@@ -7,18 +7,15 @@
 
 
 class MaterialManager : public Singleton<MaterialManager> {
-	typedef std::unordered_map<std::string, std::shared_ptr<Material>> MaterialMap;
-
 public:
 	MaterialManager() = default;
 
-	std::weak_ptr<Material> addMaterial(const std::string& name);
-	bool addMaterial(Material* m);
-
-	std::weak_ptr<Material> getMaterial(ID id) const;
-	std::weak_ptr<Material> getMaterial(const std::string& name) const;
+	std::weak_ptr<IMaterial> addMaterial(const std::string& name, MaterialType type);
 	
-	bool removeMaterial(ID id);
+	bool addMaterial(IMaterial* mtl);
+
+	std::weak_ptr<IMaterial> getMaterial(const std::string& name) const;
+
 	bool removeMaterial(const std::string& name);
 	
 	void clearMaterials();
@@ -27,8 +24,9 @@ public:
 		return m_materials.size();
 	}
 
-	static Material* defaultMaterial();
-		
+	static IMaterial* defaultPhongMaterial();
+	static IMaterial* defaultPBRMaterial();
+
 private:
-	std::unordered_map<std::string, std::shared_ptr<Material>> m_materials;
+	std::unordered_map<std::string, std::shared_ptr<IMaterial>> m_materials;
 };

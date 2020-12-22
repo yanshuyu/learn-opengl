@@ -43,17 +43,17 @@ void MeshRenderComponent::destory(MeshRenderComponent* mrc){
 }
 
 
-void MeshRenderComponent::addMaterial(std::weak_ptr<Material> m) {
-	m_materials.push_back(m);
+void MeshRenderComponent::addMaterial(std::weak_ptr<IMaterial> mtl) {
+	m_materials.push_back(mtl);
 }
 
-void MeshRenderComponent::setMaterialAt(size_t index, std::weak_ptr<Material> m) {
-	m_materials[index] = m;
+void MeshRenderComponent::setMaterialAt(size_t index, std::weak_ptr<IMaterial> mtl) {
+	m_materials[index] = mtl;
 }
 
-std::weak_ptr<Material> MeshRenderComponent::materialAt(size_t index) const {
+std::weak_ptr<IMaterial> MeshRenderComponent::materialAt(size_t index) const {
 	if (index < 0 || index >= m_materials.size())
-		return std::weak_ptr<Material>();
+		return std::weak_ptr<IMaterial>();
 	
 	return m_materials[index];
 }
@@ -90,9 +90,9 @@ void MeshRenderComponent::render(RenderContext* context) {
 
 	for (size_t i = 0; i < model->meshCount(); i++) {
 		MeshRenderItem_t task;
-		std::shared_ptr<Material> strongMat = materialAt(i).expired() ? nullptr : materialAt(i).lock();
+		std::shared_ptr<IMaterial> mtl = materialAt(i).expired() ? nullptr : materialAt(i).lock();
 		auto mesh = model->meshAt(i);
-		auto mat = strongMat ? strongMat.get() : MaterialManager::getInstance()->defaultMaterial();
+		auto mat = mtl ? mtl.get() : MaterialManager::getInstance()->defaultPhongMaterial();
 
 		task.vao = mesh->vertexArray();
 		task.vertexCount = mesh->verticesCount();

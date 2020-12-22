@@ -50,9 +50,9 @@ public:
 	std::vector<IMesh*> getMeshes() const;
 	std::vector<AnimationClip*> getAnimations() const;
 
-	bool addEmbededMaterial(const IMesh* mesh, const Material* mat);
-	std::weak_ptr<Material> embededMaterialForMesh(const IMesh* mesh);
-	std::weak_ptr<Material> embededMaterialForMesh(ID meshId);
+	bool addEmbededMaterial(const IMesh* mesh, const IMaterial* mat);
+	std::weak_ptr<IMaterial> embededMaterialForMesh(const IMesh* mesh);
+	std::weak_ptr<IMaterial> embededMaterialForMesh(ID meshId);
 
 	inline ID id() const {
 		return m_id;

@@ -4,7 +4,7 @@
 #include"VertexLayoutDescription.h"
 #include"FrameBuffer.h"
 #include"Texture.h"
-#include"Material.h"
+#include"PhongMaterial.h"
 #include"Util.h"
 #include"Renderer.h"
 #include"SpotLightShadowMapping.h"
@@ -382,7 +382,7 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 
 		// set max shininess
 		if (m_passShader->hasUniform("u_maxShininess")) {
-			m_passShader->setUniform1("u_maxShininess", float(Material::s_maxShininess));
+			m_passShader->setUniform1("u_maxShininess", float(PhongMaterial::s_maxShininess));
 		}
 
 		// set g-buffers
