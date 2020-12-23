@@ -1,7 +1,6 @@
 #shader vertex
 #version 450 core
-
-#define MAX_NUM_BONE 156
+#include "Transform.glsl"
 
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec3 a_normal;
@@ -19,26 +18,6 @@ out VS_OUT{
 
 
 uniform mat4 u_VPMat;
-uniform mat4 u_ModelMat;
-uniform mat4 u_SkinPose[MAX_NUM_BONE];
-
-subroutine vec4 TransformType(vec4 pos, ivec4 bones, vec4 weights);
-subroutine uniform TransformType u_Transform;
-
-subroutine(TransformType)
-vec4 staticMesh(vec4 pos, ivec4 bones, vec4 weights) {
-	return u_ModelMat * pos;
-}
-
-subroutine(TransformType)
-vec4 skinMesh(vec4 pos, ivec4 bones, vec4 weights) {
-	mat4 skinMat = u_SkinPose[bones.x] * weights.x
-		+ u_SkinPose[bones.y] * weights.y
-		+ u_SkinPose[bones.z] * weights.z
-		+ u_SkinPose[bones.w] * weights.w;
-
-	return u_ModelMat * skinMat * pos;
-}
 
 
 void main() {
@@ -67,11 +46,9 @@ in VS_OUT{
 
 out vec4 frag_color;
 
-uniform sampler2D u_DiffuseMap;
-uniform bool u_HasDiffuseMap;
-
+uniform sampler2D u_AlbedoMap;
 uniform sampler2D u_NormalMap;
-uniform bool u_HasNormalMap;
+uniform ivec2 u_HasANMap;
 
 uniform vec3 u_AmbientSky;
 uniform vec3 u_AmbientGround;
@@ -79,7 +56,7 @@ uniform vec3 u_AmbientGround;
 
 vec3 calcAmibientLight() {
 	vec3 normalW = fs_in.normal_W;
-	if (u_HasNormalMap) {
+	if (u_HasANMap.y == 1) {
 		vec3 normal = (texture(u_NormalMap, fs_in.uv).xyz - 0.5) * 2;
 		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
 		normalW = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
@@ -90,8 +67,8 @@ vec3 calcAmibientLight() {
 
 
 void main() {
-	vec4 mainColor = u_HasDiffuseMap ? texture(u_DiffuseMap, fs_in.uv) : vec4(1.f);
-	if (mainColor.a < 0.05f)
+	vec4 mainColor = u_HasANMap.x == 1 ? texture(u_AlbedoMap, fs_in.uv) : vec4(1.f);
+	if (mainColor.a < 0.1f)
 		discard;
 
 	mainColor.rgb *= mainColor.rgb; // sRGB to RGb

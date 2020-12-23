@@ -24,7 +24,7 @@ public:
 	}
 
 
-	std::string getResourcePath(const std::string& fileName) const;
+	std::pair<bool, std::string> getResourcePath(const std::string& fileName) const;
 
 private:
 	std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;

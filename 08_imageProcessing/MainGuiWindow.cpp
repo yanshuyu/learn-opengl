@@ -59,6 +59,8 @@ bool MainGuiWindow::initialize() {
 		}
 	}
 
+	m_pbrMan = m_application->m_scene->findObjectWithNameRecursive("PBR_Man");
+
 	return true;
 }
 
@@ -231,6 +233,29 @@ void MainGuiWindow::render() {
 		if (ImGui::SliderFloat("HP", &m_hp, 0.f, 1.f) && !m_animAC.expired())
 			m_animAC.lock()->setHp(m_hp);
 
+		ImGui::Separator();
+	}
+
+
+	if (m_pbrMan) {
+		ImGui::Text("PBR Material Setting");
+		auto meshRenderer = m_pbrMan->getComponent<MeshRenderComponent>().lock();
+		auto mtl = meshRenderer->materialAt(0).lock()->asType<PBRMaterial>();
+		ImGui::ColorEdit3("Base Main Color", &mtl->m_mainColor[0]);
+		ImGui::SliderFloat("Base Metallic", &mtl->m_metallic, 0.f, 1.f);
+		ImGui::SliderFloat("Base Roughness", &mtl->m_roughness, 0.f, 1.f);
+
+		mtl = meshRenderer->materialAt(1).lock()->asType<PBRMaterial>();
+		ImGui::ColorEdit3("Head Main Color", &mtl->m_mainColor[0]);
+		ImGui::SliderFloat("Head Metallic", &mtl->m_metallic, 0.f, 1.f);
+		ImGui::SliderFloat("Head Roughness", &mtl->m_roughness, 0.f, 1.f);
+
+		mtl = meshRenderer->materialAt(2).lock()->asType<PBRMaterial>();
+		ImGui::ColorEdit3("Body Main Color", &mtl->m_mainColor[0]);
+		ImGui::SliderFloat("Body Metallic", &mtl->m_metallic, 0.f, 1.f);
+		ImGui::SliderFloat("Body Roughness", &mtl->m_roughness, 0.f, 1.f);
+		
+		ImGui::Separator();
 	}
 
 

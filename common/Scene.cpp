@@ -126,8 +126,8 @@ SceneObject* Scene::addCamera(const glm::vec3& pos, const glm::vec3& rot, const 
 	return camera;
 }
 
-SceneObject* Scene::addModel(const std::string& file, const std::string& name) {
-	auto model = MeshManager::getInstance()->addMesh(file).lock();
+SceneObject* Scene::addModel(const std::string& file, int loadOptions, const std::string& name) {
+	auto model = MeshManager::getInstance()->addMesh(file, loadOptions).lock();
 
 	std::string modelName = name.empty() ? model->getName() : name;
 	SceneObject* obj = addObject(modelName);

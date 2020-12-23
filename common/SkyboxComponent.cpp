@@ -128,12 +128,12 @@ bool SkyboxComponent::load(const std::string& posX, const std::string& negX,
 	const std::string& posZ, const std::string& negZ) {
 	m_cubeMap->bind(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
 	auto texMgr = TextureManager::getInstance();
-	bool ok = m_cubeMap->loadCubeMapFromFiles(texMgr->getResourcePath( ExtractFileNameFromPath(posX)), 
-		texMgr->getResourcePath(ExtractFileNameFromPath(negX)), 
-		texMgr->getResourcePath(ExtractFileNameFromPath(posY)), 
-		texMgr->getResourcePath(ExtractFileNameFromPath(negY)), 
-		texMgr->getResourcePath(ExtractFileNameFromPath(posZ)),
-		texMgr->getResourcePath(ExtractFileNameFromPath(negZ)));
+	bool ok = m_cubeMap->loadCubeMapFromFiles(texMgr->getResourcePath(ExtractFileNameFromPath(posX)).second,
+		texMgr->getResourcePath(ExtractFileNameFromPath(negX)).second,
+		texMgr->getResourcePath(ExtractFileNameFromPath(posY)).second,
+		texMgr->getResourcePath(ExtractFileNameFromPath(negY)).second,
+		texMgr->getResourcePath(ExtractFileNameFromPath(posZ)).second,
+		texMgr->getResourcePath(ExtractFileNameFromPath(negZ)).second);
 	m_cubeMap->unbind();
 
 	return ok;
@@ -141,10 +141,14 @@ bool SkyboxComponent::load(const std::string& posX, const std::string& negX,
 
 
 bool SkyboxComponent::load(Face face, const std::string& image) {
+	auto imagePath = TextureManager::getInstance()->getResourcePath(ExtractFileNameFromPath(image));
+	if (!imagePath.first)
+		return false;
+
 	int channelCnt = 0;
 	int w, h;
 	stbi_set_flip_vertically_on_load(true);
-	auto data = stbi_load(TextureManager::getInstance()->getResourcePath(ExtractFileNameFromPath(image)).c_str(), &w, &h, &channelCnt, 0);
+	auto data = stbi_load(imagePath.second.c_str(), &w, &h, &channelCnt, 0);
 
 	if (!data)
 		return false;

@@ -49,12 +49,7 @@ public:
 class LightPassRenderTaskExecuter : public RenderTaskExecutor {
 public:
 	LightPassRenderTaskExecuter(IRenderTechnique* rt);
-	bool initialize() override;
 	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
-	void release() override;
-
-private:
-	std::unique_ptr<Buffer> m_materialUBO;
 };
 
 

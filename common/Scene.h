@@ -1,6 +1,7 @@
 #pragma once
 #include"SceneObject.h"
 #include"RendererCore.h"
+#include"MeshLoader.h"
 #include<functional>
 
 
@@ -43,7 +44,7 @@ public:
 	void addOject(SceneObject* object);
 	void addObject(std::unique_ptr<SceneObject>&& object);
 	
-	SceneObject* addModel( const std::string& file, const std::string& name = "");
+	SceneObject* addModel( const std::string& file, int loadOptions = MeshLoader::Option::LoadMaterials | MeshLoader::Option::LoadAnimations,const std::string& name = "");
 	SceneObject* addGrid(float w, float d, float spacing, std::weak_ptr<IMaterial> mat = std::weak_ptr<IMaterial>());
 	SceneObject* addPlane(float w, float d, std::weak_ptr<IMaterial> mat = std::weak_ptr<IMaterial>());
 	SceneObject* addCube(std::weak_ptr<IMaterial> mat = std::weak_ptr<IMaterial>());

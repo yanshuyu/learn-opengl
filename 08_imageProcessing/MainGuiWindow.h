@@ -9,6 +9,8 @@ class AnimatorController;
 class HDRFilterComponent;
 class HDRFilterComponent2;
 class GaussianBlurFilterComponent;
+class SceneObject;
+
 
 class MainGuiWindow : public GuiWindow {
 public:
@@ -38,4 +40,6 @@ protected:
 	bool m_blurEnabled;
 	float m_sigma;
 	int m_blurKernel;
+
+	SceneObject* m_pbrMan;
 };
