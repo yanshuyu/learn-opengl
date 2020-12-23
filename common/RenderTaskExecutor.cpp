@@ -38,7 +38,7 @@ void DepthPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& render
 
 	if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
 		if (renderTask.boneCount <= 0) {
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "staticMesh");
 		}
 		else {
 #ifdef _DEBUG
@@ -46,9 +46,11 @@ void DepthPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& render
 #endif // _DEBUG
 			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
 			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
 		}
 	}
+
+	shader->bindSubroutineUniforms();
 
 	if (renderTask.primitive == PrimitiveType::Triangle) {
 		if (renderTask.indexCount > 0) {
@@ -85,7 +87,7 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 
 		if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
 			if (renderTask.boneCount <= 0) {
-				shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
+				shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "staticMesh");
 			}
 			else {
 #ifdef _DEBUG
@@ -93,7 +95,7 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 #endif // _DEBUG
 				int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
 				shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
-				shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
+				shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
 			}
 		}
 
@@ -119,6 +121,7 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 		}
 	} 
 
+	shader->bindSubroutineUniforms();
 	// draw
 	if (renderTask.primitive == PrimitiveType::Triangle) {
 		if (renderTask.indexCount > 0) {
@@ -173,7 +176,7 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 
 	if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
 		if (renderTask.boneCount <= 0) {
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "staticMesh");
 		}
 		else {
 #ifdef _DEBUG
@@ -181,11 +184,15 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 #endif // _DEBUG
 			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
 			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
 		}
 	}
 	
 	if (auto mtl = renderTask.material->asType<PhongMaterial>()) {
+		if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_ShadingMode")) {
+			shader->setSubroutineUniform(Shader::Type::FragmentShader, "u_ShadingMode", "PhongShading");
+		}
+
 		// set materials
 		if (shader->hasUniformBlock("MatrialBlock")) {
 			s_materialBlock.diffuseFactor = glm::vec4(mtl->m_mainColor, mtl->m_opacity);
@@ -239,7 +246,7 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 		}
 	}
 
-
+	shader->bindSubroutineUniforms();
 	// draw
 	if (renderTask.primitive == PrimitiveType::Triangle) {
 		if (renderTask.indexCount > 0) {
@@ -308,7 +315,7 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 
 	if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
 		if (renderTask.boneCount <= 0) {
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "staticMesh");
 		}
 		else {
 #ifdef _DEBUG
@@ -316,7 +323,7 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 #endif // _DEBUG
 			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
 			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
 		}
 	}
 
@@ -373,6 +380,8 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 			}
 		}
 	}
+	
+	shader->bindSubroutineUniforms();
 
 	// draw
 	if (renderTask.primitive == PrimitiveType::Triangle) {
@@ -424,7 +433,7 @@ void ShadowPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& rende
 
 	if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
 		if (renderTask.boneCount <= 0) {
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "staticMesh");
 		}
 		else {
 #ifdef _DEBUG
@@ -432,9 +441,11 @@ void ShadowPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& rende
 #endif // _DEBUG
 			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
 			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
 		}
 	}
+
+	shader->bindSubroutineUniforms();
 
 	if (renderTask.primitive == PrimitiveType::Triangle) {
 		if (renderTask.indexCount > 0) {
@@ -476,7 +487,7 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 
 	if (shader->hasSubroutineUniform(Shader::Type::VertexShader, "u_Transform")) {
 		if (task.boneCount <= 0) {
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "staticMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "staticMesh");
 		}
 		else {
 #ifdef _DEBUG
@@ -484,7 +495,7 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 #endif // _DEBUG
 			int  numBone = MIN(task.boneCount, MAX_NUM_BONE);
 			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(task.bonesTransform[0]), numBone);
-			shader->setSubroutineUniforms(Shader::Type::VertexShader, { {"u_Transform", "skinMesh"} });
+			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
 		}
 	}
 
@@ -509,6 +520,8 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 			}
 		}
 	}
+
+	shader->bindSubroutineUniforms();
 
 	if (task.primitive == PrimitiveType::Triangle) {
 		if (task.indexCount > 0) {

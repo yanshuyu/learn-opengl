@@ -63,7 +63,7 @@ uniform sampler2D u_specularMap;
 uniform bool u_hasSpecularMap;
 
 uniform sampler2D u_emissiveMap;
- uniform bool u_hasEmissiveMap;
+uniform bool u_hasEmissiveMap;
 
 uniform vec3 u_cameraPosW;
 
@@ -154,6 +154,10 @@ float softShadow() {
 }
 
 
+subroutine vec3 ShadingMode();
+subroutine uniform ShadingMode u_ShadingMode;
+
+subroutine (ShadingMode)
 vec3 PhongShading() {
 	vec4 diffuseTexColor = u_hasDiffuseMap ? texture(u_diffuseMap, fs_in.uv) : vec4(1.f);
 	if (diffuseTexColor.a < 0.05f) {
@@ -181,9 +185,13 @@ vec3 PhongShading() {
 	return Phong(I, L, N, V, kd, ks, shinness);
 }
 
+subroutine (ShadingMode)
+vec3 PBRShading() {
+	return vec3(1.f, 0.f, 0.f);
+}
 
 void main() {
-	vec3 C = PhongShading();
+	vec3 C = u_ShadingMode();
 	vec3 E = u_hasEmissiveMap ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
 	E *= u_emissiveColor;
 

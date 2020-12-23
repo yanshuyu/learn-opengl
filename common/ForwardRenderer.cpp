@@ -164,6 +164,7 @@ void ForwardRenderer::drawDepthPass(const Scene_t& scene) {
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
 	m_renderer->setColorMask(true);
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 	m_pass = RenderPass::None;
 }
@@ -209,6 +210,7 @@ void ForwardRenderer::drawUnlitScene(const Scene_t& scene) {
 
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 	m_pass = RenderPass::None;
 }
@@ -346,6 +348,7 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, bool useCutOut) {
 
 		m_passShader->unbindUniformBlock("LightBlock");
 		m_renderer->popShadrProgram();
+		m_passShader->unbindSubroutineUniforms();
 		m_passShader = nullptr;
 		m_pass = RenderPass::None;
 	}
@@ -387,6 +390,7 @@ void ForwardRenderer::drawAmbientScene(const Scene_t& scene) {
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
 	m_pass = RenderPass::None;
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 }
 
@@ -420,7 +424,6 @@ void ForwardRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light
 	m_renderer->popGPUPipelineState();
 	m_renderer->setColorMask(true);
 	m_pass = RenderPass::None;
-	m_passShader = nullptr;
 }
 
 

@@ -135,7 +135,9 @@ public:
 	bool bindShaderStorageBlock(const std::string& name, size_t idx);
 	void unbindShaderStorageBlock(const std::string& name);
 
-	bool setSubroutineUniforms(Shader::Type shaderStage, const std::unordered_map<std::string, std::string>& mapping);
+	bool setSubroutineUniform(Shader::Type stage, const std::string& uniformName, const std::string& subrotineName);
+	void bindSubroutineUniforms();
+	void unbindSubroutineUniforms();
 	const std::vector<Subroutine>& getSubroutines(Shader::Type shaderStage) const;
 	const std::vector<SubroutineUniform>& getSubroutineUniforms(Shader::Type shaderStage) const;
 
@@ -206,6 +208,7 @@ protected:
 	std::vector<UniformBlock> m_uniformBlocks;
 	std::vector<ShaderStorageBlock> m_shaderStorageBlocks;
 	mutable std::unordered_map<Shader::Type, StageSubroutineInfo> m_stageSubroutinesInfo;
+	std::unordered_map<Shader::Type, std::unordered_map<std::string, std::string>> m_subroutineMapping;
 };
 
 

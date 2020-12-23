@@ -95,21 +95,17 @@ void PointLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& 
 	renderer->popViewport();
 	renderer->popRenderTarget();
 	renderer->popShadrProgram();
+	m_shader->unbindSubroutineUniforms();
 	m_shader = nullptr;
 }
 
 
 void PointLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgram* shader) {		
 	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
-		if (light.shadowType == ShadowType::NoShadow) {
-			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
-		}
-		else if (light.shadowType == ShadowType::HardShadow) {
-			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "hardShadow"} });
-		}
-		else if (light.shadowType == ShadowType::SoftShadow) {
-			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "softShadow"} });
-		}
+		static std::map<ShadowType, std::string> shadowSubrotines{ {ShadowType::HardShadow, "hardShadow"},
+			{ShadowType::SoftShadow, "softShadow"}, {ShadowType::NoShadow, "noShadow"} };
+
+		shader->setSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten", shadowSubrotines.at(light.shadowType));
 	}
 
 	if (shader->hasUniform("u_shadowMap") && light.isCastShadow()) {

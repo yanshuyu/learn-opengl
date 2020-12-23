@@ -186,6 +186,7 @@ void DeferredRenderer::drawDepthPass(const Scene_t& scene) {
 	m_renderer->popGPUPipelineState();
 	m_renderer->setColorMask(true);
 	m_renderer->popShadrProgram();
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 	m_pass = RenderPass::None;
 }
@@ -216,6 +217,7 @@ void DeferredRenderer::drawGeometryPass(const Scene_t& scene) {
 	
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 	m_pass = RenderPass::None;
 }
@@ -422,6 +424,8 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 			m_passShader->setUniform1("u_emissive", int(Texture::Unit::EmissiveMap));
 		}
 
+		m_passShader->bindSubroutineUniforms();
+
 		m_renderer->drawFullScreenQuad();
 
 		m_shadowMappings[light.type]->endRenderLight(light, m_passShader.get());
@@ -436,6 +440,7 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 		if (emissive) emissive->unbind();
 
 		m_renderer->popShadrProgram();
+		m_passShader->unbindSubroutineUniforms();
 		m_passShader = nullptr;
 		m_pass = RenderPass::None;
 	}
@@ -559,6 +564,7 @@ void DeferredRenderer::drawCutOutsLights(const Scene_t& scene) {
 			lightUBO->unbind();
 		m_passShader->unbindUniformBlock("LightBlock");
 		m_renderer->popShadrProgram();
+		m_passShader->unbindSubroutineUniforms();
 		m_passShader = nullptr;
 		m_pass = RenderPass::None;
 	}
@@ -593,6 +599,8 @@ void DeferredRenderer::drawSolidsAmbient(const Scene_t& scene) {
 	diffuseTex->bind(Texture::Unit::DiffuseMap);
 	m_passShader->setUniform1("u_DiffuseMap", int(Texture::Unit::DiffuseMap));
 
+	m_passShader->bindSubroutineUniforms();
+
 	m_renderer->drawFullScreenQuad();
 
 	normalTex->unbind();
@@ -600,6 +608,7 @@ void DeferredRenderer::drawSolidsAmbient(const Scene_t& scene) {
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
 	m_pass = RenderPass::None;
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 }
 
@@ -638,6 +647,7 @@ void DeferredRenderer::drawCutOutsAmbient(const Scene_t& scene) {
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
 	m_pass = RenderPass::None;
+	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
 }
 
@@ -670,7 +680,6 @@ void DeferredRenderer::drawLightShadow(const Scene_t& scene, const Light_t& ligh
 
 	m_renderer->popGPUPipelineState();
 	m_renderer->setColorMask(true);
-	m_passShader = nullptr;
 	m_pass = RenderPass::None;
 }
 

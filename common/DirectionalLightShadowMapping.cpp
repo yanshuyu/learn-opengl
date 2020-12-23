@@ -97,27 +97,17 @@ void DirectionalLightShadowMapping::renderShadow(const Scene_t& scene, const Lig
 	renderer->popViewport();
 	renderer->popRenderTarget();
 	renderer->popShadrProgram();
+	m_shader->unbindSubroutineUniforms();
 	m_shader = nullptr;
 }
 
 
 void DirectionalLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgram* shader) {
-
 	if (shader->hasSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten")) {
-		switch (light.shadowType)
-		{
-		case ShadowType::NoShadow: 
-			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "noShadow"} });
-			break;
-		case ShadowType::HardShadow:
-			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "hardShadow"} });
-			break;
-		case ShadowType::SoftShadow:
-			shader->setSubroutineUniforms(Shader::Type::FragmentShader, { {"u_shadowAtten", "softShadow"} });
-			break;
-		default:
-			break;
-		}	
+		static std::map<ShadowType, std::string> shadowSubrotines { {ShadowType::HardShadow, "hardShadow"},
+			{ShadowType::SoftShadow, "softShadow"}, {ShadowType::NoShadow, "noShadow"} };
+		
+		shader->setSubroutineUniform(Shader::Type::FragmentShader, "u_shadowAtten", shadowSubrotines.at(light.shadowType));
 	}
 
 	if (shader->hasUniform("u_shadowMapArray") && light.isCastShadow()) {

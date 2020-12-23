@@ -1,5 +1,7 @@
 #include"ShaderProgram.h"
 #include"Util.h"
+#include"FrameAllocator.h"
+#include"Containers.h"
 #include<filesystem>
 #include<fstream>
 #include<sstream>
@@ -201,41 +203,71 @@ void ShaderProgram::unbindShaderStorageBlock(const std::string& name) {
 		GLCALL(glShaderStorageBlockBinding(m_handler, blockIdx, 0));
 }
 
-bool ShaderProgram::setSubroutineUniforms(Shader::Type shaderStage, const std::unordered_map<std::string, std::string>& mapping) {
-	if (!isBinded())
+
+bool ShaderProgram::setSubroutineUniform(Shader::Type stage, const std::string& uniformName, const std::string& subrotineName) {
+	auto uniform = getSubroutineUniform(stage, uniformName);
+	if (!uniform)
+		return false;
+	
+	auto subrotine = getSubroutine(stage, subrotineName);
+	if (!subrotine)
 		return false;
 
-	std::vector<std::pair<int, int>> locationIndexMapping;
-	for (auto& nameMapping : mapping) {
-		SubroutineUniform* su = getSubroutineUniform(shaderStage, nameMapping.first);
-		Subroutine*  st = getSubroutine(shaderStage, nameMapping.second);
-		if (!su || !st)
-			return false;
+	if (!checkSubroutineCompatible(uniform, subrotine))
+		return false;
 
-		if (!checkSubroutineCompatible(su, st))
-			return false;
-
-		locationIndexMapping.push_back({ su->location, st->index });
-	}
-
-	std::sort(locationIndexMapping.begin(), 
-		locationIndexMapping.end(),
-		[](decltype(locationIndexMapping)::const_reference l, decltype(locationIndexMapping)::const_reference r) {
-			return l.first < r.first;
-		});
-
-	std::vector<int> indices;
-	indices.reserve(locationIndexMapping.size());
-
-	std::transform(locationIndexMapping.begin(),
-		locationIndexMapping.end(),
-		std::back_inserter<decltype(indices)>(indices), [](decltype(locationIndexMapping)::const_reference locIdx) {
-			return locIdx.second;
-		});
-
-	GLCALL(glUniformSubroutinesuiv(int(shaderStage), indices.size(), reinterpret_cast<unsigned*>(indices.data())));
+	if (m_subroutineMapping.find(stage) == m_subroutineMapping.end())
+		m_subroutineMapping[stage] = {};
+	
+	m_subroutineMapping.at(stage)[uniformName] = subrotineName;
 
 	return true;
+}
+
+
+void ShaderProgram::bindSubroutineUniforms() {
+	if (!isBinded())
+		return;
+
+	frame_mark();
+
+	for (auto& suMapping : m_subroutineMapping) {
+		if (suMapping.second.empty())
+			continue;
+
+		FrameVector<std::pair<int, int>> locationIndexMapping;
+		locationIndexMapping.reserve(suMapping.second.size());
+		for (auto& nameMapping : suMapping.second) {
+			SubroutineUniform* su = getSubroutineUniform(suMapping.first, nameMapping.first);
+			Subroutine* st = getSubroutine(suMapping.first, nameMapping.second);
+			locationIndexMapping.push_back({ su->location, st->index });
+		}
+
+		std::sort(locationIndexMapping.begin(),
+			locationIndexMapping.end(),
+			[](decltype(locationIndexMapping)::const_reference l, decltype(locationIndexMapping)::const_reference r) {
+				return l.first < r.first;
+			});
+
+		FrameVector<int> indices;
+		indices.reserve(locationIndexMapping.size());
+		std::transform(locationIndexMapping.begin(),
+			locationIndexMapping.end(),
+			std::back_inserter<decltype(indices)>(indices), [](decltype(locationIndexMapping)::const_reference locIdx) {
+				return locIdx.second;
+			});
+
+		GLCALL(glUniformSubroutinesuiv(int(suMapping.first), indices.size(), reinterpret_cast<unsigned*>(indices.data())));
+	}
+
+	frame_clear();
+}
+
+
+void ShaderProgram::unbindSubroutineUniforms() {
+	for (auto& suMapping : m_subroutineMapping) {
+		suMapping.second.clear();
+	}
 }
 
 const std::vector<ShaderProgram::Subroutine>& ShaderProgram::getSubroutines(Shader::Type shaderStage) const {
