@@ -94,7 +94,7 @@ layout(std140) uniform LightBlock{
 };
 
 vec3 sRGB2RGB(in vec3 color) {
-	return color * color;
+	return pow(color, vec3(2.2f));
 }
 
 subroutine float ShadowAttenType();

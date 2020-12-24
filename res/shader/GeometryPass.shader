@@ -54,7 +54,7 @@ layout(location = 5) out vec3 o_tmr; // materialtype(1:phong, 2:pbr)/metallic/ro
 
 
 vec3 sRGB2RGB(in vec3 color) {
-	return color * color;
+	return pow(color, vec3(2.2f));
 }
 
 uniform sampler2D u_albedoMap;

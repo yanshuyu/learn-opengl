@@ -21,8 +21,13 @@ void main() {
 in vec2 frag_uv;
 out vec4 frag_color;
 
+vec3 GammaCorrection(vec3 rgb) {
+	return pow(rgb, vec3(1.f / 2.2f));
+}
+
 uniform sampler2D u_color;
 
 void main() {
-	frag_color = vec4(texture(u_color, frag_uv).rgb, 1.f);
+	vec3 C = GammaCorrection(texture(u_color, frag_uv).rgb);
+	frag_color = vec4(C, 1.f);
 }

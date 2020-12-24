@@ -97,7 +97,7 @@ vec3 PBR(vec3 irradiance, vec3 L, vec3 N, vec3 V, vec3 albedo, float metallic, f
     //radiance = radiance / (radiance + vec3(1.f));
     
     // Gamma correction
-    radiance = pow(radiance, vec3(1.f / 2.2f));
+    //radiance = pow(radiance, vec3(1.f / 2.2f));
 
     return radiance;
 }

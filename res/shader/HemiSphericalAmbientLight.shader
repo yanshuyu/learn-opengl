@@ -53,6 +53,9 @@ uniform ivec2 u_HasANMap;
 uniform vec3 u_AmbientSky;
 uniform vec3 u_AmbientGround;
 
+vec3 sRGB2RGB(vec3 rgb) {
+	return pow(rgb, vec3(2.2f));
+}
 
 vec3 calcAmibientLight() {
 	vec3 normalW = fs_in.normal_W;
@@ -71,7 +74,7 @@ void main() {
 	if (mainColor.a < 0.1f)
 		discard;
 
-	mainColor.rgb *= mainColor.rgb; // sRGB to RGb
+	mainColor.rgb  = sRGB2RGB(mainColor.rgb);
 
 	frag_color = vec4(calcAmibientLight() * mainColor.rgb, 1.f);
 }
