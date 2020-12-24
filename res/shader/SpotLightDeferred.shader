@@ -18,6 +18,7 @@ void main() {
 #shader fragment
 #version 450 core
 #include "Phong.glsl"
+#include "PBR.glsl"
 
 const int PCFCornelSize = 5;
 
@@ -27,9 +28,10 @@ out vec4 frag_color;
 
 uniform sampler2D u_posW;
 uniform sampler2D u_nromalW;
-uniform sampler2D u_diffuse;
+uniform sampler2D u_albedo;
 uniform sampler2D u_specular;
-uniform sampler2D u_emissive;
+uniform sampler2D u_tmr; // materialtype/metallic/roughness
+
 uniform float u_maxShininess;
 
 uniform sampler2D u_shadowMap;
@@ -93,32 +95,36 @@ float softShadow(vec3 P) {
 
 
 
-vec3 PhongShading(vec3 P) {
-	vec4 specular = texture(u_specular, f_uv);
-	vec3 kd = texture(u_diffuse, f_uv).rgb;
-	vec3 ks = specular.rgb;
-	float shinness = specular.a * u_maxShininess;
+void main() {
+	vec3 P = texture(u_posW, f_uv).xyz;
 
 	vec3 l = u_lightPos.xyz - P;
 	float distance = length(l);
 	vec3 L = l / distance;
-	vec3 V = normalize(u_cameraPosW - P);
-	vec3 N = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
 
 	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance);
 	float angleAtten = smoothstep(u_angles.x * 0.5f, u_angles.y * 0.5f, acos(dot(L, u_toLight)));
-	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten * angleAtten;
 
-	return Phong(I, L, N, V, kd, ks, shinness);
-}
-void main() {
-	vec3 P = texture(u_posW, f_uv).xyz;
-	vec3 C = PhongShading(P);
-	vec3 E = texture(u_emissive, f_uv).rgb;
+	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten * angleAtten;
+	vec3 N = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
+	vec3 V = normalize(u_cameraPosW - P);
+	vec3 A = texture(u_albedo, f_uv).rgb;
+	vec3 TMR = texture(u_tmr, f_uv).rgb;
+
+	vec3 C = vec3(1.f, 0.f, 0.f);
+	if (TMR.r == 1.f) {
+		vec4 specular = texture(u_specular, f_uv);
+		vec3 ks = specular.rgb;
+		float shinness = specular.a * u_maxShininess;
+		C = Phong(I, L, N, V, A, ks, shinness);
+	}
+	else if (TMR.r == 2.f) {
+		C = PBR(I, L, N, V, A, TMR.g, TMR.b);
+	}
 	
 	float shadowAtten = u_shadowAtten(P);
 
-	frag_color = vec4(C * shadowAtten + E, 1.f);
+	frag_color = vec4(C * shadowAtten, 1.f);
 }
 
 

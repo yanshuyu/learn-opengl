@@ -18,6 +18,7 @@ void main() {
 #shader fragment
 #version 450 core
 #include "Phong.glsl"
+#include "PBR.glsl"
 
 const float diskRadius = 0.05f;
 
@@ -35,18 +36,18 @@ in vec2 f_uv;
 out vec4 frag_color;
 
 
-layout(location = 0) uniform sampler2D u_posW;
-layout(location = 1) uniform sampler2D u_nromalW;
-layout(location = 2) uniform sampler2D u_diffuse;
-layout(location = 3) uniform sampler2D u_specular;
-layout(location = 4) uniform sampler2D u_emissive;
+uniform sampler2D u_posW;
+uniform sampler2D u_nromalW;
+uniform sampler2D u_albedo;
+uniform sampler2D u_specular;
+uniform sampler2D u_tmr; // materialtype/metallic/roughness
 
-layout(location = 5) uniform float u_maxShininess;
-layout(location = 6) uniform vec3 u_cameraPosW;
+uniform float u_maxShininess;
+uniform vec3 u_cameraPosW;
 
-layout(location = 7) uniform samplerCube u_shadowMap;
-layout(location = 8) uniform float u_shadowStrength;
-layout(location = 9) uniform float u_shadowBias;
+uniform samplerCube u_shadowMap;
+uniform float u_shadowStrength;
+uniform float u_shadowBias;
 
 layout(std140) uniform LightBlock{
 	vec4 u_lightPos; // (w for range)
@@ -89,32 +90,34 @@ float softShadow(vec3 posW) {
 }
 
 
-vec3 PhongShading(vec3 P) {
-	vec4 specular = texture(u_specular, f_uv);
-	vec3 kd = texture(u_diffuse, f_uv).rgb;
-	vec3 ks = specular.rgb;
-	float shinness = specular.a * u_maxShininess;
-
+void main() {
+	vec3 P = texture(u_posW, f_uv).xyz;
+	
 	vec3 l = u_lightPos.xyz - P;
 	float distance = length(l);
 	float rangeAtten = 1.f - smoothstep(0.f, u_lightPos.w, distance);
+
 	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten;
 	vec3 L = l / distance;
 	vec3 N = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
 	vec3 V = normalize(u_cameraPosW - P);
+	vec3 A = texture(u_albedo, f_uv).rgb;
+	vec3 TMR = texture(u_tmr, f_uv).rgb;
 
-	return Phong(I, L, N, V, kd, ks, shinness);
-}
-
-
-void main() {
-	vec3 P = texture(u_posW, f_uv).xyz;
-	vec3 C = PhongShading(P);
-	vec3 E = texture(u_emissive, f_uv).rgb;
+	vec3 C = vec3(1.f, 0.f, 0.f);
+	if (TMR.r == 1.f) {
+		vec4 specular = texture(u_specular, f_uv);
+		vec3 ks = specular.rgb;
+		float shinness = specular.a * u_maxShininess;
+		C = Phong(I, L, N, V, A, ks, shinness);
+	}
+	else if (TMR.r == 2.f) {
+		C = PBR(I, L, N, V, A, TMR.g, TMR.b);
+	}
 
 	float shadowAtte = u_shadowAtten(P);
 
-	frag_color = vec4(C * shadowAtte + E, 1.f);
+	frag_color = vec4(C * shadowAtte, 1.f);
 }
 
 

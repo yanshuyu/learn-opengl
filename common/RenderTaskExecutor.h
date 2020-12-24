@@ -56,13 +56,7 @@ public:
 class GeometryPassRenderTaskExecutor : public RenderTaskExecutor {
 public:
 	GeometryPassRenderTaskExecutor(IRenderTechnique* rt);
-
-	bool initialize() override;
 	void executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) override;
-	void release() override;
-
-private:
-	std::unique_ptr<Buffer> m_materialUBO;
 };
 
 

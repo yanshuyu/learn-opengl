@@ -198,7 +198,7 @@ void DeferredRenderer::drawGeometryPass(const Scene_t& scene) {
 
 	auto geometryShader = ShaderProgramManager::getInstance()->getProgram("GeometryPass");
 	if (geometryShader.expired())
-		geometryShader = ShaderProgramManager::getInstance()->addProgram("GeometryPass.shader");
+		geometryShader = ShaderProgramManager::getInstance()->addProgram("GeometryPass");
 	ASSERT(!geometryShader.expired());
 
 	m_passShader = geometryShader.lock();
@@ -393,15 +393,15 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 		Texture* diffuse = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
 		Texture* specular = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
 		Texture* emissive = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
+		Texture* tmr = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 5);
 
 #ifdef _DEBUG
-		ASSERT(pos && normal && diffuse && specular && emissive);
+		ASSERT(pos && normal && diffuse && specular && emissive && tmr);
 #endif // _DEBUG
 
-
 		if (m_passShader->hasUniform("u_posW") && pos) {
-			pos->bind(Texture::Unit::Position);
-			m_passShader->setUniform1("u_posW", int(Texture::Unit::Position));
+			pos->bind(Texture::Unit::Texture0);
+			m_passShader->setUniform1("u_posW", int(Texture::Unit::Texture0));
 		}
 
 		if (m_passShader->hasUniform("u_nromalW") && normal) {
@@ -409,9 +409,9 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 			m_passShader->setUniform1("u_nromalW", int(Texture::Unit::NormalMap));
 		}
 
-		if (m_passShader->hasUniform("u_diffuse") && diffuse) {
+		if (m_passShader->hasUniform("u_albedo") && diffuse) {
 			diffuse->bind(Texture::Unit::DiffuseMap);
-			m_passShader->setUniform1("u_diffuse", int(Texture::Unit::DiffuseMap));
+			m_passShader->setUniform1("u_albedo", int(Texture::Unit::DiffuseMap));
 		}
 
 		if (m_passShader->hasUniform("u_specular") && specular) {
@@ -424,20 +424,24 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 			m_passShader->setUniform1("u_emissive", int(Texture::Unit::EmissiveMap));
 		}
 
+		if (m_passShader->hasUniform("u_tmr") && tmr) {
+			tmr->bind(Texture::Unit::Texture1, Texture::Target::Texture_2D);
+			m_passShader->setUniform1("u_tmr", int(Texture::Unit::Texture1));
+		}
+
 		m_passShader->bindSubroutineUniforms();
 
 		m_renderer->drawFullScreenQuad();
 
 		m_shadowMappings[light.type]->endRenderLight(light, m_passShader.get());
 
-		if (lightUBO)
-			lightUBO->unbind();
-
+		if (lightUBO) lightUBO->unbind();
 		if (pos) pos->unbind();
 		if (normal) normal->unbind();
 		if (diffuse) diffuse->unbind();
 		if (specular) specular->unbind();
 		if (emissive) emissive->unbind();
+		if (tmr) tmr->unbind();
 
 		m_renderer->popShadrProgram();
 		m_passShader->unbindSubroutineUniforms();
@@ -728,155 +732,67 @@ void DeferredRenderer::onShadowMapResolutionChange(float w, float h) {
 
 bool DeferredRenderer::setupRenderTargets() {
 	// world position
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color, 0)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif 
-		return false;
-	}
-	
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB32F, RenderTarget::Slot::Color, 0));
 	Texture* buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 0);
-#ifdef _DEBUG
-	ASSERT(buffer);
-#endif 
-	if (buffer) {
-		buffer->bind();
-		buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		buffer->unbind();
-	}
-
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->unbind();
 
 	// world normal
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 1)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif 
-		return false;
-	}
-	
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB8, RenderTarget::Slot::Color, 1));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
-#ifdef _DEBUG
-	ASSERT(buffer);
-#endif 
-	if (buffer) {
-		buffer->bind();
-		buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		buffer->unbind();
-	}
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->unbind();
 
 	// diffuse color
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 2)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif 
-		return false;
-	}
-
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 2));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
-#ifdef _DEBUG
-	ASSERT(buffer);
-#endif 
-	if (buffer) {
-		buffer->bind();
-		buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		buffer->unbind();
-	}
-
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->unbind();
 
 	// specular color
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 3)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif 
-		return false;
-	}
-
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 3));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
-#ifdef _DEBUG
-	ASSERT(buffer);
-#endif 
-
-	if (buffer) {
-		buffer->bind();
-		buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		buffer->unbind();
-	}
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->unbind();
 
 	// emissive color
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 4)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif 
-		return false;
-	}
-
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB8, RenderTarget::Slot::Color, 4));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
-#ifdef _DEBUG
-	ASSERT(buffer);
-#endif 
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->unbind();
 	
-	if (buffer) {
-		buffer->bind();
-		buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		buffer->unbind();
-	}
+	// materialtype(1:phong, 2.pbr)/metallic/roughness
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB32F, RenderTarget::Slot::Color, 5));
+	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 5);
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->unbind();
 
 	// depth/stcencil
-	if (!m_gBufferTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif 
-		return false;
-	}
-
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
-#ifdef _DEBUG
-	ASSERT(buffer);
-#endif 
-	if (buffer) {
-		buffer->bind();
-		buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		buffer->unbind();
-	}
-
-	m_gBufferTarget.setDrawLocations({ 0, 1, 2, 3, 4 });
-
-	if (!m_gBufferTarget.isValid()) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif
-		return false;
-	}
-
-
-	if (!m_outputTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif
-		return false;
-	}
+	buffer->bind();
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->unbind();
+	
+	m_gBufferTarget.setDrawLocations({ 0, 1, 2, 3, 4, 5 });
+	ASSERT(m_gBufferTarget.isValid());
 
 	Texture* dsTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Depth_Stencil);
-	if (!m_outputTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif
-		return false;
-	}
+	ASSERT(m_outputTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color));
+	ASSERT(m_outputTarget.attachProxyTexture(dsTex, RenderTarget::Slot::Depth_Stencil));
 
 	return true;
 }

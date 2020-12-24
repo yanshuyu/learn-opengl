@@ -18,7 +18,6 @@ public:
 		RoughnessMap,
 		ShadowMap,
 		CubeMap,
-		Position,
 		Texture0,
 		Texture1,
 		Texture2,

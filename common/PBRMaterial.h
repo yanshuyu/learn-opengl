@@ -35,7 +35,9 @@ public:
 		return !m_aoMap.expired();
 	}
 
-
+	inline bool hasEmissiveMap() const {
+		return !m_emissiveMap.expired();
+	}
 
 public:
 	std::weak_ptr<Texture> m_albedoMap;

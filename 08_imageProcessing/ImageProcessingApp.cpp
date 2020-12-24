@@ -129,7 +129,7 @@ void ImageProcessingApp::_loadScene() {
 	pbrMtl->m_roughnessMap = texMgr->addTexture("monster_roughness.jpg");
 	pbrMtl->m_mainColor = { 1.f, 1.f, 1.f };
 	pbrMtl->m_metallic = 0.9f;
-	pbrMtl->m_roughness = 0.8f;
+	pbrMtl->m_roughness = 0.2f;
 
 	// PBR man
 	gameObj = m_scene->addModel("Mesh_MAT.FBX", MeshLoader::Option::None, "PBR_Man");
