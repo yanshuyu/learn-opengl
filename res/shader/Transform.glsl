@@ -1,8 +1,11 @@
 
-#define MAX_NUM_BONE 156
+#define MAX_NUM_BONE 256
 
 uniform mat4 u_ModelMat;
-uniform mat4 u_SkinPose[MAX_NUM_BONE];
+
+uniform SkinPoseBlock {
+	 mat4 u_SkinPose[MAX_NUM_BONE];
+};
 
 subroutine vec4 TransformType(vec4 pos, ivec4 bones, vec4 weights);
 subroutine uniform TransformType u_Transform;

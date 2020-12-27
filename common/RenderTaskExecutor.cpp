@@ -9,10 +9,23 @@
 #include"Pose.h"
 #include<glm/gtc/type_ptr.hpp>
 
+#define MAX_NUM_BONES 256
+static std::unique_ptr<Buffer> s_SkinPoseBlockBuf;
 
-#define MAX_NUM_BONE 156
+bool RENDER_TASK_EXECUTOR_INIT() {
+	s_SkinPoseBlockBuf.reset(new Buffer());
+	s_SkinPoseBlockBuf->bind(Buffer::Target::UniformBuffer);
+	s_SkinPoseBlockBuf->loadData(nullptr, sizeof(glm::mat4) * MAX_NUM_BONES, Buffer::Usage::StaticDraw);
+	s_SkinPoseBlockBuf->unbind();
 
-static MaterialBlock s_materialBlock;
+	return true;
+}
+
+
+void RENDER_TASK_EXECUTOR_DEINIT() {
+	s_SkinPoseBlockBuf.release();
+}
+
 
 RenderTaskExecutor::RenderTaskExecutor(IRenderTechnique* rt) :m_renderer(rt) {
 
@@ -43,11 +56,13 @@ void DepthPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& render
 		}
 		else {
 #ifdef _DEBUG
-			ASSERT(renderTask.boneCount <= MAX_NUM_BONE);
+			ASSERT(renderTask.boneCount <= MAX_NUM_BONES);
 #endif // _DEBUG
-			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
-			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
+			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONES);
 			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
+			s_SkinPoseBlockBuf->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock));
+			s_SkinPoseBlockBuf->loadSubData(renderTask.bonesTransform, 0, sizeof(glm::mat4) * numBone);
+			shader->bindUniformBlock("SkinPoseBlock", ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock);
 		}
 	}
 
@@ -69,6 +84,7 @@ void DepthPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& render
 	}
 
 	renderTask.vao->unbind();
+	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }
 
 
@@ -79,7 +95,7 @@ UlitPassRenderTaskExecutror::UlitPassRenderTaskExecutror(IRenderTechnique* rt) :
 void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& renderTask, ShaderProgram* shader) {
 	std::shared_ptr<Texture> strongDiffuseMap;
 	renderTask.vao->bind();
-
+	
 	if (m_renderer->identifier() == ForwardRenderer::s_identifier) {
 		if (shader->hasUniform("u_ModelMat")) {
 			glm::mat4 m = renderTask.modelMatrix;
@@ -92,11 +108,13 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 			}
 			else {
 #ifdef _DEBUG
-				ASSERT(renderTask.boneCount <= MAX_NUM_BONE);
+				ASSERT(renderTask.boneCount <= MAX_NUM_BONES);
 #endif // _DEBUG
-				int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
-				shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
+				int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONES);
 				shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
+				s_SkinPoseBlockBuf->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock));
+				s_SkinPoseBlockBuf->loadSubData(renderTask.bonesTransform, 0, sizeof(glm::mat4) * numBone);
+				shader->bindUniformBlock("SkinPoseBlock", ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock);
 			}
 		}
 
@@ -143,8 +161,8 @@ void UlitPassRenderTaskExecutror::executeMeshTask(const MeshRenderItem_t& render
 	}
 
 	renderTask.vao->unbind();
-	if (strongDiffuseMap)
-		strongDiffuseMap->unbind();
+	if (strongDiffuseMap) strongDiffuseMap->unbind();
+	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }
 
 
@@ -173,11 +191,13 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 		}
 		else {
 #ifdef _DEBUG
-			ASSERT(renderTask.boneCount <= MAX_NUM_BONE);
+			ASSERT(renderTask.boneCount <= MAX_NUM_BONES);
 #endif // _DEBUG
-			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
-			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
+			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONES);
 			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
+			s_SkinPoseBlockBuf->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock));
+			s_SkinPoseBlockBuf->loadSubData(renderTask.bonesTransform, 0, sizeof(glm::mat4) * numBone);
+			shader->bindUniformBlock("SkinPoseBlock", ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock);
 		}
 	}
 	
@@ -273,16 +293,12 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 	}
 
 	renderTask.vao->unbind();
-	if (strongDiffuseMap)
-		strongDiffuseMap->unbind();
-	if (strongNormalMap)
-		strongNormalMap->unbind();
-	if (strongSpecularMap)
-		strongSpecularMap->unbind();
-	if (strongMetallicMap)
-		strongMetallicMap->unbind();
-	if (strongroughnessMap)
-		strongroughnessMap->unbind();
+	if (strongDiffuseMap) strongDiffuseMap->unbind();
+	if (strongNormalMap) strongNormalMap->unbind();
+	if (strongSpecularMap) strongSpecularMap->unbind();
+	if (strongMetallicMap) strongMetallicMap->unbind();
+	if (strongroughnessMap) strongroughnessMap->unbind();
+	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }
 
 
@@ -312,11 +328,13 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 		}
 		else {
 #ifdef _DEBUG
-			ASSERT(renderTask.boneCount <= MAX_NUM_BONE);
+			ASSERT(renderTask.boneCount <= MAX_NUM_BONES);
 #endif // _DEBUG
-			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
-			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
+			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONES);
 			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
+			s_SkinPoseBlockBuf->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock));
+			s_SkinPoseBlockBuf->loadSubData(renderTask.bonesTransform, 0, sizeof(glm::mat4) * numBone);
+			shader->bindUniformBlock("SkinPoseBlock", ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock);
 		}
 	}
 
@@ -407,18 +425,13 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 		}
 	}
 
-	if (hasAlbedoMap)
-		strongDiffuseMap->unbind();
-	if (hasNormalMap)
-		strongNormalMap->unbind();
-	if (hasSpecularMap)
-		strongSpecularMap->unbind();
-	if (hasEmissiveMap)
-		strongEmissiveMap->unbind();
-	if (hasMetallicMap)
-		strongMatellicMap->unbind();
-	if (hasRoughnessMap)
-		strongRoughnessMap->unbind();
+	if (hasAlbedoMap) strongDiffuseMap->unbind();
+	if (hasNormalMap) strongNormalMap->unbind();
+	if (hasSpecularMap) strongSpecularMap->unbind();
+	if (hasEmissiveMap) strongEmissiveMap->unbind();
+	if (hasMetallicMap) strongMatellicMap->unbind();
+	if (hasRoughnessMap) strongRoughnessMap->unbind();
+	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 
 	renderTask.vao->unbind();
 }
@@ -443,11 +456,13 @@ void ShadowPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& rende
 		}
 		else {
 #ifdef _DEBUG
-			ASSERT(renderTask.boneCount <= MAX_NUM_BONE);
+			ASSERT(renderTask.boneCount <= MAX_NUM_BONES);
 #endif // _DEBUG
-			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONE);
-			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(renderTask.bonesTransform[0]), numBone);
+			int  numBone = MIN(renderTask.boneCount, MAX_NUM_BONES);
 			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
+			s_SkinPoseBlockBuf->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock));
+			s_SkinPoseBlockBuf->loadSubData(renderTask.bonesTransform, 0, sizeof(glm::mat4) * numBone);
+			shader->bindUniformBlock("SkinPoseBlock", ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock);
 		}
 	}
 
@@ -471,6 +486,7 @@ void ShadowPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& rende
 	//	}
 	//}
 
+	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 	renderTask.vao->unbind();
 }
 
@@ -497,11 +513,13 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 		}
 		else {
 #ifdef _DEBUG
-			ASSERT(task.boneCount <= MAX_NUM_BONE);
+			ASSERT(task.boneCount <= MAX_NUM_BONES);
 #endif // _DEBUG
-			int  numBone = MIN(task.boneCount, MAX_NUM_BONE);
-			shader->setUniformMat4v("u_SkinPose[0]", (float*)glm::value_ptr(task.bonesTransform[0]), numBone);
+			int  numBone = MIN(task.boneCount, MAX_NUM_BONES);
 			shader->setSubroutineUniform(Shader::Type::VertexShader, "u_Transform", "skinMesh");
+			s_SkinPoseBlockBuf->bindBase(Buffer::Target::UniformBuffer, int(ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock));
+			s_SkinPoseBlockBuf->loadSubData(task.bonesTransform, 0, sizeof(glm::mat4) * numBone);
+			shader->bindUniformBlock("SkinPoseBlock", ShaderProgram::UniformBlockBindingPoint::SkinPoseBlock);
 		}
 	}
 
@@ -554,8 +572,7 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 	}
 
 	task.vao->unbind();
-	if (diffuseMap)
-		diffuseMap->unbind();
-	if (normalMap)
-		normalMap->unbind();
+	if (diffuseMap) diffuseMap->unbind();
+	if (normalMap) normalMap->unbind();
+	if (task.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }

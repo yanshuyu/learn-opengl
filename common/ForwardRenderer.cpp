@@ -30,6 +30,7 @@ ForwardRenderer::ForwardRenderer(Renderer* renderer): RenderTechniqueBase(render
 
 ForwardRenderer::~ForwardRenderer() {
 	cleanUp();
+	RENDER_TASK_EXECUTOR_DEINIT();
 }
 
 bool ForwardRenderer::intialize() {
@@ -89,6 +90,8 @@ bool ForwardRenderer::intialize() {
 			return false;
 		}
 	}
+
+	RENDER_TASK_EXECUTOR_INIT();
 
 	if (!m_outputTarget.attachTexture2D(Texture::Format::RGBA16F,RenderTarget::Slot::Color)) {
 #ifdef _DEBUG
@@ -403,7 +406,7 @@ void ForwardRenderer::drawLightShadow(const Scene_t& scene, const Light_t& light
 	if (m_shadowMappings.find(light.type) == m_shadowMappings.end()) {
 		IShadowMapping* shadowMapping = nullptr;
 		if (light.type == LightType::DirectioanalLight) {
-			shadowMapping = new DirectionalLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());
+			shadowMapping = new DirectionalLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution(), 3);
 		}
 		else if (light.type == LightType::PointLight) {
 			shadowMapping = new PointLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());

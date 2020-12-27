@@ -13,7 +13,7 @@ class Buffer;
 
 class DirectionalLightShadowMapping : public IShadowMapping {
 public:
-	DirectionalLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution, const std::vector<float>& cascadeSplitPercentage = {0.2f, 0.5f});
+	DirectionalLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution, int numCascade);
 	
 	static const int s_maxNumCascades;
 	
@@ -31,7 +31,7 @@ public:
 
 private:
 	void calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
-	void _calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
+	void calcViewFrumstumSplitPercents(const Camera_t& camera, float t);
 
 private:
 	RenderTarget m_shadowTarget;
@@ -40,7 +40,8 @@ private:
 	glm::vec2 m_shadowMapResolution;
 	Viewport_t m_shadowViewport;
 
-	std::vector<float> m_cascadeSplitPercents;
+	int m_numCascade;
+	std::vector<float> m_splitPercents;
 	std::vector<float> m_cascadeFarProjZ;
 	std::vector<Camera_t> m_cascadeCameras;
 };

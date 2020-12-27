@@ -9,12 +9,8 @@ class ShaderProgram;
 class IRenderTechnique;
 
 
-struct  MaterialBlock {
-	glm::vec4 diffuseFactor;
-	glm::vec4 specularFactor;
-	glm::vec3 emissiveColor;
-};
-
+bool RENDER_TASK_EXECUTOR_INIT();
+void RENDER_TASK_EXECUTOR_DEINIT();
 
 class RenderTaskExecutor {
 public:

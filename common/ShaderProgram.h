@@ -99,9 +99,9 @@ public:
 	};
 
 	enum class UniformBlockBindingPoint {
-		Unknown,
-		MaterialBlock,
 		LightBlock,
+		SkinPoseBlock,
+		MaterialBlock,
 		ShadowBlock,
 	};
 

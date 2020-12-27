@@ -414,13 +414,6 @@ struct SpotLightBlock {
 	glm::vec2 angles;
 };
 
-struct ShadowBlock {
-	glm::mat4 lightVP;
-	float shadowStrength;
-	float depthBias;
-	int shadowType;
-};
-
 
 template<size_t N>
 struct CascadeShadowBlock {

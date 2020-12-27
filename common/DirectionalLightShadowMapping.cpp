@@ -9,14 +9,14 @@
 #include<glm/gtx/transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<sstream>
-
+#include"Containers.h"
 
 const int DirectionalLightShadowMapping::s_maxNumCascades = 4;
 
 
-DirectionalLightShadowMapping::DirectionalLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution, const std::vector<float>& cascadeSplitPercentage)
+DirectionalLightShadowMapping::DirectionalLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution, int numCascade)
 : IShadowMapping(rt)
-, m_cascadeSplitPercents(cascadeSplitPercentage)
+, m_numCascade(numCascade)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
 , m_shadowTarget(shadowMapResolution)
@@ -25,7 +25,7 @@ DirectionalLightShadowMapping::DirectionalLightShadowMapping(IRenderTechnique* r
 }
 	
 bool DirectionalLightShadowMapping::initialize() {
-	if (m_cascadeSplitPercents.size() + 1 > s_maxNumCascades) {
+	if (m_numCascade > s_maxNumCascades) {
 #ifdef _DEBUG
 		ASSERT(false);
 #endif // _DEBUG
@@ -33,7 +33,7 @@ bool DirectionalLightShadowMapping::initialize() {
 		return false;
 	}
 	
-	if (!m_shadowTarget.attchTexture2DArray(Texture::Format::Depth24, m_cascadeSplitPercents.size() + 1, RenderTarget::Slot::Depth)) {
+	if (!m_shadowTarget.attchTexture2DArray(Texture::Format::Depth24, m_numCascade, RenderTarget::Slot::Depth)) {
 		cleanUp();
 #ifdef _DEBUG
 		ASSERT(false);
@@ -76,7 +76,7 @@ void DirectionalLightShadowMapping::renderShadow(const Scene_t& scene, const Lig
 	renderer->clearScreen(ClearFlags::Depth);
 
 	if (m_shader->hasUniform("u_numCascade"))
-		m_shader->setUniform1("u_numCascade", int(m_cascadeSplitPercents.size() + 1));
+		m_shader->setUniform1("u_numCascade", m_numCascade);
 
 	if (m_shader->hasUniform("u_lightVP[0]")) {
 		std::vector<glm::mat4> lightsVP;
@@ -159,28 +159,8 @@ void DirectionalLightShadowMapping::onShadowMapResolutionChange(float w, float h
 
 void DirectionalLightShadowMapping::calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera) {
 	//split view frumstum to cascade
-	auto cascades = camera.viewFrustum.split(m_cascadeSplitPercents);
-	//auto vfCorners = Frustum::FromMatrix(camera.projMatrix).getCorners();
-	//ViewFrustum_t vf;
-	//vf.points[ViewFrustum_t::LBN] = vfCorners[0];
-	//vf.points[ViewFrustum_t::LTN] = vfCorners[1];
-	//vf.points[ViewFrustum_t::RTN] = vfCorners[2];
-	//vf.points[ViewFrustum_t::RBN] = vfCorners[3];
-
-	//vf.points[ViewFrustum_t::LBF] = vfCorners[4];
-	//vf.points[ViewFrustum_t::LTF] = vfCorners[5];
-	//vf.points[ViewFrustum_t::RTF] = vfCorners[6];
-	//vf.points[ViewFrustum_t::RBF] = vfCorners[7];
-
-	//auto cascades = vf.split(m_cascadeSplitPercents);
-
-	// store cascades far plane z pos in view clip space
-	m_cascadeFarProjZ.clear();
-	m_cascadeFarProjZ.resize(cascades.size(), 0.f);
-	std::transform(cascades.begin(), cascades.end(), m_cascadeFarProjZ.begin(), [&](const ViewFrustum_t& cascade) {
-		glm::vec4 projPos = camera.projMatrix * glm::vec4(0.f, 0.f, cascade.points[ViewFrustum_t::PointIndex::LTF].z, 1.f);
-		return projPos.z;
-	});
+	calcViewFrumstumSplitPercents(camera, 0.2);
+	auto cascades = camera.viewFrustum.split(m_splitPercents);
 
 	// transform camera view frustum cascades from view space to world space
 	glm::mat4 toWorld = glm::inverse(camera.viewMatrix);
@@ -208,23 +188,24 @@ void DirectionalLightShadowMapping::calcViewFrumstumCascades(const Light_t& ligh
 }
 
 
-void DirectionalLightShadowMapping::_calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera) {
-	Frustum frustumViewSpace = Frustum::FromMatrix(camera.projMatrix);
+void DirectionalLightShadowMapping::calcViewFrumstumSplitPercents(const Camera_t& camera, float t) {
+	m_splitPercents.clear();
+	m_cascadeFarProjZ.clear();
+	m_splitPercents.reserve(m_numCascade);
+	m_cascadeFarProjZ.reserve(m_numCascade);
 
+	float n = camera.near;
+	float f = camera.far;
+	for (int i = 0; i < m_numCascade - 1; i++) {
+		float logPart = n * glm::pow(f / n, (i + 1) / float(m_numCascade));
+		float linePart = n + (f - n) * (i + 1) / float(m_numCascade);
+		float distance = logPart * t + linePart * (1 - t);
+		m_splitPercents.push_back((distance - n) / (f - n));
+		
+		glm::vec4 p = camera.projMatrix * glm::vec4(0.f, 0.f, distance, 1.f);
+		m_cascadeFarProjZ.push_back(p.z);
+	}
+
+	glm::vec4 p = camera.projMatrix * glm::vec4(0.f, 0.f, camera.far, 1.f);
+	m_cascadeFarProjZ.push_back(p.z);
 }
-
-
-#ifdef _DEBUG
-
-void DirectionalLightShadowMapping::visualizeShadowMaps(const glm::vec2& wndSize) {
-	//for (size_t i = 0; i < m_shadowMaps.size(); i++) {
-	//	glm::vec4 rect(0.f);
-	//	rect.x = wndSize.x * 0.15f * i;
-	//	rect.y = 0;
-	//	rect.z = wndSize.x * 0.15f;
-	//	rect.w = rect.z;
-	//	Renderer::visualizeDepthBuffer(m_shadowMaps[i].get(), wndSize, rect, m_cascadeCameras[i].near, m_cascadeCameras[i].far);
-	//}
-}
-
-#endif // _DEBUG

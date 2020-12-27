@@ -49,12 +49,12 @@ bool AnimatorController::setupAnimationStates() {
 	//m_animator->anyState()->setAnimationClip(idle->getAnimationClip());
 	
 	// transitions
-	idle->addTransition<float>(walk, speed, ConditionComparer::Greater, 0.f, 2.f);
-	walk->addTransition<float>(idle, speed, ConditionComparer::Less_Equal, 0.f, 2.f);
+	idle->addTransition<float>(walk, speed, ConditionComparer::Greater, 0.5f, 2.f);
+	walk->addTransition<float>(idle, speed, ConditionComparer::Less_Equal, 0.5f, 2.f);
 	walk->addTransition<float>(run, speed, ConditionComparer::Greater, 2.0f, 2.f);
 	run->addTransition<float>(walk, speed, ConditionComparer::Less_Equal, 2.0f, 2.f);
-	animator->anyState()->addTransition<float>(die, hp, ConditionComparer::Less_Equal, 0.f, 1.f);
-	die->addTransition<float>(idle, hp, ConditionComparer::Greater, 0.f, 1.f);
+	animator->anyState()->addTransition<float>(die, hp, ConditionComparer::Less_Equal, 0.1f, 1.f);
+	die->addTransition<float>(idle, hp, ConditionComparer::Greater, 0.1f, 1.f);
 }
 
 

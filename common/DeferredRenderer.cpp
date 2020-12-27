@@ -36,6 +36,7 @@ DeferredRenderer::DeferredRenderer(Renderer* renderer): RenderTechniqueBase(rend
 
 DeferredRenderer::~DeferredRenderer() {
 	cleanUp();
+	RENDER_TASK_EXECUTOR_DEINIT();
 }
 
 
@@ -120,6 +121,7 @@ bool DeferredRenderer::intialize() {
 		}
 	}
 	
+	RENDER_TASK_EXECUTOR_INIT();
 
 	return ok;
 }
@@ -664,7 +666,7 @@ void DeferredRenderer::drawLightShadow(const Scene_t& scene, const Light_t& ligh
 	if (m_shadowMappings.find(light.type) == m_shadowMappings.end()) {
 		IShadowMapping* shadowMapping = nullptr;
 		if (light.type == LightType::DirectioanalLight) {
-			shadowMapping = new DirectionalLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());
+			shadowMapping = new DirectionalLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution(), 3);
 		}
 		else if (light.type == LightType::PointLight) {
 			shadowMapping = new PointLightShadowMapping(m_renderer->getRenderTechnique(), m_renderer->getShadowMapResolution());

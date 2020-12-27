@@ -99,8 +99,31 @@ void ImageProcessingApp::_loadScene() {
 
 	SceneObject* gameObj;
 	std::shared_ptr<MeshRenderComponent> meshRenderer;
+	std::shared_ptr<SkinMeshRenderComponent> skinMeshRenderer;
 	PhongMaterial* phongMtl;
 	PBRMaterial* pbrMtl;
+	
+	gameObj = m_scene->addModel("phoenix.fbx", MeshLoader::Option::LoadAnimations);
+	gameObj->setLayer(SceneLayer::CutOut);
+	gameObj->m_transform.setScale({ 0.05f, 0.05f, 0.05f });
+	gameObj->m_transform.setPosition({ -25.f, 35.f, 10.f });
+	auto animator = gameObj->getComponent<AnimatorComponent>().lock();
+	auto idleState = animator->addState("idle");
+	idleState->setAnimationClip(animator->animationAt(0));
+	idleState->setAnimationLoopType(LoopType::Loop);
+	idleState->setAnimationSpeed(0.5);
+	skinMeshRenderer = gameObj->getComponent<SkinMeshRenderComponent>().lock();
+	skinMeshRenderer->addMaterial(mtlMgr->addMaterial("phoenix_a_mtl", MaterialType::PBR));
+	skinMeshRenderer->addMaterial(mtlMgr->addMaterial("phoenix_b_mtl", MaterialType::PBR));
+	pbrMtl = skinMeshRenderer->materialAt(0).lock()->asType<PBRMaterial>();
+	pbrMtl->m_albedoMap = texMgr->addTexture("Tex_Ride_FengHuang_01a_D_A.tga.png");
+	pbrMtl = skinMeshRenderer->materialAt(1).lock()->asType<PBRMaterial>();
+	pbrMtl->m_metallic = 0.35;
+	pbrMtl->m_roughness = 0.7;
+	pbrMtl->m_albedoMap = texMgr->addTexture("Tex_Ride_FengHuang_01b_D_A.tga.png");
+	pbrMtl->m_metallic = 0.35;
+	pbrMtl->m_roughness = 0.7;
+
 
 	// PBR monster
 	gameObj = m_scene->addModel("Alien_Animal.fbx", MeshLoader::Option::LoadAnimations);
@@ -109,7 +132,7 @@ void ImageProcessingApp::_loadScene() {
 	gameObj->setTag(100);
 	gameObj->addComponent<AnimatorController>();
 	m_animator = gameObj->getComponent<AnimatorComponent>();
-	auto skinMeshRenderer = gameObj->getComponent<SkinMeshRenderComponent>().lock();
+	skinMeshRenderer = gameObj->getComponent<SkinMeshRenderComponent>().lock();
 	skinMeshRenderer->addMaterial(mtlMgr->addMaterial("monster_xx01_mtl", MaterialType::PBR));
 	skinMeshRenderer->addMaterial(mtlMgr->addMaterial("monster_xx02_mtl", MaterialType::PBR));
 	skinMeshRenderer->addMaterial(mtlMgr->addMaterial("monster_xx03_mtl", MaterialType::PBR));
