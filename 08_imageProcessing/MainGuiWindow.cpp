@@ -6,6 +6,7 @@
 #include<common/HDRFilter.h>
 #include<common/GaussianBlurFilter.h>
 
+
 MainGuiWindow::MainGuiWindow(const std::string& title, ImageProcessingApp* app): GuiWindow(title)
 , m_application(app)
 , m_dirLight()
@@ -33,6 +34,11 @@ bool MainGuiWindow::initialize() {
 	obj = m_application->m_scene->findObjectWithTagRecursive(Scene::Tag::PointLight);
 	if (obj) {
 		m_pointLight = obj->getComponent<LightComponent>();
+	}
+
+	obj = m_application->m_scene->findObjectWithTag(Scene::Tag::AmbientLight);
+	if (obj) {
+		m_ambientLight = obj->getComponent<HemiSphericAmbientComponent>();
 	}
 	
 	obj = m_application->m_scene->findObjectWithTagRecursive(100);
@@ -70,25 +76,31 @@ void MainGuiWindow::render() {
 	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	ImGui::Separator();
 
-	ImGui::Text("Rendering Setting");
+	//ImGui::Text("Rendering Setting");
 
-	static const char* modes[] = { "Forward", "Deffered" };
-	if (ImGui::Combo("Render Mode", &m_renderMode, modes, IM_ARRAYSIZE(modes)))
-		m_application->m_renderer->setRenderMode(Renderer::Mode(m_renderMode + 1));
+	//static const char* modes[] = { "Forward", "Deffered" };
+	//if (ImGui::Combo("Render Mode", &m_renderMode, modes, IM_ARRAYSIZE(modes)))
+	//	m_application->m_renderer->setRenderMode(Renderer::Mode(m_renderMode + 1));
+	//
+	//ImGui::Separator();
 	
-	ImGui::Separator();
-	ImGui::Text("Lightting Setting");
-	
-	static float envSkyColor[3] = { m_application->m_scene->getEnviromentLight().first.r, m_application->m_scene->getEnviromentLight().first.g, m_application->m_scene->getEnviromentLight().first.b };
-	static float envGroundColor[3] = { m_application->m_scene->getEnviromentLight().second.r, m_application->m_scene->getEnviromentLight().second.g, m_application->m_scene->getEnviromentLight().second.b };
-	
-	if (ImGui::ColorEdit3("Ambient Sky", envSkyColor))
-		m_application->m_scene->setEnviromentLight({ envSkyColor[0], envSkyColor[1], envSkyColor[2] }, { envGroundColor[0], envGroundColor[1], envGroundColor[2] });
+	if (!m_dirLight.expired() || !m_spotLight.expired() || !m_pointLight.expired() || !m_ambientLight.expired()) {
+		ImGui::Text("Lightting Setting");
 
-	if (ImGui::ColorEdit3("Amibient Ground", envGroundColor))
-		m_application->m_scene->setEnviromentLight({ envSkyColor[0], envSkyColor[1], envSkyColor[2] }, { envGroundColor[0], envGroundColor[1], envGroundColor[2] });
+		if (!m_ambientLight.expired()) {
+			auto light = m_ambientLight.lock();
+			
+			ImGui::PushID("Ambient Light");
 
-	if (!m_dirLight.expired() || !m_spotLight.expired() || !m_pointLight.expired()) {
+			ImGui::Checkbox("Ambient Light", &light->m_isEnable);
+			ImGui::ColorEdit3("Sky tone", &light->m_skyAmbient[0]);
+			ImGui::ColorEdit3("Land tone", &light->m_landAmbient[0]);
+			ImGui::SliderFloat("Intensity", &light->m_intensity, 0.f, 5.f);
+
+			ImGui::PopID();
+		}
+
+
 		if (!m_dirLight.expired()) {
 			auto light = m_dirLight.lock();			
 			static bool enabled = light->m_isEnable;
@@ -122,7 +134,7 @@ void MainGuiWindow::render() {
 			if (ImGui::SliderFloat("Shadow Strength", &shadowStren, 0.1f, 1.f))
 				light->setShadowStrength(shadowStren);
 
-			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
+			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -LightComponent::s_maxShadowBias, LightComponent::s_maxShadowBias))
 				light->setShadowBias(shadowBias);
 
 			ImGui::PopID();
@@ -175,7 +187,7 @@ void MainGuiWindow::render() {
 			if (ImGui::SliderFloat("Shadow Strength", &shadowStren, 0.1f, 1.f))
 				light->setShadowStrength(shadowStren);
 
-			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
+			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -LightComponent::s_maxShadowBias, LightComponent::s_maxShadowBias))
 				light->setShadowBias(shadowBias);
 
 			ImGui::PopID();
@@ -215,7 +227,7 @@ void MainGuiWindow::render() {
 			if (ImGui::SliderFloat("Shadow Strength", &shadowStren, 0.1f, 1.f))
 				light->setShadowStrength(shadowStren);
 
-			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -0.1f, 0.1f))
+			if (ImGui::SliderFloat("Shadow Bias", &shadowBias, -LightComponent::s_maxShadowBias, LightComponent::s_maxShadowBias))
 				light->setShadowBias(shadowBias);
 
 			ImGui::PopID();
@@ -225,7 +237,7 @@ void MainGuiWindow::render() {
 	}
 
 	if (!m_animAC.expired()) {
-		ImGui::Text("Animation Setting");
+		ImGui::Text("Monster Animation Setting");
 
 		if (ImGui::SliderFloat("Speed", &m_speed, 0.f, 3.f) && !m_animAC.expired())
 			m_animAC.lock()->setSpeed(m_speed);
@@ -238,7 +250,7 @@ void MainGuiWindow::render() {
 
 
 	if (m_pbrMan) {
-		ImGui::Text("PBR Material Setting");
+		ImGui::Text("PBR Man Material Setting");
 		auto meshRenderer = m_pbrMan->getComponent<MeshRenderComponent>().lock();
 		auto mtl = meshRenderer->materialAt(0).lock()->asType<PBRMaterial>();
 		ImGui::ColorEdit3("Base Main Color", &mtl->m_mainColor[0]);

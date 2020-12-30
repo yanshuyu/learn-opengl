@@ -32,10 +32,18 @@ struct SkinVertex_t {
 
 
 enum class PrimitiveType {
-	Point,
-	Line,
-	Triangle,
-	Polygon,
+	Points = GL_POINTS,
+	LineStrip = GL_LINE_STRIP,
+	LineLoop = GL_LINE_LOOP,
+	Lines = GL_LINES,
+	LineStripAdjacency = GL_LINE_STRIP_ADJACENCY,
+	LinesAdjacency = GL_LINES_ADJACENCY,
+	TriangleStrip = GL_TRIANGLE_STRIP,
+	TriangleFan = GL_TRIANGLE_FAN,
+	Triangles = GL_TRIANGLES,
+	TriangleStripAdjacency = GL_TRIANGLE_STRIP_ADJACENCY,
+	TrianglesAdjacency = GL_TRIANGLES_ADJACENCY,
+	Patches = GL_PATCHES,
 	Unknown,
 };
 
@@ -47,6 +55,7 @@ enum class LightType {
 	DirectioanalLight,
 	PointLight,
 	SpotLight,
+	Ambient,
 };
 
 
@@ -127,15 +136,28 @@ struct Camera_t {
 	Viewport_t viewport;
 	ViewFrustum_t viewFrustum;
 
-	Camera_t();
+	Camera_t() : viewMatrix(1.f)
+		, projMatrix(1.f)
+		, backgrounColor(0.f)
+		, position(0.f)
+		, lookDirection(0.f, 0.f, -1.f)
+		, near(0.1f)
+		, far(1000.f)
+		, fov(glm::radians(45.f))
+		, aspectRatio(1.f)
+		, viewport(0, 0, 0, 0)
+		, viewFrustum() {
+
+	}
 };
 
 
 struct Light_t {
 	LightType type;
+	glm::vec3 position;
 	glm::vec3 direction;
 	glm::vec3 color;
-	glm::vec3 position;
+	glm::vec3 colorEx;
 	float range;
 	float innerCone;
 	float outterCone;
@@ -187,19 +209,19 @@ struct Scene_t {
 	
 	MeshRenderItem_t* transparentItems;
 	size_t numTransparentItems;
+
+	Light_t* mainLights; // lights cast shadow
+	size_t	numMainLights; 
 	
-	Light_t* lights;
+	Light_t* lights; // lights no cast shadow
 	size_t numLights;
 	
-	Camera_t* assistCameras;
-	size_t numAssistCameras;
+	Camera_t* cameras;
+	size_t numCameras;
 
 	Camera_t* mainCamera;
 
 	SkyBox_t* skyBox;
-
-	glm::vec3 ambinetSky;
-	glm::vec3 ambinetGround;
 
 	Scene_t();
 	void clear();
@@ -218,8 +240,11 @@ enum class RenderPass {
 	LightPass,
 	AmbientPass,
 	TransparencyPass,
+	LightAccumulationPass,
 };
 
+
+class Scene;
 
 class RenderContext {
 public:
@@ -248,9 +273,18 @@ public:
 		m_renderer = renderer;
 	}
 
+	inline void setScene(Scene* scene) {
+		m_scene = scene;
+	}
+
+	inline Scene* getScene() const {
+		return m_scene;
+	}
+
 protected:
 	PoolStack<glm::mat4> m_transforms;
 	Renderer* m_renderer;
+	Scene* m_scene;
 };
 
 
@@ -397,21 +431,21 @@ struct GPUPipelineState {
 //
 // uniform block structs
 //
-struct DirectionalLightBlock {
-	glm::vec4 color;
-	glm::vec3 inverseDiretion;
-};
 
-struct PointLightBlock {
-	glm::vec4 position;
-	glm::vec4 color;
-};
+struct MaterialBlock {
+	glm::vec4 albedo; // rgb(diffuse/emissive) a(alpha)
+	glm::vec4 specular; // rgb(specular) a(shinness)
+	float emissive;
+	float roughness;
+	float metalness;
 
-struct SpotLightBlock {
-	glm::vec4 position;
-	glm::vec4 color;
-	glm::vec3 inverseDirection;
-	glm::vec2 angles;
+	MaterialBlock() : albedo(0.f)
+		, specular(0.f)
+		, emissive(0.f)
+		, roughness(0.f)
+		, metalness(0.f) {
+
+	}
 };
 
 

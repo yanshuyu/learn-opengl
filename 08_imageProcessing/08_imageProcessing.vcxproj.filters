@@ -51,9 +51,6 @@
     <ClCompile Include="..\common\DebugDrawer.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\DeferredRenderer.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\DirectionalLightShadowMapping.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -64,9 +61,6 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\common\FirstPersonCameraController.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\ForwardRenderer.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\common\FrameAllocator.cpp">
@@ -276,6 +270,15 @@
     <ClCompile Include="..\common\PBRMaterial.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\ForwardPlusRenderer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\HemiSphericAmbientComponent.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="PhoenixFlyController.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h">
@@ -314,9 +317,6 @@
     <ClInclude Include="..\common\DebugDrawer.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\DeferredRenderer.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\DirectionalLightShadowMapping.h">
       <Filter>common</Filter>
     </ClInclude>
@@ -327,9 +327,6 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\FirstPersonCameraController.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\common\ForwardRenderer.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\FrameAllocator.h">
@@ -557,6 +554,15 @@
     <ClInclude Include="..\common\PBRMaterial.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\ForwardPlusRenderer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\HemiSphericAmbientComponent.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="PhoenixFlyController.h">
+      <Filter>main</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader">
@@ -644,6 +650,12 @@
       <Filter>shader</Filter>
     </None>
     <None Include="..\res\shader\Phong.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\ForwardPluseShading.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\Material.glsl">
       <Filter>shader</Filter>
     </None>
   </ItemGroup>

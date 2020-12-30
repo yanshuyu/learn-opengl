@@ -3,7 +3,7 @@
 #include<common/FileSystem.h>
 #include<stdarg.h>
 #include<glm/gtx/transform.hpp>
-
+#include"PhoenixFlyController.h"
 
 
 ImageProcessingApp::ImageProcessingApp(const std::string& t, int w, int h) :GLApplication(t, w, h)
@@ -21,10 +21,10 @@ bool ImageProcessingApp::initailize() {
 	m_scene = std::unique_ptr<Scene>(new Scene("image_processing_secene"));
 	m_renderer = std::unique_ptr<Renderer>(new Renderer(glm::vec2(m_wndWidth, m_wndHeight)));
 	m_renderer->setRenderMode(Renderer::Mode::Forward);
+	m_renderer->setShadowMapResolution({ 2048, 2048 });
 	ASSERT(m_renderer->isValid());
 
 	m_scene->setRenderer(m_renderer.get());
-	m_scene->setEnviromentLight({ 0.f, 0.f, 0.1f }, { 0.f, 0.1f, 0.f });
 
 	_loadScene();
 	
@@ -60,6 +60,8 @@ bool ImageProcessingApp::initailize() {
 	// light
 	auto dirLight = m_scene->addDirectionalLight({ 0.9f, 0.9f, 0.9f }, 0.9f, ShadowType::SoftShadow);
 	dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
+
+	m_scene->addAmbientLight({ 0.f, 0.f, 0.1f }, { 0.f, 0.1f, 0.1f });
 
 	GuiManager::getInstance()->addWindow(new MainGuiWindow(m_scene->getName(), this));
 
@@ -106,7 +108,8 @@ void ImageProcessingApp::_loadScene() {
 	gameObj = m_scene->addModel("phoenix.fbx", MeshLoader::Option::LoadAnimations);
 	gameObj->setLayer(SceneLayer::CutOut);
 	gameObj->m_transform.setScale({ 0.05f, 0.05f, 0.05f });
-	gameObj->m_transform.setPosition({ -25.f, 35.f, 10.f });
+	gameObj->m_transform.setPosition({ -35.f, 35.f, 15.f });
+	//gameObj->addComponent<PhoenixFlyController>();
 	auto animator = gameObj->getComponent<AnimatorComponent>().lock();
 	auto idleState = animator->addState("idle");
 	idleState->setAnimationClip(animator->animationAt(0));
@@ -228,7 +231,7 @@ void ImageProcessingApp::_loadScene() {
 	pbrMtl->m_albedoMap = texMgr->addTexture("house_diffuse.png");
 	//phongMtl->m_specularColor = { 0.1, 0.1, 0.1 };
 	pbrMtl->m_metallic = 0.25f;
-	pbrMtl->m_roughness = 1.f;
+	pbrMtl->m_roughness = 0.75f;
 	pbrMtl->m_mainColor = { 1.f, 1.f, 1.f };
 
 	// barrel

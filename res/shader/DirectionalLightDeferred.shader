@@ -26,11 +26,12 @@ void main() {
 in vec2 f_uv;
 out vec4 frag_color;
 
-uniform sampler2D u_posW;
-uniform sampler2D u_nromalW;
-uniform sampler2D u_albedo;
-uniform sampler2D u_specular;
-uniform sampler2D u_tmr; // materialtype/metallic/roughness
+uniform sampler2D u_PosW;
+uniform sampler2D u_NormalW;
+uniform sampler2D u_Albedo;
+uniform sampler2D u_Specular;
+uniform sampler2D u_EMR; // emissive/metallic/roughness
+uniform sampler2D u_ShadeMode;
 
 uniform float u_maxShininess;
 uniform vec3 u_cameraPosW;
@@ -113,23 +114,24 @@ float softShadow(vec3 posW) {
 
 
 void main() {
-	vec3 P = texture(u_posW, f_uv).xyz;
+	vec3 P = texture(u_PosW, f_uv).xyz;
 	vec3 I = u_lightColor.rgb * u_lightColor.a;
 	vec3 L = normalize(u_toLight);
-	vec3 N = (texture(u_nromalW, f_uv).xyz - 0.5) * 2;
+	vec3 N = (texture(u_NormalW, f_uv).xyz - 0.5) * 2;
 	vec3 V = normalize(u_cameraPosW - P);
-	vec3 A = texture(u_albedo, f_uv).rgb;
-	vec3 TMR = texture(u_tmr, f_uv).rgb;
+	vec3 A = texture(u_Albedo, f_uv).rgb;
+	vec3 EMR = texture(u_EMR, f_uv).rgb;
+	int Mode = texture(u_ShadeMode, f_uv).r;
 
 	vec3 C = vec3(1.f, 0.f, 0.f);
-	if (TMR.r == 1.f) {
-		vec4 specular = texture(u_specular, f_uv);
-		vec3 ks = specular.rgb;
-		float shinness = specular.a * u_maxShininess;
+	if (Mode == 1) {
+		vec4 S = texture(u_Specular, f_uv);
+		vec3 ks = S.rgb;
+		float shinness = S.a * u_maxShininess;
 		C = Phong(I, L, N, V, A, ks, shinness);
 	}
-	else if (TMR.r == 2.f) {
-		C = PBR(I, L, N, V, A, TMR.g, TMR.b);
+	else if (Mode == 2) {
+		C = PBR(I, L, N, V, A, EMR.g, EMR.b);
 	}
 
 	float shadowAtte = u_shadowAtten(P);

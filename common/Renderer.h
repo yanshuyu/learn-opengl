@@ -1,6 +1,7 @@
 #pragma once
 #include<glad/glad.h>
 #include"Util.h"
+#include"VertexArray.h"
 #include"RendererCore.h"
 #include"ShaderProgram.h"
 #include"RenderTechnique.h"
@@ -92,23 +93,34 @@ public:
 	//
 	// render taskes
 	//
-	void drawFullScreenQuad();
-	
-	void submitCamera(const Camera_t& camera, bool isMain = false);
+	inline void submitCamera(const Camera_t& camera, bool isMain = false) {
+		m_cameras.push_back(camera);
+		if (isMain) {
+			m_mainCamera = &m_cameras.back();
+			clearViewports();
+			pushViewport(&m_mainCamera->viewport);
+		}
+	}
 
 	inline void submitLight(const Light_t& light) {
-		m_lights.push_back(light);
+		if (light.isCastShadow())
+			m_mainLights.push_back(light);
+		else
+			m_lights.push_back(light);
 	}
 
 	inline void submitOpaqueItem(const MeshRenderItem_t& item) {
+		ASSERT(item.vao->isVailde());
 		m_opaqueItems.push_back(item);
 	}
 
 	inline void submitCutOutItem(const MeshRenderItem_t& item) {
+		ASSERT(item.vao->isVailde());
 		m_cutOutItems.push_back(item);
 	}
 
 	inline void submitTransparentItem(const MeshRenderItem_t& item) {
+		ASSERT(item.vao->isVailde());
 		m_transparentItems.push_back(item);
 	}
 
@@ -120,20 +132,18 @@ public:
 		m_skyBox = skyBox;
 	}
 
-	inline void setEnviromentLight(const glm::vec3& sky, const glm::vec3& ground) {
-		m_ambientSky = sky;
-		m_ambientGround = ground;
-	}
-
 	void flush(); // render all submited tasks
 
 	// 
-	// dispatch compute
+	// dispatch compute/draw command
 	//
 	inline void dispatchCompute(size_t numGroupX = 1, size_t numGroupY = 1, size_t numGroupZ = 1) {
 		GLCALL(glDispatchCompute(numGroupX, numGroupY, numGroupZ));
 	}
 
+	void executeDrawCommand(const VertexArray* vao, PrimitiveType pt, size_t numVert, size_t numIndex);
+	void drawFullScreenQuad();
+	void presentFrame(Texture* frame);
 
 	//
 	// events
@@ -180,7 +190,8 @@ protected:
 		GLCALL(glViewport(vp.x, vp.y, vp.width, vp.height));
 	}
 
-	void syncScene();
+	void updateRenderScene();
+	void clearRenderScene();
 
 	// clipping states
 	void setCullFaceMode(CullFaceMode mode);
@@ -209,7 +220,7 @@ protected:
 	void setBlendFunc(int buffer, BlendFunc func);
 	void setBlendColor(const glm::vec4& c);
 
-	void presentFrame(Texture* frame);
+
 
 protected:
 	Mode m_renderMode;
@@ -235,10 +246,11 @@ protected:
 	FrameVector<MeshRenderItem_t> m_opaqueItems;
 	FrameVector<MeshRenderItem_t> m_cutOutItems;
 	FrameVector<MeshRenderItem_t> m_transparentItems;
+	FrameVector<Light_t> m_mainLights;
 	FrameVector<Light_t> m_lights;
-	FrameVector<Camera_t> m_assistCameras;
+	FrameVector<Camera_t> m_cameras;
+	Camera_t* m_mainCamera;
 	FrameVector<const FilterComponent*> m_filters;
-	Camera_t m_mainCamera;	
 	SkyBox_t m_skyBox;
 	Scene_t m_scene;
 
@@ -248,8 +260,4 @@ protected:
 	// render settings
 	glm::vec2 m_renderSize;
 	glm::vec2 m_shadowMapResolution;
-
-	glm::vec3 m_ambientSky;
-	glm::vec3 m_ambientGround;
-
 };

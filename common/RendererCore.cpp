@@ -132,25 +132,12 @@ maximum(0.f) {
 
 }
 
-Camera_t::Camera_t(): viewMatrix(1.f)
-, projMatrix(1.f)
-, backgrounColor(0.f)
-, position(0.f)
-, lookDirection(0.f)
-, near(0.f)
-, far(0.f) 
-, fov(0.f)
-, aspectRatio(1.f)
-, viewport() 
-, viewFrustum() {
-
-}
-
 
 Light_t::Light_t(): type(LightType::Unknown)
+, position(0.f)
 , direction(0.f)
 , color(0.f)
-, position(0.f)
+, colorEx(0.f)
 , range(0.f)
 , innerCone(0.f)
 , outterCone(0.f)
@@ -195,19 +182,19 @@ void Scene_t::reset() {
 	
 	transparentItems = nullptr;
 	numTransparentItems = 0;
+
+	mainLights = nullptr;
+	numMainLights = 0;
 		
 	lights = nullptr;
 	numLights = 0;
 	
-	assistCameras = nullptr;
-	numAssistCameras = 0;
+	cameras = nullptr;
+	numCameras = 0;
 
 	mainCamera = nullptr;
 
 	skyBox = nullptr;
-
-	ambinetSky = glm::vec3(0);
-	ambinetGround = glm::vec3(0);
 }
 
 
@@ -254,19 +241,33 @@ GPUPipelineState GPUPipelineState::s_defaultState;
 std::string PrimitiveType2Str(PrimitiveType pt) {
 	switch (pt)
 	{
-	case PrimitiveType::Point:
-		return "Point";
-
-	case PrimitiveType::Line:
-		return "Line";
-
-	case PrimitiveType::Triangle:
-		return "Triangle";
-
-	case PrimitiveType::Polygon:
-		return "Polygon";
-
-	default:
+	case PrimitiveType::Points:
+		return "Points";
+	case PrimitiveType::LineStrip:
+		return "LineStrip";
+	case PrimitiveType::LineLoop:
+		return "LineLoop";
+	case PrimitiveType::Lines:
+		return "Lines";
+	case PrimitiveType::LineStripAdjacency:
+		return "LineStripAdjacency";
+	case PrimitiveType::LinesAdjacency:
+		return "LinesAdjacency";
+	case PrimitiveType::TriangleStrip:
+		return "TriangleStrip";
+	case PrimitiveType::TriangleFan:
+		return "TriangleFan";
+	case PrimitiveType::Triangles:
+		return "Triangles";
+	case PrimitiveType::TriangleStripAdjacency:
+		return "TriangleStripAdjacency";
+	case PrimitiveType::TrianglesAdjacency:
+		return "TrianglesAdjacency";
+	case PrimitiveType::Patches:
+		return "Patches";
+	case PrimitiveType::Unknown:
 		return "Unknown";
+	default:
+		ASSERT(false);
 	}
 }

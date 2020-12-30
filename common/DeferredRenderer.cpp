@@ -279,6 +279,9 @@ void DeferredRenderer::drawUnlitScene(const Scene_t& scene) {
 
 
 void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
+	if (scene.numOpaqueItems <= 0)
+		return;
+
 	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
 
 	for (size_t lightIdx = 0; lightIdx < scene.numLights; lightIdx++) {
@@ -394,41 +397,41 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 		Texture* normal = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
 		Texture* diffuse = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
 		Texture* specular = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 3);
-		Texture* emissive = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
-		Texture* tmr = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 5);
+		Texture* emr = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
+		Texture* mode = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 5);
 
 #ifdef _DEBUG
-		ASSERT(pos && normal && diffuse && specular && emissive && tmr);
+		ASSERT(pos && normal && diffuse && specular && emr && mode);
 #endif // _DEBUG
 
-		if (m_passShader->hasUniform("u_posW") && pos) {
+		if (m_passShader->hasUniform("u_PosW") && pos) {
 			pos->bind(Texture::Unit::Texture0);
-			m_passShader->setUniform1("u_posW", int(Texture::Unit::Texture0));
+			m_passShader->setUniform1("u_PosW", int(Texture::Unit::Texture0));
 		}
 
-		if (m_passShader->hasUniform("u_nromalW") && normal) {
+		if (m_passShader->hasUniform("u_NormalW") && normal) {
 			normal->bind(Texture::Unit::NormalMap);
-			m_passShader->setUniform1("u_nromalW", int(Texture::Unit::NormalMap));
+			m_passShader->setUniform1("u_NormalW", int(Texture::Unit::NormalMap));
 		}
 
-		if (m_passShader->hasUniform("u_albedo") && diffuse) {
+		if (m_passShader->hasUniform("u_Albedo") && diffuse) {
 			diffuse->bind(Texture::Unit::DiffuseMap);
-			m_passShader->setUniform1("u_albedo", int(Texture::Unit::DiffuseMap));
+			m_passShader->setUniform1("u_Albedo", int(Texture::Unit::DiffuseMap));
 		}
 
-		if (m_passShader->hasUniform("u_specular") && specular) {
+		if (m_passShader->hasUniform("u_Specular") && specular) {
 			specular->bind(Texture::Unit::SpecularMap);
-			m_passShader->setUniform1("u_specular", int(Texture::Unit::SpecularMap));
+			m_passShader->setUniform1("u_Specular", int(Texture::Unit::SpecularMap));
 		}
 
-		if (m_passShader->hasUniform("u_emissive") && emissive) {
-			emissive->bind(Texture::Unit::EmissiveMap);
-			m_passShader->setUniform1("u_emissive", int(Texture::Unit::EmissiveMap));
+		if (m_passShader->hasUniform("u_EMR") && emr) {
+			emr->bind(Texture::Unit::Texture1);
+			m_passShader->setUniform1("u_EMR", int(Texture::Unit::Texture1));
 		}
 
-		if (m_passShader->hasUniform("u_tmr") && tmr) {
-			tmr->bind(Texture::Unit::Texture1, Texture::Target::Texture_2D);
-			m_passShader->setUniform1("u_tmr", int(Texture::Unit::Texture1));
+		if (m_passShader->hasUniform("u_ShadeMode") && mode) {
+			mode->bind(Texture::Unit::Texture2, Texture::Target::Texture_2D);
+			m_passShader->setUniform1("u_ShadeMode", int(Texture::Unit::Texture2));
 		}
 
 		m_passShader->bindSubroutineUniforms();
@@ -442,8 +445,8 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 		if (normal) normal->unbind();
 		if (diffuse) diffuse->unbind();
 		if (specular) specular->unbind();
-		if (emissive) emissive->unbind();
-		if (tmr) tmr->unbind();
+		if (emr) emr->unbind();
+		if (mode) mode->unbind();
 
 		m_renderer->popShadrProgram();
 		m_passShader->unbindSubroutineUniforms();
@@ -456,6 +459,9 @@ void DeferredRenderer::drawSolidsLights(const Scene_t& scene) {
 
 
 void DeferredRenderer::drawCutOutsLights(const Scene_t& scene) {
+	if (scene.numCutOutItems <= 0)
+		return;
+
 	m_renderer->pushGPUPipelineState(&m_cutOutPipelineState1);
 	
 	for (size_t lightIdx = 0; lightIdx < scene.numLights; lightIdx++) {
@@ -566,8 +572,7 @@ void DeferredRenderer::drawCutOutsLights(const Scene_t& scene) {
 
 		m_shadowMappings[light.type]->endRenderLight(light, m_passShader.get());
 
-		if (lightUBO)
-			lightUBO->unbind();
+		if (lightUBO)lightUBO->unbind();
 		m_passShader->unbindUniformBlock("LightBlock");
 		m_renderer->popShadrProgram();
 		m_passShader->unbindSubroutineUniforms();
@@ -580,14 +585,13 @@ void DeferredRenderer::drawCutOutsLights(const Scene_t& scene) {
 
 
 void DeferredRenderer::drawSolidsAmbient(const Scene_t& scene) {
-	if (scene.ambinetSky == glm::vec3(0.f) && scene.ambinetGround == glm::vec3(0.f))
+	if (scene.numAmbientLights <= 0)
+		return;
+
+	if (scene.numCutOutItems <= 0)
 		return;
 
 	auto shader = ShaderProgramManager::getInstance()->getProgram("HemiSphericalAmibentLightDefferred");
-	Texture* normalTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
-	Texture* diffuseTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
-	ASSERT(normalTex && diffuseTex);
-
 	if (shader.expired()) {
 		shader = ShaderProgramManager::getInstance()->addProgram("HemiSphericalAmibentLightDefferred");
 		ASSERT(!shader.expired());
@@ -598,8 +602,9 @@ void DeferredRenderer::drawSolidsAmbient(const Scene_t& scene) {
 	m_renderer->pushShaderProgram(m_passShader.get());
 	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
 
-	m_passShader->setUniform3v("u_AmbientSky", (float*)&scene.ambinetSky[0]);
-	m_passShader->setUniform3v("u_AmbientGround", (float*)&scene.ambinetGround[0]);
+	Texture* normalTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
+	Texture* diffuseTex = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
+	ASSERT(normalTex && diffuseTex);
 	normalTex->bind(Texture::Unit::NormalMap);
 	m_passShader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 	diffuseTex->bind(Texture::Unit::DiffuseMap);
@@ -607,20 +612,26 @@ void DeferredRenderer::drawSolidsAmbient(const Scene_t& scene) {
 
 	m_passShader->bindSubroutineUniforms();
 
-	m_renderer->drawFullScreenQuad();
+	for (size_t i = 0; i < scene.numAmbientLights; i++) {
+		glm::vec3 skyColor = scene.ambientLights[i].color;
+		glm::vec3 groundColor = scene.ambientLights[i].colorEx;
+		m_passShader->setUniform3v("u_AmbientSky", &skyColor[0]);
+		m_passShader->setUniform3v("u_AmbientGround", &groundColor[0]);
+		m_renderer->drawFullScreenQuad();
+	}
 
 	normalTex->unbind();
 	diffuseTex->unbind();
 	m_renderer->popGPUPipelineState();
 	m_renderer->popShadrProgram();
-	m_pass = RenderPass::None;
 	m_passShader->unbindSubroutineUniforms();
 	m_passShader = nullptr;
+	m_pass = RenderPass::None;
 }
 
 
 void DeferredRenderer::drawCutOutsAmbient(const Scene_t& scene) {
-	if (scene.ambinetSky == glm::vec3(0.f) && scene.ambinetGround == glm::vec3(0.f))
+	if (scene.numAmbientLights <= 0)
 		return;
 	
 	if (scene.numCutOutItems <= 0)
@@ -639,8 +650,6 @@ void DeferredRenderer::drawCutOutsAmbient(const Scene_t& scene) {
 
 	glm::mat4 vp = scene.mainCamera->projMatrix * scene.mainCamera->viewMatrix;
 	m_passShader->setUniformMat4v("u_VPMat", &vp[0][0]);
-	m_passShader->setUniform3v("u_AmbientSky", (float*)&scene.ambinetSky[0]);
-	m_passShader->setUniform3v("u_AmbientGround", (float*)&scene.ambinetGround[0]);
 
 	if (scene.numLights <= 0 ) m_renderer->pushGPUPipelineState(&m_cutOutPipelineState2);
 
@@ -742,14 +751,14 @@ bool DeferredRenderer::setupRenderTargets() {
 	buffer->unbind();
 
 	// world normal
-	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB8, RenderTarget::Slot::Color, 1));
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB16F, RenderTarget::Slot::Color, 1));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 1);
 	buffer->bind();
 	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	buffer->unbind();
 
-	// diffuse color
+	// albedo color
 	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGBA8, RenderTarget::Slot::Color, 2));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 2);
 	buffer->bind();
@@ -765,16 +774,16 @@ bool DeferredRenderer::setupRenderTargets() {
 	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
 	buffer->unbind();
 
-	// emissive color
-	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB8, RenderTarget::Slot::Color, 4));
+	// emissive/metallic/roughness
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB32F, RenderTarget::Slot::Color, 4));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 4);
 	buffer->bind();
-	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
+	buffer->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
 	buffer->unbind();
-	
-	// materialtype(1:phong, 2.pbr)/metallic/roughness
-	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::RGB32F, RenderTarget::Slot::Color, 5));
+
+	// shading mode (1.phong 2. pbr)
+	ASSERT(m_gBufferTarget.attachTexture2D(Texture::Format::R8, RenderTarget::Slot::Color, 5));
 	buffer = m_gBufferTarget.getAttachedTexture(RenderTarget::Slot::Color, 5);
 	buffer->bind();
 	buffer->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);

@@ -22,6 +22,7 @@ public:
 		DirectionalLight,
 		PointLight,
 		SpotLight,
+		AmbientLight,
 	};
 
 public:
@@ -53,6 +54,7 @@ public:
 	SceneObject* addDirectionalLight(const glm::vec3& color, float intensity = 1.f, ShadowType shadowType = ShadowType::HardShadow);
 	SceneObject* addPointLight(const glm::vec3& color, float range = 50, float intensity = 1.f, ShadowType shadowType = ShadowType::NoShadow);
 	SceneObject* addSpotLight(const glm::vec3& color, float innerAngle = 30.f, float outterAngle = 60.f, float range = 50.f,float intesity = 1.f, ShadowType shadowType = ShadowType::NoShadow,float shadowStrength = 0.5f);
+	SceneObject* addAmbientLight(const glm::vec3& skyAmbient, const glm::vec3& landAmbient, float intentsity = 1.f);
 
 	SceneObject* findObjectWithID(ID id) const;
 	SceneObject* findObjectWithTag(ID tag) const;
@@ -79,6 +81,7 @@ public:
 	//
 	inline void setRenderer(Renderer* renderer) {
 		m_renderContext.setRenderer(renderer);
+		m_renderContext.setScene(this);
 		m_renderContext.clearMatrix();
 	}
 
@@ -86,13 +89,8 @@ public:
 		return m_renderContext.getRenderer();
 	}
 
-	void setEnviromentLight(const glm::vec3& sky, const glm::vec3& ground);
 
-	inline std::pair<glm::vec3, glm::vec3> getEnviromentLight() const {
-		return std::pair<glm::vec3, glm::vec3>(m_ambientSky, m_ambientGround);
-	}
-
-	glm::vec2 getRenderSize() const;
+	inline glm::vec2 getRenderSize() const;
 
 	void render();
 
@@ -104,8 +102,6 @@ public:
 	void onComponentDetach(SceneObject* obj, Component* c) {};
 	void onCameraAdded(SceneObject* obj, CameraComponent* camera);
 	void onCameraRemoved(SceneObject* obj, CameraComponent* camera);
-	void onLightAdded(SceneObject* obj, LightComponent* light);
-	void onLightRemoved(SceneObject* obj, LightComponent* light);
 
 	//
 	// public getter setter
@@ -126,22 +122,13 @@ public:
 		return m_id;
 	}
 
-	inline size_t cameraCount() const {
-		return m_cameras.size();
+	inline void setMainCamera(CameraComponent* camera) {
+		m_mainCamera = camera;
 	}
-
-	inline CameraComponent* cameraAt(size_t idx) {
-		return m_cameras[idx];
+	
+	inline CameraComponent* getMainCamera() const {
+		return m_mainCamera;
 	}
-
-	inline size_t lightCount() const {
-		return m_lights.size();
-	}
-
-	LightComponent* lightAt(size_t idx) {
-		return m_lights[idx];
-	}
-
 
 private:
 	ID m_id;
@@ -150,12 +137,7 @@ private:
 
 	std::unique_ptr<SceneObject> m_rootObject;
 
-	std::vector<LightComponent*> m_lights;
-	std::vector<CameraComponent*> m_cameras;
 	CameraComponent* m_mainCamera;
 	
 	RenderContext m_renderContext;
-
-	glm::vec3 m_ambientGround;
-	glm::vec3 m_ambientSky;
 };

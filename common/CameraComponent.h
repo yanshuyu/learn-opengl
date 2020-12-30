@@ -1,5 +1,5 @@
 #pragma once
-#include"Component.h"
+#include"RenderableComponent.h"
 #include"RendererCore.h"
 #include"Util.h"
 #include<glm/glm.hpp>
@@ -9,7 +9,7 @@
 class Scene;
 class TextureCubeApp;
 
-class CameraComponent : public Component {
+class CameraComponent : public RenderableComponent {
 	friend class Scene;
 	
 	RTTI_DECLARATION(CameraComponent)
@@ -24,12 +24,9 @@ public:
 	CameraComponent(float ar = 1.f);
 	~CameraComponent();
 
-	CameraComponent(const CameraComponent& other) = delete;
-	CameraComponent(CameraComponent&& rv) = delete;
-	CameraComponent& operator = (const CameraComponent& other) = delete;
-	CameraComponent& operator = (CameraComponent&& rv) = delete;
+	inline Component* copy() const override { return nullptr; }
+	inline void render(RenderContext* context) override;
 
-	Component* copy() const override;
 	virtual void onAttached() override;
 	virtual void onDetached() override;
 
@@ -68,6 +65,6 @@ public:
 	mutable float m_viewPortMaxX;
 	mutable float m_viewPortMaxY;
 	
-	glm::vec4 m_backGroundColor;
+	glm::vec4 m_clearColor;
 	ProjectionMode m_projMode;
 };

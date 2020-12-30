@@ -7,12 +7,11 @@ PBRMaterial::PBRMaterial(const std::string& name) : IMaterial(name, MaterialType
 , m_metallicMap()
 , m_roughnessMap()
 , m_normalMap()
-, m_emissiveMap()
 , m_aoMap()
 , m_mainColor(0.9f)
-, m_emissiveColor(0.f)
 , m_metallic(0.5f)
 , m_roughness(0.5f)
-, m_opacity(1.f) {
+, m_opacity(1.f)
+, m_emissive(0.f){
 
 }

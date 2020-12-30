@@ -55,7 +55,7 @@ IMaterial* MaterialManager::defaultPhongMaterial() {
 	static PhongMaterial mtl("phong_mtl_default");
 	mtl.m_mainColor = glm::vec3(0.7f, 0.7f, 0.7f);
 	mtl.m_specularColor = glm::vec3(1.f, 1.f, 1.f);
-	mtl.m_emissiveColor = glm::vec3(0.f, 0.f, 0.f);
+	mtl.m_emissive = 0.f;
 	mtl.m_shininess = 0.5f;
 	mtl.m_opacity = 1.f;
 
@@ -66,8 +66,8 @@ IMaterial* MaterialManager::defaultPhongMaterial() {
 IMaterial* MaterialManager::defaultPBRMaterial() {
 	static PBRMaterial mtl("pbr_mtl_default");
 	mtl.m_mainColor = glm::vec3(0.7f, 0.7f, 0.7f);
-	mtl.m_emissiveColor = glm::vec3(0.f, 0.f, 0.f);
-	mtl.m_metallic = 0.f;
+	mtl.m_emissive = 1.f;
+	mtl.m_metallic = 0.5f;
 	mtl.m_roughness = 0.5f;
 	mtl.m_opacity = 1.f;
 

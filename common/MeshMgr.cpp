@@ -79,7 +79,7 @@ std::weak_ptr<Model> MeshManager::createGrid(float width, float depth, float spa
 	
 	Model* grid = new Model();
 	grid->setName(ss.str());
-	grid->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Line);
+	grid->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Lines);
 
 	addMesh(grid);
 
@@ -126,7 +126,7 @@ std::weak_ptr<Model> MeshManager::createPlane(float width, float depth) {
 
 	Model* plane = new Model();
 	plane->setName(ss.str());
-	plane->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangle);
+	plane->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangles);
 
 	addMesh(plane);
 
@@ -278,7 +278,7 @@ std::weak_ptr<Model> MeshManager::createCube() {
 
 	Model* cube = new Model();
 	cube->setName(cubeName);
-	cube->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangle);
+	cube->addMesh(std::move(vertices), std::move(indices), PrimitiveType::Triangles);
 
 	addMesh(cube);
 

@@ -1,38 +1,32 @@
 #pragma once
-#include"Component.h"
+#include"RenderableComponent.h"
 #include"RendererCore.h"
 #include"Util.h"
 #include<glm/glm.hpp>
 
 class Scene;
 
-class LightComponent : public Component {
+class LightComponent : public RenderableComponent {
 	friend class  Scene;
 
 	RTTI_DECLARATION(LightComponent)
 
 public:
 	LightComponent(LightType type = LightType::DirectioanalLight);
-	LightComponent(const LightComponent& other) = delete;
-	LightComponent(LightComponent&& rv) = delete;
-
-	LightComponent& operator = (const LightComponent& other) = delete;
-	LightComponent& operator = (LightComponent&& rv) = delete;
 
 	static const float s_maxShadowBias;
 
-	static LightComponent* create();
-	static void destory(const LightComponent* l);
 
-	Component* copy() const override;
-	virtual void onAttached() override;
-	virtual void onDetached() override;
+	inline Component* copy() const override { return nullptr; };
+
+	inline void render(RenderContext* context) override;
 
 	glm::vec3 getPosition() const;
 	glm::vec3 getDirection() const;
 	
-	bool isCastShadow() const;
-	Light_t makeLight() const;
+	inline bool isCastShadow() const {
+		return m_shadowType != ShadowType::NoShadow;
+	};
 
 	inline glm::vec3 getColor() const {
 		return m_color;
@@ -106,7 +100,10 @@ public:
 		return m_shadowStrength;
 	}
 
-private:
+protected:
+	Light_t makeLight() const;
+
+protected:
 	LightType m_type;
 	glm::vec3 m_color;
 	float m_intensity;

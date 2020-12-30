@@ -2,12 +2,11 @@
 #include"Util.h"
 #include"Scene.h"
 #include"ShaderProgamMgr.h"
-#include"ForwardRenderer.h"
-#include"DeferredRenderer.h"
 #include"VertexArray.h"
 #include"Buffer.h"
 #include"Texture.h"
 #include"VertexLayoutDescription.h"
+#include"ForwardPlusRenderer.h"
 #include"GuiMgr.h"
 #include<glm/gtx/transform.hpp>
 #include<functional>
@@ -32,10 +31,11 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_opaqueItems(&_frameAlloc)
 , m_cutOutItems(&_frameAlloc)
 , m_transparentItems(&_frameAlloc)
+, m_mainLights(&_frameAlloc)
 , m_lights(&_frameAlloc)
-, m_assistCameras(&_frameAlloc)
+, m_cameras(&_frameAlloc)
 , m_filters(&_frameAlloc)
-, m_mainCamera()
+, m_mainCamera(nullptr)
 , m_skyBox()
 , m_scene()
 , m_postProcessingMgr(this) {
@@ -46,7 +46,7 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 	m_opaqueItems.reserve(1024);
 	m_transparentItems.reserve(256);
 	m_lights.reserve(128);
-	m_assistCameras.reserve(8);
+	m_cameras.reserve(8);
 	m_filters.reserve(16);
 }
 
@@ -79,41 +79,45 @@ void Renderer::cleanUp() {
 	clearRenerTargets();
 	clearShaderPrograms();
 	clearViewports();
-	m_mainCamera = Camera_t();
-
+	m_scene.clear();
+	m_mainCamera = nullptr;
 }
 
 
 bool Renderer::setRenderMode(Mode mode) {
-	if (m_renderMode == mode)
+	if (m_renderMode != Mode::None)
 		return true;
 
 	cleanUp();
 
-	if (mode == Mode::Forward) {
-		m_renderTechnique.reset(new ForwardRenderer(this));
-		if (!m_renderTechnique->intialize()) {
-			m_renderTechnique.release();
-			m_renderMode = Mode::None;
-			return false;
-		}
+	//if (mode == Mode::Forward) {
+	//	m_renderTechnique.reset(new ForwardRenderer(this));
+	//	if (!m_renderTechnique->intialize()) {
+	//		m_renderTechnique.release();
+	//		m_renderMode = Mode::None;
+	//		return false;
+	//	}
 
-		m_renderMode = mode;
-		return true;
+	//	m_renderMode = mode;
+	//	return true;
 
-	} else if (mode == Mode::Deferred) {	
-		m_renderTechnique.reset(new DeferredRenderer(this));
-		if (!m_renderTechnique->intialize()) {
-			m_renderTechnique.release();
-			m_renderMode = mode;
-			return false;
-		}
-		
-		m_renderMode = mode;
-		return true;
-	}
+	//} else if (mode == Mode::Deferred) {	
+	//	m_renderTechnique.reset(new DeferredRenderer(this));
+	//	if (!m_renderTechnique->intialize()) {
+	//		m_renderTechnique.release();
+	//		m_renderMode = mode;
+	//		return false;
+	//	}
+	//	
+	//	m_renderMode = mode;
+	//	return true;
+	//}
 	
-	m_renderMode = Mode::None;
+	m_renderTechnique.reset(new ForwardPlusRenderer(this));
+	ASSERT(m_renderTechnique->intialize());
+
+	m_renderMode = mode;
+
 	return true;
 }
 
@@ -251,13 +255,11 @@ void Renderer::clearViewports() {
 	while (!m_viewports.empty()) {
 		m_viewports.pop();
 	}
-
-	setViewPort(m_mainCamera.viewport);
 }
 
 const Viewport_t* Renderer::getActiveViewport() const {
-	if (m_viewports.empty())
-		return &(m_mainCamera.viewport);
+	if (m_viewports.empty() && m_mainCamera)
+		return &m_mainCamera->viewport;
 
 	return m_viewports.top();
 }
@@ -268,7 +270,7 @@ void Renderer::onWindowResize(float w, float h) {
 	m_postProcessingMgr.onRenderSizeChange(w, h);
 }
 
-void Renderer::syncScene() {
+void Renderer::updateRenderScene() {
 	m_scene.clear();
 	m_scene.opaqueItems = m_opaqueItems.data();
 	m_scene.numOpaqueItems = m_opaqueItems.size();
@@ -276,23 +278,36 @@ void Renderer::syncScene() {
 	m_scene.numCutOutItems = m_cutOutItems.size();
 	m_scene.transparentItems = m_transparentItems.data();
 	m_scene.numTransparentItems = m_transparentItems.size();
+	m_scene.mainLights = m_mainLights.data();
+	m_scene.numMainLights = m_mainLights.size();
 	m_scene.lights = m_lights.data();
 	m_scene.numLights = m_lights.size();
-	m_scene.assistCameras = m_assistCameras.data();
-	m_scene.numAssistCameras = m_assistCameras.size();
-	m_scene.mainCamera = &m_mainCamera;
+	m_scene.cameras = m_cameras.data();
+	m_scene.numCameras = m_cameras.size();
+	m_scene.mainCamera = m_mainCamera;
 	m_scene.skyBox = m_skyBox ? &m_skyBox : nullptr;
-	m_scene.ambinetSky = m_ambientSky;
-	m_scene.ambinetGround = m_ambientGround;
+}
+
+
+void Renderer::clearRenderScene() {
+	// clen up flushed renderables
+	m_opaqueItems.resize(0);
+	m_cutOutItems.resize(0);
+	m_transparentItems.resize(0);
+	m_mainLights.resize(0);
+	m_lights.resize(0);
+	m_cameras.resize(0);
+	m_filters.resize(0);
+	m_skyBox.reset();
+
+	// release allocated frame memory, remake a new frame
+	_frameAlloc.clearFrame();
+	_frameAlloc.markFrame();
 }
 
 
 void Renderer::flush() {
-	GLCALL(glBindVertexArray(0));
-	for (size_t unit = size_t(Texture::Unit::Defualt); unit < size_t(Texture::Unit::MaxUnit); unit++) {
-		GLCALL(glActiveTexture(GL_TEXTURE0 + unit));
-		GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
-	}
+	ASSERT(m_mainCamera);
 
 	clearShaderPrograms();
 	clearGPUPiepelineStates();
@@ -302,7 +317,8 @@ void Renderer::flush() {
 	setStencilMask(0xffffffff);
 	clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 	
-	syncScene();
+
+	updateRenderScene();
 	m_renderTechnique->render(m_scene);
 	
 	Texture* finalFrame = m_renderTechnique->getRenderedFrame();
@@ -310,19 +326,8 @@ void Renderer::flush() {
 		finalFrame = m_postProcessingMgr.applyFilters(finalFrame, m_filters.data(), m_filters.size());
 
 	presentFrame(finalFrame);
-	
-	// clen up flushed renderables
-	m_opaqueItems.clear();
-	m_cutOutItems.clear();
-	m_transparentItems.clear();
-	m_lights.clear();
-	m_assistCameras.clear();
-	m_filters.clear();
-	m_skyBox.reset();
 
-	// release allocated frame memory, remake a new frame
-	_frameAlloc.clearFrame();
-	_frameAlloc.markFrame();
+	clearRenderScene();
 }
 
 void Renderer::presentFrame(Texture* frame) {
@@ -519,17 +524,6 @@ void Renderer::setGPUPipelineState(const GPUPipelineState& pipelineState) {
 }
 
 
-void Renderer::submitCamera(const Camera_t& camera, bool isMain) {
-	if (isMain) {
-		m_mainCamera = camera;
-		clearViewports();
-		pushViewport(&m_mainCamera.viewport);
-	}
-	else {
-		m_assistCameras.push_back(camera);
-	}
-}
-
 bool Renderer::setupFullScreenQuad() {
 	Vertex quadVertices[] = {
 		Vertex({-1.f, -1.f, 0.f}, {0.f, 0.f}),
@@ -566,3 +560,14 @@ bool Renderer::setupFullScreenQuad() {
 	return true;
 }
 
+
+void Renderer::executeDrawCommand(const VertexArray* vao, PrimitiveType pt, size_t numVert, size_t numIndex) {
+	vao->bind();
+	if (numIndex > 0) {
+		GLCALL(glDrawElements(GLenum(pt), numIndex, GL_UNSIGNED_INT, 0));
+	}
+	else {
+		GLCALL(glDrawArrays(GLenum(pt), 0, numVert));
+	}
+	vao->unbind();
+}

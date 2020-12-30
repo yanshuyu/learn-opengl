@@ -162,13 +162,12 @@
     <ClCompile Include="..\common\Component.cpp" />
     <ClCompile Include="..\common\ConditionVariable.cpp" />
     <ClCompile Include="..\common\DebugDrawer.cpp" />
-    <ClCompile Include="..\common\DeferredRenderer.cpp" />
     <ClCompile Include="..\common\DirectionalLightShadowMapping.cpp" />
     <ClCompile Include="..\common\Exceptions.cpp" />
     <ClCompile Include="..\common\FileSystem.cpp" />
     <ClCompile Include="..\common\FilterParams.cpp" />
     <ClCompile Include="..\common\FirstPersonCameraController.cpp" />
-    <ClCompile Include="..\common\ForwardRenderer.cpp" />
+    <ClCompile Include="..\common\ForwardPlusRenderer.cpp" />
     <ClCompile Include="..\common\FrameAllocator.cpp" />
     <ClCompile Include="..\common\FrameBuffer.cpp" />
     <ClCompile Include="..\common\GaussianBlurFilter.cpp" />
@@ -179,6 +178,7 @@
     <ClCompile Include="..\common\GuiWindow.cpp" />
     <ClCompile Include="..\common\HDRFilter.cpp" />
     <ClCompile Include="..\common\HDRFilter2.cpp" />
+    <ClCompile Include="..\common\HemiSphericAmbientComponent.cpp" />
     <ClCompile Include="..\common\IFilter.cpp" />
     <ClCompile Include="..\common\IMaterial.cpp" />
     <ClCompile Include="..\common\IMesh.cpp" />
@@ -237,6 +237,7 @@
     <ClCompile Include="ImageProcessingApp.cpp" />
     <ClCompile Include="image_processing_main.cpp" />
     <ClCompile Include="MainGuiWindow.cpp" />
+    <ClCompile Include="PhoenixFlyController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h" />
@@ -251,13 +252,12 @@
     <ClInclude Include="..\common\ConditionVariable.h" />
     <ClInclude Include="..\common\Containers.h" />
     <ClInclude Include="..\common\DebugDrawer.h" />
-    <ClInclude Include="..\common\DeferredRenderer.h" />
     <ClInclude Include="..\common\DirectionalLightShadowMapping.h" />
     <ClInclude Include="..\common\Exceptions.h" />
     <ClInclude Include="..\common\FileSystem.h" />
     <ClInclude Include="..\common\FilterParams.h" />
     <ClInclude Include="..\common\FirstPersonCameraController.h" />
-    <ClInclude Include="..\common\ForwardRenderer.h" />
+    <ClInclude Include="..\common\ForwardPlusRenderer.h" />
     <ClInclude Include="..\common\FrameAllocator.h" />
     <ClInclude Include="..\common\FrameBuffer.h" />
     <ClInclude Include="..\common\GaussianBlurFilter.h" />
@@ -268,6 +268,7 @@
     <ClInclude Include="..\common\GuiWindow.h" />
     <ClInclude Include="..\common\HDRFilter.h" />
     <ClInclude Include="..\common\HDRFilter2.h" />
+    <ClInclude Include="..\common\HemiSphericAmbientComponent.h" />
     <ClInclude Include="..\common\IFilter.h" />
     <ClInclude Include="..\common\IMaterial.h" />
     <ClInclude Include="..\common\IMesh.h" />
@@ -332,6 +333,7 @@
     <ClInclude Include="AnimatorController.h" />
     <ClInclude Include="ImageProcessingApp.h" />
     <ClInclude Include="MainGuiWindow.h" />
+    <ClInclude Include="PhoenixFlyController.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader" />
@@ -340,6 +342,7 @@
     <None Include="..\res\shader\DirectionalLight.shader" />
     <None Include="..\res\shader\DirectionalLightDeferred.shader" />
     <None Include="..\res\shader\DirectionalLightShadowPass.shader" />
+    <None Include="..\res\shader\ForwardPluseShading.shader" />
     <None Include="..\res\shader\FullScreenQuad.shader" />
     <None Include="..\res\shader\GaussianBlur.shader" />
     <None Include="..\res\shader\GeometryPass.shader" />
@@ -351,6 +354,7 @@
     <None Include="..\res\shader\HemiSphericalAmbientLight.shader" />
     <None Include="..\res\shader\HemiSphericalAmibentLightDefferred.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
+    <None Include="..\res\shader\Material.glsl" />
     <None Include="..\res\shader\PBR.glsl" />
     <None Include="..\res\shader\Phong.glsl" />
     <None Include="..\res\shader\PointLight.shader" />

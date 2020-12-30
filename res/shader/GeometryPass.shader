@@ -36,6 +36,7 @@ void main() {
 
 #shader fragment
 #version 450 core
+#include "Material.glsl"
 
 in VS_OUT{
 	vec3 pos_W;
@@ -45,86 +46,64 @@ in VS_OUT{
 } fs_in;
 
 
-layout(location = 0) out vec3 o_posW;
-layout(location = 1) out vec3 o_normalW;
-layout(location = 2) out vec4 o_albedo;
-layout(location = 3) out vec4 o_specular;
-layout(location = 4) out vec3 o_emissive;
-layout(location = 5) out vec3 o_tmr; // materialtype(1:phong, 2:pbr)/metallic/roughness/
-
+layout(location = 0) out vec3 o_PosW;
+layout(location = 1) out vec3 o_NormalW;
+layout(location = 2) out vec4 o_Albedo;
+layout(location = 3) out vec4 o_Specular;
+layout(location = 4) out vec3 o_EMR; // (emissive/metalness/roughness)
+layout(location = 5) out int o_ShadeMode; // (1:phong, 2:pbr)
 
 vec3 sRGB2RGB(in vec3 color) {
 	return pow(color, vec3(2.2f));
 }
 
-uniform sampler2D u_albedoMap;
-uniform vec4 u_mainColor; // rgb(diffuse) a(alpha)
 
-uniform sampler2D u_emissiveMap;
-uniform vec3 u_emissiveColor;
-
-uniform sampler2D u_normalMap;
-
-uniform sampler2D u_specularMap; // phong material property
-uniform vec4 u_specularColor; // rgb(specular) a(shinness)
-
-uniform sampler2D u_roughnessMap; // PBR meterial property
-uniform float u_roughness;
-
-uniform sampler2D u_metallicMap;
-uniform float u_metalness;
-
-uniform ivec3 u_hasANEMap; // has albedo/normal/emissive map
-uniform ivec3 u_hasSMRMap; // has specular/metallic/ roughness map
-
-
-subroutine void ShadingMode(vec3 P, vec3 N, vec4 A, vec3 E);
+subroutine void ShadingMode(vec3 P, vec3 N, vec4 A);
 subroutine uniform ShadingMode u_ShadingMode;
 
 subroutine (ShadingMode)
-void PhongShading(vec3 P, vec3 N, vec4 A, vec3 E) {
-	vec3 S = u_hasSMRMap.x == 1 ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
-	S *= u_specularColor.rgb;
+void PhongShading(vec3 P, vec3 N, vec4 A) {
+	vec3 S = u_HasANRMMap.b == 1 ? sRGB2RGB(texture(u_SpecularMap, fs_in.uv).rgb) : vec3(1.f);
+	S *= ub_Mtl.specular .rgb;
 
-	o_posW = P;
-	o_normalW = (N + 1.f) * 0.5f;
-	o_albedo = A;
-	o_specular = vec4(S, u_specularColor.a);
-	o_emissive = E;
-	o_tmr = vec3(1.f, 0.f, 0.f);
+	o_PosW = P;
+	o_NormalW = (N + 1.f) * 0.5f;
+	o_Albedo = A;
+	o_Specular = vec4(S, ub_Mtl.specular.a);
+	o_EMR = vec3(ub_Mtl.emissive, 0.f, 0.f);
+	o_ShadeMode = 1;
 }
 
 subroutine (ShadingMode) 
-void PBRShading(vec3 P, vec3 N, vec4 A, vec3 E) {
-	float M = u_hasSMRMap.y == 1 ? texture(u_metallicMap, fs_in.uv).r : 1.f;
-	float R = u_hasSMRMap.z == 1 ? texture(u_roughnessMap, fs_in.uv).r : 1.f;
-	M *= u_metalness;
-	R *= u_roughness;
+void PBRShading(vec3 P, vec3 N, vec4 A) {
+	float R = u_HasANRMMap.b == 1 ? texture(u_RoughnessMap, fs_in.uv).r : 1.f;
+	float M = u_HasANRMMap.a == 1 ? texture(u_MetallicMap, fs_in.uv).r : 1.f;
 
-	o_posW = P;
-	o_normalW = (N + 1) * 0.5f;
-	o_albedo = A;
-	o_specular = vec4(0.f);
-	o_emissive = E;
-	o_tmr = vec3(2.f, M, R);
+	M *= ub_Mtl.metalness;
+	R *= ub_Mtl.roughness;
+
+	o_PosW = P;
+	o_NormalW = (N + 1) * 0.5f;
+	o_Albedo = A;
+	o_Specular = vec4(0.f);
+	o_EMR = vec3(ub_Mtl.emissive, M, R);
+	o_ShadeMode = 2;
 }
 
 
 void main() {
 	vec3 P = fs_in.pos_W;
+
+	vec4 A = u_HasANRMMap.r == 1 ? texture(u_AlbedoMap, fs_in.uv) : vec4(1.f);
+	A.rgb = sRGB2RGB(A.rgb) * ub_Mtl.albedo.rgb;
+	A.a *= ub_Mtl.albedo.a;
+
 	vec3 N = fs_in.normal_W;
-	if (u_hasANEMap.y == 1) {
-		vec3 normal = (texture(u_normalMap, fs_in.uv).xyz - 0.5) * 2;
+	if (u_HasANRMMap.g == 1) {
+		vec3 normal = (texture(u_NormalMap, fs_in.uv).xyz - 0.5) * 2;
 		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
 		N = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
 	}
-	
-	vec4 A = u_hasANEMap.x == 1 ? texture(u_albedoMap, fs_in.uv) : vec4(1.f);
-	A.rgb = sRGB2RGB(A.rgb) * u_mainColor.rgb;
-	A.a *=  u_mainColor.a;
 
-	vec3 E = u_hasANEMap.z == 1 ? sRGB2RGB(texture(u_emissiveMap, fs_in.uv).rgb) : vec3(1.f);
-	E *= u_emissiveColor;
-
-	u_ShadingMode(P, N, A, E);
+	u_ShadingMode(P, N, A);
 }

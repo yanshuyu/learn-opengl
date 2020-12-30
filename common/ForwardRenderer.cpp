@@ -223,6 +223,12 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, bool useCutOut) {
 	if (scene.numLights <= 0)
 		return;
 
+	if (useCutOut && scene.numCutOutItems <= 0)
+		return;
+
+	if (!useCutOut && scene.numOpaqueItems <= 0)
+		return;
+
 	m_renderer->pushGPUPipelineState(&m_lightPassPipelineState);
 
 	for (size_t lightIdx = 0; lightIdx < scene.numLights; lightIdx++) {
@@ -361,7 +367,10 @@ void ForwardRenderer::drawLightScene(const Scene_t& scene, bool useCutOut) {
 
 
 void ForwardRenderer::drawAmbientScene(const Scene_t& scene) {
-	if (scene.ambinetSky == glm::vec3(0.f) && scene.ambinetGround == glm::vec3(0.f))
+	if (scene.numAmbientLights <= 0)
+		return;
+
+	if ((scene.numOpaqueItems + scene.numCutOutItems) <= 0)
 		return;
 
 	auto shader = ShaderProgramManager::getInstance()->getProgram("HemiSphericalAmbientLight");

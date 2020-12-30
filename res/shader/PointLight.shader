@@ -40,6 +40,7 @@ void main() {
 
 #shader fragment
 #version 450 core
+#include "Material.glsl"
 #include "Phong.glsl"
 #include "PBR.glsl"
 
@@ -63,39 +64,15 @@ in VS_OUT{
 
 out vec4 frag_color;
 
-uniform sampler2D u_albedoMap;
-uniform vec4 u_mainColor; // rgb(diffuse) a(alpha)
-
-uniform sampler2D u_normalMap;
-
-uniform sampler2D u_specularMap; // phong material property
-uniform vec4 u_specularColor; // rgb(specular) a(shinness)
-uniform int u_maxShininess;
-
-uniform sampler2D u_roughnessMap; // PBR meterial property
-uniform float u_roughness;
-
-uniform sampler2D u_metallicMap;
-uniform float u_metalness;
-
-uniform ivec4 u_hasANRMMap; // xyz for Phong material has albedo/normal/specular
-							// xyzw for PBR material has albedo/normal/roughness/metallic
-
 uniform vec3 u_cameraPosW;
 
 uniform samplerCube u_shadowMap;
 uniform float u_shadowStrength;
 uniform float u_shadowBias;
 
+uniform	vec4 u_lightPos; // (w for range)
+uniform	vec4 u_lightColor; //(a for intensity)
 
-layout(std140) uniform LightBlock{
-	vec4 u_lightPos; // (w for range)
-	vec4 u_lightColor; //(a for intensity)
-};
-
-vec3 sRGB2RGB(in vec3 color) {
-	return pow(color, vec3(2.2f));
-}
 
 subroutine float ShadowAttenType();
 subroutine uniform ShadowAttenType u_shadowAtten;
@@ -133,46 +110,29 @@ float softShadow() {
 }
 
 
-subroutine vec3 ShadingMode(vec3 I, vec3 L, vec3 N, vec3 V);
+subroutine vec3 ShadingMode(vec3 I, vec3 L, vec3 N, vec3 V, vec3 A);
 subroutine uniform ShadingMode u_ShadingMode;
 
 subroutine (ShadingMode)
-vec3 PhongShading(vec3 I, vec3 L, vec3 N, vec3 V) {
-	vec4 diffuseTexColor = u_hasANRMMap.x == 1 ? texture(u_albedoMap, fs_in.uv) : vec4(1.f);
-	if (diffuseTexColor.a < 0.1f) {
-		discard;
-		return vec3(0.f);
-	}
-
-	diffuseTexColor.rgb = sRGB2RGB(diffuseTexColor.rgb);
-	vec3 specularTexColor = u_hasANRMMap.z == 1 ? sRGB2RGB(texture(u_specularMap, fs_in.uv).rgb) : vec3(1.f);
-
-	vec3 kd = diffuseTexColor.rgb * u_mainColor.rgb;
-	vec3 ks = specularTexColor * u_specularColor.rgb;
-	float shinness = u_specularColor.a * u_maxShininess;
+vec3 PhongShading(vec3 I, vec3 L, vec3 N, vec3 V, vec3 A) {
+	vec3 S = u_HasANRMMap.b == 1 ? sRGB2RGB(texture(u_SpecularMap, fs_in.uv).rgb) : vec3(1.f);
+	vec3 kd = A;
+	vec3 ks = S * ub_Mtl.specular.rgb;
+	float shinness = ub_Mtl.specular.a;
 
 	return Phong(I, L, N, V, kd, ks, shinness);
 }
 
 
 subroutine (ShadingMode)
-vec3 PBRShading(vec3 I, vec3 L, vec3 N, vec3 V) {
-	vec4 albedo = u_hasANRMMap.x == 1 ? texture(u_albedoMap, fs_in.uv) : vec4(1.f);
-	if (albedo.a < 0.1f) {
-		discard;
-		return vec3(0.f);
-	}
+vec3 PBRShading(vec3 I, vec3 L, vec3 N, vec3 V, vec3 A) {
+	float R = u_HasANRMMap.b == 1 ? texture(u_RoughnessMap, fs_in.uv).r : 1.f;
+	R *= ub_Mtl.roughness;
 
-	albedo.rgb = sRGB2RGB(albedo.rgb);
-	albedo.rgb *= u_mainColor.rgb;
+	float M = u_HasANRMMap.a == 1 ? texture(u_MetallicMap, fs_in.uv).r : 1.f;
+	M *= ub_Mtl.metalness;
 
-	float roughness = u_hasANRMMap.z == 1 ? texture(u_roughnessMap, fs_in.uv).r : 1.f;
-	roughness *= u_roughness;
-
-	float metallic = u_hasANRMMap.w == 1 ? texture(u_metallicMap, fs_in.uv).r : 1.f;
-	metallic *= u_metalness;
-
-	return PBR(I, L, N, V, albedo.rgb, metallic, roughness);
+	return PBR(I, L, N, V, A, M, R);
 }
 
 
@@ -184,15 +144,23 @@ void main() {
 	vec3 I = u_lightColor.rgb * u_lightColor.a * rangeAtten;
 	vec3 L = l / distance;
 	vec3 V = normalize(u_cameraPosW - fs_in.pos_W);
+	
+	vec4 A = u_HasANRMMap.r == 1 ? texture(u_AlbedoMap, fs_in.uv) : vec4(1.f);
+	if (A.a < 0.1f) {
+		discard;
+	}
+
+	A.rgb = sRGB2RGB(A.rgb) * ub_Mtl.albedo.rgb;
+	
 	vec3 N = fs_in.normal_W;
-	if (u_hasANRMMap.y == 1) {
-		vec3 normal = (texture(u_normalMap, fs_in.uv).xyz - 0.5) * 2;
+	if (u_HasANRMMap.g == 1) {
+		vec3 normal = (texture(u_NormalMap, fs_in.uv).xyz - 0.5) * 2;
 		vec3 biTangent = normalize(cross(fs_in.normal_W, fs_in.tangent_W));
 		N = normalize(mat3(fs_in.tangent_W, biTangent, fs_in.normal_W) * normal);
 	}
 
 
-	vec3 C = u_ShadingMode(I, L, N, V);
+	vec3 C = u_ShadingMode(I, L, N, V, A.rgb);
 
 	float shadowAtte = u_shadowAtten();
 

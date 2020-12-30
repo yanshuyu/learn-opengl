@@ -69,3 +69,11 @@ public:
 	AmbientPassRenderTaskExecutor(IRenderTechnique* rt);
 	void executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) override;
 };
+
+
+
+class LightAccumulationPassRenderTaskExecutor : public RenderTaskExecutor {
+public:
+	LightAccumulationPassRenderTaskExecutor(IRenderTechnique* rt);
+	void executeMeshTask(const MeshRenderItem_t& task, ShaderProgram* shader) override;
+};

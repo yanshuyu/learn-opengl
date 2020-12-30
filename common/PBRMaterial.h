@@ -35,22 +35,17 @@ public:
 		return !m_aoMap.expired();
 	}
 
-	inline bool hasEmissiveMap() const {
-		return !m_emissiveMap.expired();
-	}
-
 public:
 	std::weak_ptr<Texture> m_albedoMap;
 	std::weak_ptr<Texture> m_metallicMap;
 	std::weak_ptr<Texture> m_roughnessMap;
 	std::weak_ptr<Texture> m_normalMap;
 	std::weak_ptr<Texture> m_aoMap;
-	std::weak_ptr<Texture> m_emissiveMap;
 
 	glm::vec3 m_mainColor;
-	glm::vec3 m_emissiveColor;
 
 	float m_metallic;
 	float m_roughness;
 	float m_opacity;
+	float m_emissive;
 };

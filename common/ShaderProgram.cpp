@@ -50,7 +50,7 @@ bool ShaderProgram::compileAndLink() {
 		Shader shader(src.second, src.first);
 		if (!shader.compile()) {
 			std::stringstream msg;
-			msg << ShaderType2Str(src.first) << " Compile error: " << shader.getInfoLog() << std::endl;
+			msg << "Program \"" << m_file << "\" " << ShaderType2Str(src.first) << " Compile error, log: " << shader.getInfoLog() << std::endl;
 			CONSOLELOG(msg.str());
 			return false;
 		}
@@ -65,7 +65,7 @@ bool ShaderProgram::compileAndLink() {
 
 	if (!linked) {
 		std::stringstream msg;
-		msg << "[Shader Link error] info log: " << getInfoLog() << std::endl;
+		msg << "Program \"" << m_file << "\"" << "Link error, log: " << getInfoLog() << std::endl;
 		CONSOLELOG(msg.str());
 
 #ifdef _DEBUG

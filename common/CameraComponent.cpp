@@ -1,12 +1,13 @@
 #include"CameraComponent.h"
 #include"SceneObject.h"
 #include"Scene.h"
+#include"Renderer.h"
 #include<glm/gtc/matrix_transform.hpp>
 #include<glad/glad.h>
 
 RTTI_IMPLEMENTATION(CameraComponent)
 
-CameraComponent::CameraComponent(float ar) : Component()
+CameraComponent::CameraComponent(float ar) : RenderableComponent()
 , m_aspectRatio(ar)
 , m_near(0.1)
 , m_far(1000)
@@ -19,17 +20,13 @@ CameraComponent::CameraComponent(float ar) : Component()
 , m_viewPortMinY(0.f)
 , m_viewPortMaxX(1.f)
 , m_viewPortMaxY(1.f)
-, m_backGroundColor(0.f, 0.f, 0.f, 1.f)
+, m_clearColor(0.f, 0.f, 0.f, 1.f)
 , m_projMode(CameraComponent::ProjectionMode::Perspective) {
 }
 
 CameraComponent::~CameraComponent() {
 }
 
-
-Component* CameraComponent::copy() const {
-	return nullptr;
-}
 
 void CameraComponent::onAttached() {
 	__super::onAttached();
@@ -152,6 +149,13 @@ ViewFrustum_t CameraComponent::getViewFrustum() const {
 }
 
 
+void CameraComponent::render(RenderContext* context) {
+	auto renderSz = context->getRenderer()->getRenderSize();
+	auto mainCamera = context->getScene()->getMainCamera();
+	context->getRenderer()->submitCamera(makeCamera(renderSz), mainCamera == this);
+}
+
+
 Camera_t CameraComponent::makeCamera(const glm::vec2& renderSize) const {
 	Camera_t c;
 	c.position = getPosition();
@@ -160,7 +164,7 @@ Camera_t CameraComponent::makeCamera(const glm::vec2& renderSize) const {
 	c.aspectRatio = m_aspectRatio;
 	c.near = m_near;
 	c.far = m_far;
-	c.backgrounColor = m_backGroundColor;
+	c.backgrounColor = m_clearColor;
 	c.viewport = getViewPort(renderSize);
 	c.viewFrustum = getViewFrustum();
 	c.viewMatrix = viewMatrix();

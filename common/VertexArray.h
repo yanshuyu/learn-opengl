@@ -22,6 +22,10 @@ public:
 		return m_handler;
 	}
 
+	inline bool isVailde() const {
+		return m_handler != 0;
+	}
+
 private:
 	GLuint m_handler;
 };

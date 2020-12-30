@@ -4,6 +4,7 @@
 
 class ImageProcessingApp;
 class LightComponent;
+class HemiSphericAmbientComponent;
 class Renderer;
 class AnimatorController;
 class HDRFilterComponent;
@@ -26,6 +27,7 @@ protected:
 	std::weak_ptr<LightComponent> m_dirLight;
 	std::weak_ptr<LightComponent> m_spotLight;
 	std::weak_ptr<LightComponent> m_pointLight;
+	std::weak_ptr<HemiSphericAmbientComponent> m_ambientLight;
 
 	std::weak_ptr<AnimatorController> m_animAC;
 	float m_speed = 0.f;

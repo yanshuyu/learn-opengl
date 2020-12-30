@@ -362,25 +362,22 @@ IMesh* MeshLoader::loadGeometrys(const aiMesh* aMesh, const Skeleton* skeleton) 
 	loadBoneWeights(vertices, aMesh, skeleton);
 
 	pt = PrimitiveType::Unknown;
-	size_t primitiveIndexCount = 3;
+	size_t primitiveIndexCount = 0;
 	switch (aMesh->mPrimitiveTypes)
 	{
 	case aiPrimitiveType_POINT:
-		pt = PrimitiveType::Point;
+		pt = PrimitiveType::Points;
 		primitiveIndexCount = 1;
 		break;
 	case aiPrimitiveType_LINE:
-		pt = PrimitiveType::Line;
+		pt = PrimitiveType::Lines;
 		primitiveIndexCount = 2;
 		break;
 	case aiPrimitiveType_TRIANGLE:
-		pt = PrimitiveType::Triangle;
+		pt = PrimitiveType::Triangles;
 		primitiveIndexCount = 3;
 		break;
-	case aiPrimitiveType_POLYGON:
-		pt = PrimitiveType::Polygon;
-		primitiveIndexCount = 4;
-		break;
+
 	default:
 #ifdef _DEBUG
 		ASSERT(false);
@@ -490,7 +487,7 @@ IMaterial* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) 
 	auto mat = new PhongMaterial("");
 	mat->m_mainColor = glm::vec3(aiDiffuseColor.r, aiDiffuseColor.g, aiDiffuseColor.b);
 	mat->m_specularColor = glm::vec3(aiSpecularColor.r, aiSpecularColor.g, aiSpecularColor.b);
-	mat->m_emissiveColor = glm::vec3(aiEmissiveColor.r, aiEmissiveColor.g, aiEmissiveColor.b);
+	mat->m_emissive = aiEmissiveColor.r * 0.2f + aiEmissiveColor.g * 0.7f + aiEmissiveColor.b * 0.1f;
 	mat->m_opacity = aiOpacity;
 	mat->m_shininess = aiShininess;
 	
@@ -535,8 +532,8 @@ IMaterial* MeshLoader::loadMaterial(const aiScene* aScene, const aiMesh* aMesh) 
 		}
 	}
 	if (hasEmissiveMap) {
-		mat->m_emissiveMap = loadTexture(emissiveTextureName);
-		if (mat->m_emissiveMap.expired()) {
+		mat->m_albedoMap = loadTexture(emissiveTextureName);
+		if (mat->m_albedoMap.expired()) {
 #ifdef _DEBUG
 			std::string msg;
 			msg += "[Material Load error] Failed to load texture: ";
