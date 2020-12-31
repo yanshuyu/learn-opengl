@@ -11,7 +11,7 @@ class Renderer;
 class Scene;
 
 enum class SceneLayer {
-	Default,
+	Opaque,
 	CutOut,
 	Transparency,
 };

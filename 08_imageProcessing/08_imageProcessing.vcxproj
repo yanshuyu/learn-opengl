@@ -237,7 +237,6 @@
     <ClCompile Include="ImageProcessingApp.cpp" />
     <ClCompile Include="image_processing_main.cpp" />
     <ClCompile Include="MainGuiWindow.cpp" />
-    <ClCompile Include="PhoenixFlyController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h" />
@@ -333,7 +332,6 @@
     <ClInclude Include="AnimatorController.h" />
     <ClInclude Include="ImageProcessingApp.h" />
     <ClInclude Include="MainGuiWindow.h" />
-    <ClInclude Include="PhoenixFlyController.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\res\shader\AbedoMap.shader" />

@@ -276,9 +276,6 @@
     <ClCompile Include="..\common\HemiSphericAmbientComponent.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="PhoenixFlyController.cpp">
-      <Filter>main</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\AnimationClip.h">
@@ -559,9 +556,6 @@
     </ClInclude>
     <ClInclude Include="..\common\HemiSphericAmbientComponent.h">
       <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="PhoenixFlyController.h">
-      <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -27,27 +27,15 @@ Renderer::Renderer(const glm::vec2& renderSz, Mode mode) : m_pipelineStates()
 , m_quadIBO(nullptr)
 , m_renderSize(renderSz)
 , m_shadowMapResolution(1024, 1024)
-, _frameAlloc()
-, m_opaqueItems(&_frameAlloc)
-, m_cutOutItems(&_frameAlloc)
-, m_transparentItems(&_frameAlloc)
-, m_mainLights(&_frameAlloc)
-, m_lights(&_frameAlloc)
-, m_cameras(&_frameAlloc)
-, m_filters(&_frameAlloc)
 , m_mainCamera(nullptr)
 , m_skyBox()
 , m_scene()
+, m_numFilters(0)
 , m_postProcessingMgr(this) {
 	if (mode != Mode::None)
 		setRenderMode(mode);
 
-	_frameAlloc.markFrame();
-	m_opaqueItems.reserve(1024);
-	m_transparentItems.reserve(256);
-	m_lights.reserve(128);
-	m_cameras.reserve(8);
-	m_filters.reserve(16);
+	resetScene();
 }
 
 Renderer::~Renderer() {
@@ -57,8 +45,6 @@ Renderer::~Renderer() {
 	m_quadIBO.release();
 	
 	m_postProcessingMgr.cleanUp();
-
-	_frameAlloc.clearAllFrame();
 }
 
 
@@ -79,7 +65,7 @@ void Renderer::cleanUp() {
 	clearRenerTargets();
 	clearShaderPrograms();
 	clearViewports();
-	m_scene.clear();
+	resetScene();
 	m_mainCamera = nullptr;
 }
 
@@ -270,41 +256,48 @@ void Renderer::onWindowResize(float w, float h) {
 	m_postProcessingMgr.onRenderSizeChange(w, h);
 }
 
-void Renderer::updateRenderScene() {
-	m_scene.clear();
+void Renderer::submitCamera(const Camera_t& camera, bool isMain) {
+	if (m_scene.numCameras >= MAX_NUM_CAMERAS)
+		return;
+
+	m_cameras[m_scene.numCameras++] = camera;
+	
+	if (isMain) {
+		m_mainCamera = &m_cameras[m_scene.numCameras - 1];
+		m_scene.mainCamera = m_mainCamera;
+		clearViewports();
+		pushViewport(&m_mainCamera->viewport);
+	}
+}
+
+void Renderer::submitLight(const Light_t& light) {
+	if (light.isCastShadow()) {
+		if (m_scene.numMainLights < MAX_NUM_MAIN_LIGHTS)
+			m_mainLights[m_scene.numMainLights++] = light;
+	} else if (m_scene.numLights < MAX_NUM_LIGHTS) {
+		m_lights[m_scene.numLights++] = light;
+	}
+}
+
+void Renderer::resetScene() {
+	m_scene.numOpaqueItems = 0;
+	m_scene.numCutOutItems = 0;
+	m_scene.numTransparentItems = 0;
+	m_scene.numMainLights = 0;
+	m_scene.numLights = 0;
+	m_scene.numCameras = 0;
+	m_scene.mainCamera = nullptr;
+	m_scene.skyBox = nullptr;
+
+	m_numFilters = 0;
+
 	m_scene.opaqueItems = m_opaqueItems.data();
-	m_scene.numOpaqueItems = m_opaqueItems.size();
 	m_scene.cutOutItems = m_cutOutItems.data();
-	m_scene.numCutOutItems = m_cutOutItems.size();
 	m_scene.transparentItems = m_transparentItems.data();
-	m_scene.numTransparentItems = m_transparentItems.size();
 	m_scene.mainLights = m_mainLights.data();
-	m_scene.numMainLights = m_mainLights.size();
 	m_scene.lights = m_lights.data();
-	m_scene.numLights = m_lights.size();
 	m_scene.cameras = m_cameras.data();
-	m_scene.numCameras = m_cameras.size();
-	m_scene.mainCamera = m_mainCamera;
-	m_scene.skyBox = m_skyBox ? &m_skyBox : nullptr;
 }
-
-
-void Renderer::clearRenderScene() {
-	// clen up flushed renderables
-	m_opaqueItems.resize(0);
-	m_cutOutItems.resize(0);
-	m_transparentItems.resize(0);
-	m_mainLights.resize(0);
-	m_lights.resize(0);
-	m_cameras.resize(0);
-	m_filters.resize(0);
-	m_skyBox.reset();
-
-	// release allocated frame memory, remake a new frame
-	_frameAlloc.clearFrame();
-	_frameAlloc.markFrame();
-}
-
 
 void Renderer::flush() {
 	ASSERT(m_mainCamera);
@@ -318,16 +311,15 @@ void Renderer::flush() {
 	clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 	
 
-	updateRenderScene();
 	m_renderTechnique->render(m_scene);
 	
 	Texture* finalFrame = m_renderTechnique->getRenderedFrame();
 	if (m_filters.size() > 0)
-		finalFrame = m_postProcessingMgr.applyFilters(finalFrame, m_filters.data(), m_filters.size());
+		finalFrame = m_postProcessingMgr.applyFilters(finalFrame, m_filters.data(), m_numFilters);
 
 	presentFrame(finalFrame);
 
-	clearRenderScene();
+	resetScene();
 }
 
 void Renderer::presentFrame(Texture* frame) {

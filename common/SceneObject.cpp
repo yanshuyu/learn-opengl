@@ -14,7 +14,7 @@ SceneObject::SceneObject(const std::string& name) :m_name(name)
 , m_isVisible(true)
 , m_parent(nullptr)
 , m_tag(0)
-, m_layer(SceneLayer::Default)
+, m_layer(SceneLayer::Opaque)
 , m_components()
 , m_parentScene() {
 	m_id = reinterpret_cast<ID>(this);

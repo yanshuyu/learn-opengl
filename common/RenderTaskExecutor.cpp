@@ -18,12 +18,12 @@ static MaterialBlock s_MaterialBlock;
 bool RENDER_TASK_EXECUTOR_INIT() {
 	s_SkinPoseBlockBuf.reset(new Buffer());
 	s_SkinPoseBlockBuf->bind(Buffer::Target::UniformBuffer);
-	s_SkinPoseBlockBuf->loadData(nullptr, sizeof(glm::mat4) * MAX_NUM_BONES, Buffer::Usage::StaticDraw);
+	s_SkinPoseBlockBuf->loadData(nullptr, sizeof(glm::mat4) * MAX_NUM_BONES, Buffer::Usage::DynamicDraw);
 	s_SkinPoseBlockBuf->unbind();
 
 	s_MaterialBlockBuf.reset(new Buffer());
 	s_MaterialBlockBuf->bind(Buffer::Target::UniformBuffer);
-	s_MaterialBlockBuf->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::StaticDraw);
+	s_MaterialBlockBuf->loadData(nullptr, sizeof(MaterialBlock), Buffer::Usage::DynamicDraw);
 	s_MaterialBlockBuf->unbind();
 
 	return true;

@@ -3,7 +3,7 @@
 #include<common/FileSystem.h>
 #include<stdarg.h>
 #include<glm/gtx/transform.hpp>
-#include"PhoenixFlyController.h"
+
 
 
 ImageProcessingApp::ImageProcessingApp(const std::string& t, int w, int h) :GLApplication(t, w, h)
@@ -108,7 +108,8 @@ void ImageProcessingApp::_loadScene() {
 	gameObj = m_scene->addModel("phoenix.fbx", MeshLoader::Option::LoadAnimations);
 	gameObj->setLayer(SceneLayer::CutOut);
 	gameObj->m_transform.setScale({ 0.05f, 0.05f, 0.05f });
-	gameObj->m_transform.setPosition({ -35.f, 35.f, 15.f });
+	gameObj->m_transform.setRotation({ 0.f, -120.f, 0.f });
+	gameObj->m_transform.setPosition({ 35.f, 35.f, 15.f });
 	//gameObj->addComponent<PhoenixFlyController>();
 	auto animator = gameObj->getComponent<AnimatorComponent>().lock();
 	auto idleState = animator->addState("idle");
@@ -156,6 +157,15 @@ void ImageProcessingApp::_loadScene() {
 	pbrMtl->m_mainColor = { 1.f, 1.f, 1.f };
 	pbrMtl->m_metallic = 0.9f;
 	pbrMtl->m_roughness = 0.2f;
+
+	// copo
+	gameObj = m_scene->addModel("copo.blend");
+	gameObj->setLayer(SceneLayer::CutOut);
+	gameObj->m_transform.setRotation({ -90.f, 0.f, 0.f });
+	gameObj->m_transform.setPosition({ 0.f, 1.f, 0.f });
+	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
+	phongMtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
+	phongMtl->m_albedoMap = texMgr->addTexture("copos.png");
 
 	// PBR man
 	gameObj = m_scene->addModel("Mesh_MAT.FBX", MeshLoader::Option::None, "PBR_Man");

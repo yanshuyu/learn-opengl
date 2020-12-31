@@ -15,6 +15,17 @@ class VertexArray;
 class RenderTarget;
 
 
+#define MAX_NUM_OPAQUES 1024
+#define MAX_NUM_CUTOUTS 512
+#define MAX_NUM_TRANSPARENCES 64
+#define MAX_NUM_MAIN_LIGHTS 16
+#define MAX_NUM_LIGHTS 1024
+#define MAX_NUM_CAMERAS 8
+#define MAX_NUM_FILTERS 16
+
+const int MAX_NUM_TOTAL_LIGHTS = MAX_NUM_MAIN_LIGHTS + MAX_NUM_LIGHTS;
+
+
 class Renderer {
 protected:
 	template<typename T>
@@ -93,43 +104,35 @@ public:
 	//
 	// render taskes
 	//
-	inline void submitCamera(const Camera_t& camera, bool isMain = false) {
-		m_cameras.push_back(camera);
-		if (isMain) {
-			m_mainCamera = &m_cameras.back();
-			clearViewports();
-			pushViewport(&m_mainCamera->viewport);
-		}
-	}
-
-	inline void submitLight(const Light_t& light) {
-		if (light.isCastShadow())
-			m_mainLights.push_back(light);
-		else
-			m_lights.push_back(light);
-	}
+	void submitCamera(const Camera_t& camera, bool isMain = false);
+	void submitLight(const Light_t& light);
 
 	inline void submitOpaqueItem(const MeshRenderItem_t& item) {
 		ASSERT(item.vao->isVailde());
-		m_opaqueItems.push_back(item);
+		if (m_scene.numOpaqueItems < MAX_NUM_OPAQUES)
+			m_opaqueItems[m_scene.numOpaqueItems++] = item;
 	}
 
 	inline void submitCutOutItem(const MeshRenderItem_t& item) {
 		ASSERT(item.vao->isVailde());
-		m_cutOutItems.push_back(item);
+		if (m_scene.numCutOutItems < MAX_NUM_CUTOUTS)
+			m_cutOutItems[m_scene.numCutOutItems++] = item;
 	}
 
 	inline void submitTransparentItem(const MeshRenderItem_t& item) {
 		ASSERT(item.vao->isVailde());
-		m_transparentItems.push_back(item);
+		if (m_scene.numTransparentItems < MAX_NUM_TRANSPARENCES)
+			m_transparentItems[m_scene.numTransparentItems++] = item;
 	}
 
 	inline void submitPostProcessingFilter(const FilterComponent* filter) {
-		m_filters.push_back(filter);
+		if (m_numFilters < MAX_NUM_FILTERS)
+			m_filters[m_numFilters++] = filter;
 	}
 
 	inline void submitSkyBox(const SkyBox_t& skyBox) {
 		m_skyBox = skyBox;
+		m_scene.skyBox = m_skyBox ? &m_skyBox : m_scene.skyBox;
 	}
 
 	void flush(); // render all submited tasks
@@ -190,8 +193,7 @@ protected:
 		GLCALL(glViewport(vp.x, vp.y, vp.width, vp.height));
 	}
 
-	void updateRenderScene();
-	void clearRenderScene();
+	void resetScene();
 
 	// clipping states
 	void setCullFaceMode(CullFaceMode mode);
@@ -242,17 +244,17 @@ protected:
 	std::unique_ptr<Buffer> m_quadIBO;
 
 	// renderable scene
-	FrameAllocator _frameAlloc;
-	FrameVector<MeshRenderItem_t> m_opaqueItems;
-	FrameVector<MeshRenderItem_t> m_cutOutItems;
-	FrameVector<MeshRenderItem_t> m_transparentItems;
-	FrameVector<Light_t> m_mainLights;
-	FrameVector<Light_t> m_lights;
-	FrameVector<Camera_t> m_cameras;
+	std::array<MeshRenderItem_t, MAX_NUM_OPAQUES> m_opaqueItems;
+	std::array<MeshRenderItem_t, MAX_NUM_CUTOUTS> m_cutOutItems;
+	std::array<MeshRenderItem_t, MAX_NUM_TRANSPARENCES> m_transparentItems;
+	std::array<Light_t, MAX_NUM_MAIN_LIGHTS> m_mainLights;
+	std::array<Light_t, MAX_NUM_LIGHTS> m_lights;
+	std::array<Camera_t, MAX_NUM_CAMERAS> m_cameras;
+	std::array<const FilterComponent*, MAX_NUM_FILTERS> m_filters;
 	Camera_t* m_mainCamera;
-	FrameVector<const FilterComponent*> m_filters;
 	SkyBox_t m_skyBox;
 	Scene_t m_scene;
+	size_t m_numFilters;
 
 	//post processing
 	PostProcessingManager m_postProcessingMgr;

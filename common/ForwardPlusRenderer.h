@@ -2,13 +2,11 @@
 #include"RenderTechnique.h"
 #include"RenderTaskExecutor.h"
 #include"RenderTarget.h"
-
+#include"Renderer.h"
 
 class Buffer;
 class Texture;
 class IShadowMapping;
-
-#define MAX_NUM_LIGHTS 1024
 
 class ForwardPlusRenderer : public RenderTechniqueBase {
 	struct Light {
@@ -86,5 +84,5 @@ protected:
 
 	// lights SSBO
 	std::unique_ptr<Buffer> m_lightsSSBO;
-	std::array<Light, MAX_NUM_LIGHTS> m_lights;
+	std::array<Light, MAX_NUM_TOTAL_LIGHTS> m_lights;
 };

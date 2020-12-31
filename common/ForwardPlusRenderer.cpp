@@ -1,7 +1,6 @@
 #include"ForwardPlusRenderer.h"
 #include"Util.h"
 #include"Buffer.h"
-#include"Renderer.h"
 #include"ShaderProgamMgr.h"
 #include"DirectionalLightShadowMapping.h"
 #include"PointLightShadowMapping.h"
@@ -52,7 +51,7 @@ bool ForwardPlusRenderer::intialize() {
 
 	m_lightsSSBO.reset(new Buffer());
 	m_lightsSSBO->bind(Buffer::Target::ShaderStorageBuffer);
-	ASSERT(m_lightsSSBO->loadData(nullptr, sizeof(Light) * MAX_NUM_LIGHTS, Buffer::Usage::DynamicDraw));
+	ASSERT(m_lightsSSBO->loadData(nullptr, sizeof(Light) * MAX_NUM_TOTAL_LIGHTS, Buffer::Usage::DynamicDraw));
 	m_lightsSSBO->unbind();
 
 	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new DepthPassRenderTaskExecutor(this));
