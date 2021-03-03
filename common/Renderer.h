@@ -145,6 +145,7 @@ public:
 	}
 
 	void executeDrawCommand(const VertexArray* vao, PrimitiveType pt, size_t numVert, size_t numIndex);
+	void flushDrawCommands();
 	void drawFullScreenQuad();
 	void presentFrame(Texture* frame);
 

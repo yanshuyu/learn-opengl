@@ -6,7 +6,15 @@
 class ImageProcessingApp : public GLApplication {
 	friend class MainGuiWindow;
 public:
-	ImageProcessingApp(const std::string& wndTitle, int wndWidth = 1920, int wndHeight = 1080);
+	ImageProcessingApp(const std::string& wndTitle, int wndWidth = 1920, int wndHeight = 1080, int majorVer = 4, int minorVer = 5);
+
+	void setShadowMapResolution(const glm::vec2& sz) {
+		m_renderer->setShadowMapResolution(sz);
+	}
+
+	glm::vec2 getShadowMapResolution() const {
+		return m_renderer->getShadowMapResolution();
+	}
 
 private:
 	bool initailize() override;

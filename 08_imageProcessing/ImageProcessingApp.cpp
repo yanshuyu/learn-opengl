@@ -6,7 +6,7 @@
 
 
 
-ImageProcessingApp::ImageProcessingApp(const std::string& t, int w, int h) :GLApplication(t, w, h)
+ImageProcessingApp::ImageProcessingApp(const std::string& t, int w, int h, int major, int minor) :GLApplication(t, w, h, major, minor)
 , m_scene(nullptr)
 , m_renderer(nullptr)
 , m_animator() {
@@ -26,20 +26,16 @@ bool ImageProcessingApp::initailize() {
 
 	m_scene->setRenderer(m_renderer.get());
 
-	_loadScene();
-	
 	auto shaderMgr = ShaderProgramManager::getInstance();
 	auto meshMgr = MeshManager::getInstance();
 	auto matMgr = MaterialManager::getInstance();
 	auto texMgr = TextureManager::getInstance();
-	
-	auto myshader = shaderMgr->addProgram("DirectionalLight");
 
 	// camera
 	auto camera = m_scene->addCamera({ 0.f, 4.f, 16.f });
 	camera->addComponent<FirstPersonCameraController>();
 	//camera->addComponent<GrayFilterComponent>();
-	camera->addComponent<HDRFilterComponent>();
+	//camera->addComponent<HDRFilterComponent>();
 	//camera->addComponent<GaussianBlurFilterComponent>();
 
 	auto skyBox = camera->addComponent<SkyboxComponent>();
@@ -62,6 +58,8 @@ bool ImageProcessingApp::initailize() {
 	dirLight->m_transform.setRotation({ -30.f , -60.f, 0.f });
 
 	m_scene->addAmbientLight({ 0.f, 0.f, 0.1f }, { 0.f, 0.1f, 0.1f });
+
+	_loadScene();
 
 	GuiManager::getInstance()->addWindow(new MainGuiWindow(m_scene->getName(), this));
 
@@ -160,12 +158,15 @@ void ImageProcessingApp::_loadScene() {
 
 	// copo
 	gameObj = m_scene->addModel("copo.blend");
-	gameObj->setLayer(SceneLayer::CutOut);
+	gameObj->setLayer(SceneLayer::Transparency);
 	gameObj->m_transform.setRotation({ -90.f, 0.f, 0.f });
 	gameObj->m_transform.setPosition({ 0.f, 1.f, 0.f });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
 	phongMtl = meshRenderer->materialAt(0).lock()->asType<PhongMaterial>();
 	phongMtl->m_albedoMap = texMgr->addTexture("copos.png");
+	phongMtl->m_opacity = 0.7f;
+	meshRenderer->setMaterialAt(1, meshRenderer->materialAt(0));
+	meshRenderer->setMaterialAt(2, meshRenderer->materialAt(0));
 
 	// PBR man
 	gameObj = m_scene->addModel("Mesh_MAT.FBX", MeshLoader::Option::None, "PBR_Man");

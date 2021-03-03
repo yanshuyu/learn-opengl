@@ -42,12 +42,12 @@ void GrayFilter::apply(Texture* inputFrame, Texture* outputFrame, const FilterPa
 	m_outputTarget.attachProxyTexture(outputFrame, RenderTarget::Slot::Color);
 	m_manager->getRenderer()->pushRenderTarget(&m_outputTarget);
 
-	inputFrame->bind(Texture::Unit::Defualt, Texture::Target::Texture_2D);
+	inputFrame->bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_2D);
 	shader->setUniform1("u_Texture", int(Texture::Unit::Defualt));
 
 	m_manager->getRenderer()->drawFullScreenQuad();
 	
-	inputFrame->unbind();
+	inputFrame->unbindFromTextureUnit();
 	m_manager->getRenderer()->popRenderTarget();
 	m_manager->getRenderer()->popShadrProgram();
 }

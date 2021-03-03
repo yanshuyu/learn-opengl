@@ -39,6 +39,8 @@ void GLClearError();
 
 bool GLCheckError();
 
+std::string GLErrorStr(int error);
+
 void ConsoleLog(const char* file, const char* func, int line, const std::string& msg);
 
 

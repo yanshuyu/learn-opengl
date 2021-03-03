@@ -38,45 +38,43 @@ void FrameBuffer::unbind() const {
 	}
 }
 
-bool FrameBuffer::addTextureAttachment(unsigned int texHandler, AttachmentPoint ap, size_t index) const {
-	if (ap == AttachmentPoint::Color) {
-		if (index >= maximumColorAttachment()) {
-#ifdef _DEBUG
-			ASSERT(false);
-#endif // _DEBUG
-			return false;
-		}
-	}
+bool FrameBuffer::addTextureAttachment(unsigned int texHandler, Slot slot, size_t index) const {
+	if (m_bindTarget == Target::Unknown)
+		return false;
 
-	int attachment = ap == AttachmentPoint::Color ? int(ap) + index : int(ap);
-	GLCALL(glNamedFramebufferTexture(m_handler, attachment, texHandler, 0));
+	int attachment = slot == Slot::Color ? int(slot) + index : int(slot);
+	//GLCALL(glNamedFramebufferTexture(m_handler, attachment, texHandler, 0)); // opengl 450
+	GLCALL(glFramebufferTexture(GLenum(m_bindTarget), GLenum(attachment), texHandler, 0));
 }
 
 
-bool FrameBuffer::addRenderBufferAttachment(unsigned int bufHandler, AttachmentPoint ap, size_t index) const {
-	if (ap == AttachmentPoint::Color) {
-		if (index >= maximumColorAttachment()) {
-#ifdef _DEBUG
-			ASSERT(false);
-#endif // _DEBUG
-			return false;
-		}
-	}
+bool FrameBuffer::addRenderBufferAttachment(unsigned int bufHandler, Slot slot, size_t index) const {
+	if (m_bindTarget == Target::Unknown)
+		return false;
 
-	int attachment = ap == AttachmentPoint::Color ? int(ap) + index : int(ap);
-	GLCALL(glNamedFramebufferRenderbuffer(m_handler, attachment, GL_RENDERBUFFER, bufHandler));
+	int attachment = slot == Slot::Color ? int(slot) + index : int(slot);
+	//GLCALL(glNamedFramebufferRenderbuffer(m_handler, attachment, GL_RENDERBUFFER, bufHandler));
+	GLCALL(glFramebufferRenderbuffer(GLenum(m_bindTarget), GLenum(slot), GL_RENDERBUFFER, bufHandler));
 }
 
 
 FrameBuffer::Status FrameBuffer::checkStatus() const {
-	GLCALL(int result = glCheckNamedFramebufferStatus(m_handler, GL_FRAMEBUFFER));
+	//GLCALL(int result = glCheckNamedFramebufferStatus(m_handler, GL_FRAMEBUFFER));
+	if (m_bindTarget == Target::Unknown)
+		return Status::Undefine;
+
+	GLCALL(int result = glCheckFramebufferStatus(GLenum(m_bindTarget)));
 	return  Status(result);
 }
 
 
 void FrameBuffer::setDrawBufferLocation(const std::vector<int>& locations) {
+	if (m_bindTarget == Target::Unknown)
+		return;
+
 	if (locations.empty()) {
-		GLCALL(glNamedFramebufferDrawBuffer(m_handler, GL_NONE));
+		//GLCALL(glNamedFramebufferDrawBuffer(m_handler, GL_NONE));
+		GLCALL(glDrawBuffer(GL_NONE));
 		return;
 	}
 
@@ -87,33 +85,32 @@ void FrameBuffer::setDrawBufferLocation(const std::vector<int>& locations) {
 		drawTargets.push_back(GL_COLOR_ATTACHMENT0 + i);
 	}
 
-	GLCALL(glNamedFramebufferDrawBuffers(m_handler, drawTargets.size(), drawTargets.data()));
+	//GLCALL(glNamedFramebufferDrawBuffers(m_handler, drawTargets.size(), drawTargets.data()));
+	GLCALL(glDrawBuffers(drawTargets.size(), drawTargets.data()));
 }
 
 
 void FrameBuffer::setReadBufferLocation(int location) {
-	if (location == -1) {
-		GLCALL(glNamedFramebufferReadBuffer(m_handler, GL_NONE));
+	if (m_bindTarget == Target::Unknown)
+		return;
+
+	if (location < 0) {
+		//GLCALL(glNamedFramebufferReadBuffer(m_handler, GL_NONE));
+		GLCALL(glReadBuffer(GL_NONE));
 		return;
 	}
-	GLCALL(glNamedFramebufferReadBuffer(m_handler, int(GL_COLOR_ATTACHMENT0 + location)));
-}
-
-void FrameBuffer::copyData(unsigned int dstHandler, FrameBuffer::CopyFiled filedMask, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, bool usingLinearFilter) const {
-	GLenum filter = usingLinearFilter ? GL_LINEAR : GL_NEAREST;
-	GLCALL(glBlitNamedFramebuffer(m_handler, dstHandler, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, int(filedMask), filter));
-}
-
-void FrameBuffer::getDimension(int* width, int* height) const {
-	int w = 0;
-	int h = 0;
-	GLCALL(glGetNamedFramebufferParameteriv(m_handler, GL_FRAMEBUFFER_DEFAULT_WIDTH, &w));
-	GLCALL(glGetNamedFramebufferParameteriv(m_handler, GL_FRAMEBUFFER_DEFAULT_HEIGHT, &h));
 	
-	if (width)
-		*width = w;
-	if (height)
-		*height = h;
+	//GLCALL(glNamedFramebufferReadBuffer(m_handler, int(GL_COLOR_ATTACHMENT0 + location)));
+	GLCALL(glReadBuffer(int(GL_COLOR_ATTACHMENT0 + location)));
+}
+
+bool FrameBuffer::copyData(unsigned int dstHandler, FrameBuffer::CopyFiled filedMask, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, bool usingLinearFilter) const {
+	if (m_bindTarget != Target::Read)
+		return false;
+
+	GLenum filter = usingLinearFilter ? GL_LINEAR : GL_NEAREST;
+	//GLCALL(glBlitNamedFramebuffer(m_handler, dstHandler, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, int(filedMask), filter));
+	GLCALL(glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, int(filedMask), filter));
 }
 
 

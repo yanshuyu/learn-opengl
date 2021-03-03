@@ -352,7 +352,10 @@
     <None Include="..\res\shader\HemiSphericalAmbientLight.shader" />
     <None Include="..\res\shader\HemiSphericalAmibentLightDefferred.shader" />
     <None Include="..\res\shader\KeyFrameDebugViewer.shader" />
+    <None Include="..\res\shader\Lightting.glsl" />
     <None Include="..\res\shader\Material.glsl" />
+    <None Include="..\res\shader\OITFragBlending.shader" />
+    <None Include="..\res\shader\OITFragList.shader" />
     <None Include="..\res\shader\PBR.glsl" />
     <None Include="..\res\shader\Phong.glsl" />
     <None Include="..\res\shader\PointLight.shader" />

@@ -9,6 +9,9 @@ class Texture;
 class IShadowMapping;
 
 class ForwardPlusRenderer : public RenderTechniqueBase {
+
+	const unsigned MAX_FRAG_PER_PIXEL = 32;
+
 	struct Light {
 		glm::vec4 position; // (xyz)position (w)range
 		glm::vec4 color; // (rgb)color (a)intensity
@@ -21,9 +24,18 @@ class ForwardPlusRenderer : public RenderTechniqueBase {
 			, color(0.f)
 			, direction(0.f)
 			, angles(0.f)
-			, type(0) {
+			, type(0) {	}
+	};
 
-		}
+	struct Fragment {
+		glm::vec4 color;
+		float depth;
+		unsigned int next;
+		float _padding[2];
+
+		Fragment() : color(0.f)
+			, depth(1.f)
+			, next(0xffffffff) { }
 	};
 
 public:
@@ -41,9 +53,7 @@ public:
 		return s_identifier;
 	}
 
-	inline Texture* getRenderedFrame() override {
-		return m_outputTarget.getAttachedTexture(RenderTarget::Slot::Color);
-	}
+	inline Texture* getRenderedFrame() override;
 
 	bool intialize() override;
 	void cleanUp() override;
@@ -56,16 +66,25 @@ public:
 	void drawDepthPass(const Scene_t& scene) override;
 	void drawGeometryPass(const Scene_t& scene) override {};
 	void drawOpaquePass(const Scene_t& scene) override;
-	void drawTransparentPass(const Scene_t& scene) override {};
+	void drawTransparentPass(const Scene_t& scene) override;
 
 	void onWindowResize(float w, float h) override;
 	void onShadowMapResolutionChange(float w, float h) override;
 
 protected:
-	inline void DrawOpaques(const Scene_t& scene, bool useCutout);
+	void setupPipelineStates();
+	bool setupOutputTarget();
+
+	void DrawOpaques(const Scene_t& scene, bool useCutout);
 	void RenderMainLights(const Scene_t& scene);
 	void PrepareLights(const Scene_t& scene);
 	void genShadowMap(const Scene_t& scene, const Light_t& light);
+
+
+	bool setupOIT();
+	void cleanOIT();
+	void genOITFragList(const Scene_t& scene);
+	void blendOITFragList();
 
 protected:
 	GPUPipelineState m_depthPassPipelineState;
@@ -73,9 +92,11 @@ protected:
 	GPUPipelineState m_lightPassPipelineState;
 	GPUPipelineState m_opaqusPipelineState;
 	GPUPipelineState m_cutoutPipelineState;
+	GPUPipelineState m_oitDrawPipelineState;
+	GPUPipelineState m_oitBlendPipelineState;
 
 	// default frame rener target (input frame for post processing)
-	RenderTarget m_outputTarget;
+	std::unique_ptr<RenderTarget> m_outputTarget;
 
 	std::unordered_map<RenderPass, std::unique_ptr<RenderTaskExecutor>> m_taskExecutors;
 
@@ -85,4 +106,12 @@ protected:
 	// lights SSBO
 	std::unique_ptr<Buffer> m_lightsSSBO;
 	std::array<Light, MAX_NUM_TOTAL_LIGHTS> m_lights;
+
+	// order indepamdent transparency
+	std::unique_ptr<Buffer> m_fragIdxACBO;
+	std::unique_ptr<Buffer> m_fragListSSBO;
+	std::unique_ptr<Buffer> m_fragListHeaderResetBuffer;
+	std::unique_ptr<Texture> m_fragListHeader;
+	std::unique_ptr<RenderTarget> m_oitBlendTarget;
+	bool m_isOITSetup;
 };

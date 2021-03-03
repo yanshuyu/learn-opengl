@@ -209,21 +209,21 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 		int hasAlbedoMap = mtl->hasAlbedoMap();
 		if (hasAlbedoMap) {
 			strongDiffuseMap = mtl->m_albedoMap.lock();
-			strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			strongDiffuseMap->bindToTextureUnit(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_AlbedoMap", int(Texture::Unit::DiffuseMap));
 		}
 	
 		int hasNormalMap = mtl->hasNormalMap();
 		if (hasNormalMap) {
 			strongNormalMap = mtl->m_normalMap.lock();
-			strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+			strongNormalMap->bindToTextureUnit(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 		}	
 
 		int hasSpecMap = mtl->hasSpecularMap();
 		if (hasSpecMap) {
 			strongSpecularMap = mtl->m_specularMap.lock();
-			strongSpecularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+			strongSpecularMap->bindToTextureUnit(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_SpecularMap", int(Texture::Unit::SpecularMap));
 		}
 
@@ -243,28 +243,28 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 		int hasAlbedoMap = mtl->hasAlbedoMap();
 		if (hasAlbedoMap) {
 			strongDiffuseMap = mtl->m_albedoMap.lock();
-			strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			strongDiffuseMap->bindToTextureUnit(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_AlbedoMap", int(Texture::Unit::DiffuseMap));
 		}
 
 		int hasNormalMap = mtl->hasNormalMap();
 		if (hasNormalMap) {
 			strongNormalMap = mtl->m_normalMap.lock();
-			strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+			strongNormalMap->bindToTextureUnit(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 		}
 
 		int hasMetallicMap = mtl->hasMetallicMap();
 		if (hasMetallicMap) {
 			strongMetallicMap = mtl->m_metallicMap.lock();
-			strongMetallicMap->bind(Texture::Unit::MetallicMap, Texture::Target::Texture_2D);
+			strongMetallicMap->bindToTextureUnit(Texture::Unit::MetallicMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_MetallicMap", int(Texture::Unit::MetallicMap));
 		}
 
 		int hasRoughnessMap = mtl->hasRoughnessMap();
 		if (hasRoughnessMap) {
 			strongroughnessMap = mtl->m_roughnessMap.lock();
-			strongroughnessMap->bind(Texture::Unit::RoughnessMap, Texture::Target::Texture_2D);
+			strongroughnessMap->bindToTextureUnit(Texture::Unit::RoughnessMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_RoughnessMap", int(Texture::Unit::RoughnessMap));
 		}
 
@@ -280,11 +280,11 @@ void LightPassRenderTaskExecuter::executeMeshTask(const MeshRenderItem_t& render
 	m_renderer->getRenderer()->executeDrawCommand(renderTask.vao, renderTask.primitive, renderTask.vertexCount, renderTask.indexCount);
 
 	s_MaterialBlockBuf->unbind();
-	if (strongDiffuseMap) strongDiffuseMap->unbind();
-	if (strongNormalMap) strongNormalMap->unbind();
-	if (strongSpecularMap) strongSpecularMap->unbind();
-	if (strongMetallicMap) strongMetallicMap->unbind();
-	if (strongroughnessMap) strongroughnessMap->unbind();
+	if (strongDiffuseMap) strongDiffuseMap->unbindFromTextureUnit();
+	if (strongNormalMap) strongNormalMap->unbindFromTextureUnit();
+	if (strongSpecularMap) strongSpecularMap->unbindFromTextureUnit();
+	if (strongMetallicMap) strongMetallicMap->unbindFromTextureUnit();
+	if (strongroughnessMap) strongroughnessMap->unbindFromTextureUnit();
 	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }
 
@@ -348,7 +348,7 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 		
 		if (mtl->hasSpecularMap()) {
 			strongSpecularMap = mtl->m_specularMap.lock();
-			strongSpecularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+			strongSpecularMap->bindToTextureUnit(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_SpecularMap", int(Texture::Unit::SpecularMap));
 			hasSpecularMap = 1;
 		}
@@ -376,14 +376,14 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 		
 		if (mtl->hasMetallicMap()) {
 			strongMatellicMap = mtl->m_metallicMap.lock();
-			strongMatellicMap->bind(Texture::Unit::MetallicMap, Texture::Target::Texture_2D);
+			strongMatellicMap->bindToTextureUnit(Texture::Unit::MetallicMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_MetallicMap", int(Texture::Unit::MetallicMap));
 			hasMetallicMap = 1;
 		}
 
 		if (mtl->hasRoughnessMap()) {
 			strongRoughnessMap = mtl->m_roughnessMap.lock();
-			strongRoughnessMap->bind(Texture::Unit::RoughnessMap, Texture::Target::Texture_2D);
+			strongRoughnessMap->bindToTextureUnit(Texture::Unit::RoughnessMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_RoughnessMap", int(Texture::Unit::RoughnessMap));
 			hasRoughnessMap = 1;
 		}
@@ -393,11 +393,11 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 
 
 	if (hasAlbedoMap) {
-		strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+		strongDiffuseMap->bindToTextureUnit(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 		shader->setUniform1("u_AlbedoMap", int(Texture::Unit::DiffuseMap));
 	}
 	if (hasNormalMap) {
-		strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+		strongNormalMap->bindToTextureUnit(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 		shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 	}
 
@@ -410,11 +410,11 @@ void GeometryPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& ren
 	m_renderer->getRenderer()->executeDrawCommand(renderTask.vao, renderTask.primitive, renderTask.vertexCount, renderTask.indexCount);
 
 	s_MaterialBlockBuf->unbind();
-	if (hasAlbedoMap) strongDiffuseMap->unbind();
-	if (hasNormalMap) strongNormalMap->unbind();
-	if (hasSpecularMap) strongSpecularMap->unbind();
-	if (hasMetallicMap) strongMatellicMap->unbind();
-	if (hasRoughnessMap) strongRoughnessMap->unbind();
+	if (hasAlbedoMap) strongDiffuseMap->unbindFromTextureUnit();
+	if (hasNormalMap) strongNormalMap->unbindFromTextureUnit();
+	if (hasSpecularMap) strongSpecularMap->unbindFromTextureUnit();
+	if (hasMetallicMap) strongMatellicMap->unbindFromTextureUnit();
+	if (hasRoughnessMap) strongRoughnessMap->unbindFromTextureUnit();
 	if (renderTask.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }
 
@@ -510,12 +510,12 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 	}
 
 	if (hasDiffuseMap) {
-		diffuseMap->bind(Texture::Unit::DiffuseMap);
+		diffuseMap->bindToTextureUnit(Texture::Unit::DiffuseMap);
 		shader->setUniform1("u_AlbedoMap", int(Texture::Unit::DiffuseMap));
 	}
 
 	if (hasNormalMap) {
-		normalMap->bind(Texture::Unit::NormalMap);
+		normalMap->bindToTextureUnit(Texture::Unit::NormalMap);
 		shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 	}
 
@@ -524,8 +524,8 @@ void AmbientPassRenderTaskExecutor::executeMeshTask(const MeshRenderItem_t& task
 
 	m_renderer->getRenderer()->executeDrawCommand(task.vao, task.primitive, task.vertexCount, task.indexCount);
 	
-	if (diffuseMap) diffuseMap->unbind();
-	if (normalMap) normalMap->unbind();
+	if (diffuseMap) diffuseMap->unbindFromTextureUnit();
+	if (normalMap) normalMap->unbindFromTextureUnit();
 	if (task.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }
 
@@ -577,21 +577,21 @@ void LightAccumulationPassRenderTaskExecutor::executeMeshTask(const MeshRenderIt
 		int hasAlbedoMap = mtl->hasAlbedoMap();
 		if (hasAlbedoMap) {
 			strongDiffuseMap = mtl->m_albedoMap.lock();
-			strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			strongDiffuseMap->bindToTextureUnit(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_AlbedoMap", int(Texture::Unit::DiffuseMap));
 		}
 
 		int hasNormalMap = mtl->hasNormalMap();
 		if (hasNormalMap) {
 			strongNormalMap = mtl->m_normalMap.lock();
-			strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+			strongNormalMap->bindToTextureUnit(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 		}
 
 		int hasSpecMap = mtl->hasSpecularMap();
 		if (hasSpecMap) {
 			strongSpecularMap = mtl->m_specularMap.lock();
-			strongSpecularMap->bind(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
+			strongSpecularMap->bindToTextureUnit(Texture::Unit::SpecularMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_SpecularMap", int(Texture::Unit::SpecularMap));
 		}
 
@@ -611,28 +611,28 @@ void LightAccumulationPassRenderTaskExecutor::executeMeshTask(const MeshRenderIt
 		int hasAlbedoMap = mtl->hasAlbedoMap();
 		if (hasAlbedoMap) {
 			strongDiffuseMap = mtl->m_albedoMap.lock();
-			strongDiffuseMap->bind(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
+			strongDiffuseMap->bindToTextureUnit(Texture::Unit::DiffuseMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_AlbedoMap", int(Texture::Unit::DiffuseMap));
 		}
 
 		int hasNormalMap = mtl->hasNormalMap();
 		if (hasNormalMap) {
 			strongNormalMap = mtl->m_normalMap.lock();
-			strongNormalMap->bind(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
+			strongNormalMap->bindToTextureUnit(Texture::Unit::NormalMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_NormalMap", int(Texture::Unit::NormalMap));
 		}
 
 		int hasMetallicMap = mtl->hasMetallicMap();
 		if (hasMetallicMap) {
 			strongMetallicMap = mtl->m_metallicMap.lock();
-			strongMetallicMap->bind(Texture::Unit::MetallicMap, Texture::Target::Texture_2D);
+			strongMetallicMap->bindToTextureUnit(Texture::Unit::MetallicMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_MetallicMap", int(Texture::Unit::MetallicMap));
 		}
 
 		int hasRoughnessMap = mtl->hasRoughnessMap();
 		if (hasRoughnessMap) {
 			strongroughnessMap = mtl->m_roughnessMap.lock();
-			strongroughnessMap->bind(Texture::Unit::RoughnessMap, Texture::Target::Texture_2D);
+			strongroughnessMap->bindToTextureUnit(Texture::Unit::RoughnessMap, Texture::Target::Texture_2D);
 			shader->setUniform1("u_RoughnessMap", int(Texture::Unit::RoughnessMap));
 		}
 
@@ -648,10 +648,10 @@ void LightAccumulationPassRenderTaskExecutor::executeMeshTask(const MeshRenderIt
 	m_renderer->getRenderer()->executeDrawCommand(task.vao, task.primitive, task.vertexCount, task.indexCount);
 	
 	s_MaterialBlockBuf->unbind();
-	if (strongDiffuseMap) strongDiffuseMap->unbind();
-	if (strongNormalMap) strongNormalMap->unbind();
-	if (strongSpecularMap) strongSpecularMap->unbind();
-	if (strongMetallicMap) strongMetallicMap->unbind();
-	if (strongroughnessMap) strongroughnessMap->unbind();
+	if (strongDiffuseMap) strongDiffuseMap->unbindFromTextureUnit();
+	if (strongNormalMap) strongNormalMap->unbindFromTextureUnit();
+	if (strongSpecularMap) strongSpecularMap->unbindFromTextureUnit();
+	if (strongMetallicMap) strongMetallicMap->unbindFromTextureUnit();
+	if (strongroughnessMap) strongroughnessMap->unbindFromTextureUnit();
 	if (task.boneCount > 0) s_SkinPoseBlockBuf->unbind();
 }

@@ -13,11 +13,36 @@ void GLClearError() {
 bool GLCheckError() {
 	bool hasError = false;
 	while (GLenum e = glGetError()) {
-		std::cerr << "glError occur: " << e << std::endl;
+		std::cerr << "glError occur: (" << e << ")" << GLErrorStr(e) <<std::endl;
 		hasError = true;
 	}
 
 	return !hasError;
+}
+
+
+std::string GLErrorStr(int error) {
+	switch (error)
+	{
+	case GL_INVALID_ENUM:
+		return "GL_INVALID_ENUM, enumeration parameter is not legal.";
+	case GL_INVALID_VALUE:
+		return "GL_INVALID_VALUE, value parameter is not legal.";
+	case GL_INVALID_OPERATION:
+		return "GL_INVALID_OPERATION,  state for a command is not legal for its given parameters.";
+	case GL_STACK_OVERFLOW:
+		return "GL_STACK_OVERFLOW, stack pushing operation causes a stack overflow.";
+	case GL_STACK_UNDERFLOW:
+		return	"GL_STACK_UNDERFLOW, stack popping operation occurs while the stack is at its lowest point.";
+	case GL_OUT_OF_MEMORY:
+		return "GL_OUT_OF_MEMORY, memory allocation operation cannot allocate (enough) memory.";
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return "GL_INVALID_FRAMEBUFFER_OPERATION, reading or writing to a framebuffer that is not complete.";
+	default:
+		break;
+	}
+
+	return "Unknow error.";
 }
 
 std::string ExtractFileNameFromPath(const std::string& path, bool includeExt) {

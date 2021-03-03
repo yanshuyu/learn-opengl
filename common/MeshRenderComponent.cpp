@@ -101,11 +101,15 @@ void MeshRenderComponent::render(RenderContext* context) {
 		task.material = mat;
 		task.modelMatrix = context->getMatrix() * m_owner->m_transform.getMatrix() * mesh->getTransform();
 		auto layer = getGameObject()->getLayer();
+		auto renderer = context->getRenderer();
 		if (layer == SceneLayer::Opaque) {
-			context->getRenderer()->submitOpaqueItem(task);
+			renderer->submitOpaqueItem(task);
 		}
 		else if (layer == SceneLayer::CutOut) {
-			context->getRenderer()->submitCutOutItem(task);
+			renderer->submitCutOutItem(task);
+		}
+		else if (layer == SceneLayer::Transparency) {
+			renderer->submitTransparentItem(task);
 		}
 	}
 }

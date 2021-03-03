@@ -126,7 +126,7 @@ void SkyboxComponent::render(RenderContext* context) {
 bool SkyboxComponent::load(const std::string& posX, const std::string& negX,
 	const std::string& posY, const std::string& negY,
 	const std::string& posZ, const std::string& negZ) {
-	m_cubeMap->bind(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
+	m_cubeMap->bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
 	auto texMgr = TextureManager::getInstance();
 	bool ok = m_cubeMap->loadCubeMapFromFiles(texMgr->getResourcePath(ExtractFileNameFromPath(posX)).second,
 		texMgr->getResourcePath(ExtractFileNameFromPath(negX)).second,
@@ -134,7 +134,7 @@ bool SkyboxComponent::load(const std::string& posX, const std::string& negX,
 		texMgr->getResourcePath(ExtractFileNameFromPath(negY)).second,
 		texMgr->getResourcePath(ExtractFileNameFromPath(posZ)).second,
 		texMgr->getResourcePath(ExtractFileNameFromPath(negZ)).second);
-	m_cubeMap->unbind();
+	m_cubeMap->unbindFromTextureUnit();
 
 	return ok;
 }
@@ -153,10 +153,10 @@ bool SkyboxComponent::load(Face face, const std::string& image) {
 	if (!data)
 		return false;
 
-	m_cubeMap->bind(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
+	m_cubeMap->bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_CubeMap);
 	Texture::Format fmt = m_cubeMap->getGenericFormat(channelCnt);
 	GLCALL(glTexImage2D(int(face), 0, int(fmt), w, h, 0, int(fmt), GL_UNSIGNED_BYTE, data));
-	m_cubeMap->unbind();
+	m_cubeMap->unbindFromTextureUnit();
 
 	return true;
 }

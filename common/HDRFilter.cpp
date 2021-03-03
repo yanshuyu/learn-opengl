@@ -71,9 +71,9 @@ bool HDRFilter::initialize() {
 	m_atomicCounter.loadData(nullptr, sizeof(unsigned int), Buffer::Usage::DynamicDraw);
 	m_atomicCounter.unbind();
 
-	m_aveLumTex.bind(Texture::Unit::Defualt, Texture::Target::Texture_2D);
+	m_aveLumTex.bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_2D);
 	m_aveLumTex.allocStorage2D(Texture::Format::R16F, 1, 1);
-	m_aveLumTex.unbind();
+	m_aveLumTex.unbindFromTextureUnit();
 
 	return true;
 }
@@ -152,8 +152,8 @@ void HDRFilter::apply(Texture* inputFrame, Texture* outputFrame, const FilterPar
 	auto hdrShader = shader.lock();
 	m_manager->getRenderer()->pushShaderProgram(hdrShader.get());
 
-	m_aveLumTex.bind(Texture::Unit::Defualt);
-	inputFrame->bind(Texture::Unit::DiffuseMap);
+	m_aveLumTex.bindToTextureUnit(Texture::Unit::Defualt);
+	inputFrame->bindToTextureUnit(Texture::Unit::DiffuseMap);
 	hdrShader->setUniform1("u_aveLumTexture", int(Texture::Unit::Defualt));
 	hdrShader->setUniform1("u_hdrTexture", int(Texture::Unit::DiffuseMap));
 	hdrShader->setUniform1("u_exposure", params->getParam<float>(sExposureParamName)->m_value);
@@ -161,7 +161,7 @@ void HDRFilter::apply(Texture* inputFrame, Texture* outputFrame, const FilterPar
 
 	m_manager->getRenderer()->drawFullScreenQuad();
 
-	inputFrame->unbind();
+	inputFrame->unbindFromTextureUnit();
 	m_manager->getRenderer()->popShadrProgram();
 	m_manager->getRenderer()->popRenderTarget();
 }

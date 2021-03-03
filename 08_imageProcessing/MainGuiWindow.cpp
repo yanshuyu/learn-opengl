@@ -71,10 +71,18 @@ bool MainGuiWindow::initialize() {
 }
 
 void MainGuiWindow::render() {
+	static glm::vec2 shadowMapSz = m_application->getShadowMapResolution();
 	ImGui::Begin(m_title.c_str());
 
 	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	ImGui::Separator();
+
+	if (ImGui::InputFloat2("Shadow Map Resolution", &shadowMapSz[0], 1)) {
+		m_application->setShadowMapResolution(shadowMapSz);
+	}
+	ImGui::Separator();
+
+
 
 	//ImGui::Text("Rendering Setting");
 

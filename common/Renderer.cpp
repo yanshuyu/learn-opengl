@@ -327,27 +327,18 @@ void Renderer::presentFrame(Texture* frame) {
 		return; 
 
 	clearRenerTargets();
-	auto shader = ShaderProgramManager::getInstance()->getProgram("FullScreenQuad");
-	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("FullScreenQuad");
-	
-	shader.lock()->bind();
+	auto shader =  ShaderProgramManager::getInstance()->addProgram("FullScreenQuad").lock();
+
+	shader->bind();
 	m_quadVAO->bind();
 
-	glActiveTexture(int(Texture::Unit::Defualt));
-	frame->bind(Texture::Unit::Defualt);
-	shader.lock()->setUniform1("u_color", int(Texture::Unit::Defualt));
+	frame->bindToTextureUnit(Texture::Unit::Defualt);
+	shader->setUniform1("u_color", int(Texture::Unit::Defualt));
 
 	GLCALL(glDrawElements(GL_TRIANGLES, m_quadIBO->getElementCount(), GL_UNSIGNED_INT, 0));
 }
 
 void Renderer::drawFullScreenQuad() {
-	//MeshRenderItem_t task;
-	//task.vao = m_quadVAO.get();
-	//task.indexCount = m_quadIBO->getElementCount();
-	//task.primitive = PrimitiveType::Triangle;
-	//m_renderTechnique->render(task);
-
 	m_quadVAO->bind();
 	GLCALL(glDrawElements(GL_TRIANGLES, m_quadIBO->getElementCount(), GL_UNSIGNED_INT, 0));
 }
@@ -562,4 +553,11 @@ void Renderer::executeDrawCommand(const VertexArray* vao, PrimitiveType pt, size
 		GLCALL(glDrawArrays(GLenum(pt), 0, numVert));
 	}
 	vao->unbind();
+}
+
+
+
+void Renderer::flushDrawCommands() {
+	GLCALL(glFlush());
+	GLCALL(glFinish());
 }

@@ -652,5 +652,14 @@
     <None Include="..\res\shader\Material.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\res\shader\OITFragList.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\OITFragBlending.shader">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\res\shader\Lightting.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

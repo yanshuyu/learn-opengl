@@ -4,6 +4,8 @@
 #include"RendererCore.h"
 
 
+class Buffer;
+
 class Texture {
 	friend class SkyboxComponent;
 
@@ -190,7 +192,9 @@ public:
 	virtual ~Texture();
 
 	Texture(const Texture& other) = delete;
+	Texture(Texture&& rv) = delete;
 	Texture& operator = (const Texture& other) = delete;
+	Texture& operator = (Texture&& rv) = delete;
 
 	static int maximumAvaliableTextureUnit();
 
@@ -207,26 +211,26 @@ public:
 	void allocStorageCubeArray(Format fmt, size_t layers, size_t width, size_t height, size_t numlevels = 1);
 	void allocStorage3D(Format fmt, size_t depth, size_t width, size_t height, size_t numlevels = 1);
 
-	bool bind(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;
-	void unbind() const;
+	// specify sub data
+	bool subDataImage2D(const void* data, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t mipLevel = 0);
+	bool subDataImage2DFromBuffer(Buffer* buf, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t mipLevel = 0, size_t byteOffset = 0);
+	bool subDataImage2DArray(const void* data, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t slice = 0, size_t mipLevel = 0);
+	bool subDataImage2DArrayFromBuffer(Buffer* buf, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t slice = 0, size_t mipLevel = 0, size_t byteOffset = 0);
+
+	bool bindToTextureUnit(Unit unit = Unit::Defualt, Target target = Target::Texture_2D) const ;
+	void unbindFromTextureUnit() const;
 
 	void bindToImageUnit(size_t unit, Format fmt, Access access, size_t level = 0, bool bindAsArray = false, size_t layerToBind = 0);
 	void unbindFromImageUnit() const;
 
 	void release();
 
-	void setFilterMode(FilterType type, FilterMode mode);
-	void setWrapMode(WrapType type, WrapMode mode);
-	void setBorderColor(glm::vec4 color);
+	bool setFilterMode(FilterType type, FilterMode mode);
+	bool setWrapMode(WrapType type, WrapMode mode);
+	bool setBorderColor(glm::vec4 color);
 
-	inline void setCompareMode(CompareMode cm) {
-		GLCALL(glTextureParameteri(m_handler, GL_TEXTURE_COMPARE_MODE, GLint(cm)));
-	}
-
-	inline void setCompareFunc(CompareFunc cf) {
-		GLCALL(glTextureParameteri(m_handler, GL_TEXTURE_COMPARE_FUNC, GLint(cf)));
-	}
-
+	bool setCompareMode(CompareMode cm);
+	bool setCompareFunc(CompareFunc cf);
 
 	void getPiexls(int level, Texture::Format piexlFmt, Texture::FormatDataType fmtDataType, size_t bufferSz, void* piexls);
 
@@ -270,10 +274,8 @@ private:
 	int m_depth;
 	Format m_format;
 
-	mutable Unit m_bindedUnit;
 	mutable Target m_bindedTarget;
-
-	mutable bool m_bindAsImage;
+	mutable Unit m_bindedTexUnit;
 	mutable int m_bindedImageUnit;
 
 	GLuint m_handler;

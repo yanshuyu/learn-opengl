@@ -8,7 +8,7 @@
 // render target manage frame buffer and associate resource
 class RenderTarget {
 public:
-	typedef FrameBuffer::AttachmentPoint Slot; 
+	typedef FrameBuffer::Slot Slot; 
 	typedef FrameBuffer::Target Target;
 	typedef FrameBuffer::Status Status;
 

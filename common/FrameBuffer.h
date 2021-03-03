@@ -12,7 +12,7 @@ public:
 	};
 	
 
-	enum class AttachmentPoint {
+	enum class Slot {
 		Depth = GL_DEPTH_ATTACHMENT,
 		Stencil = GL_STENCIL_ATTACHMENT,
 		Depth_Stencil = GL_DEPTH_STENCIL_ATTACHMENT,
@@ -47,7 +47,6 @@ public:
 
 	FrameBuffer(const FrameBuffer& other) = delete;
 	FrameBuffer(FrameBuffer&& rv) = delete;
-
 	FrameBuffer& operator = (const FrameBuffer& other) = delete;
 	FrameBuffer& operator = (FrameBuffer&& rv) = delete;
 
@@ -57,15 +56,14 @@ public:
 	void bind(Target target = Target::ReadAndDraw) const;
 	void unbind() const;
 
-	bool addTextureAttachment(unsigned int texHandler, AttachmentPoint ap, size_t index = 0) const;
-	bool addRenderBufferAttachment(unsigned int bufHandler, AttachmentPoint ap, size_t index = 0) const;
+	bool addTextureAttachment(unsigned int texHandler, Slot slot, size_t index = 0) const;
+	bool addRenderBufferAttachment(unsigned int bufHandler, Slot slot, size_t index = 0) const;
 	Status checkStatus() const;
 	void release();
 
 	void setDrawBufferLocation(const std::vector<int>& locations);  // shader output location map to buffer attachment	
 	void setReadBufferLocation(int location);
-	void copyData(unsigned int dstHandler, CopyFiled filedMask, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, bool usingLinearFilter = true) const; //  copy a block of pixels from one framebuffer object to another
-	void getDimension(int* width, int* height) const;
+	bool copyData(unsigned int dstHandler, CopyFiled filedMask, int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, bool usingLinearFilter = true) const; //  copy a block of pixels from one framebuffer object to another
 
 	inline unsigned int getHandler() const {
 		return m_handler;

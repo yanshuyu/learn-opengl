@@ -11,7 +11,7 @@
 
 SpotLightShadowMapping::SpotLightShadowMapping(IRenderTechnique* rt, const glm::vec2& shadowMapResolution)
 : IShadowMapping(rt)
-, m_shadowTarget(shadowMapResolution)
+, m_shadowTarget()
 , m_shader()
 , m_lightVP(1.f)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
@@ -22,46 +22,6 @@ SpotLightShadowMapping::~SpotLightShadowMapping() {
 	cleanUp();
 }
 
-bool SpotLightShadowMapping::initialize() {
-	if (!m_shadowTarget.attachTexture2D(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	if (!m_shadowTarget.isValid()) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
-#ifdef _DEBUG
-	ASSERT(shadowMap);
-#endif // _DEBUG
-	if (shadowMap) {
-		shadowMap->bind();
-		shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Liner);
-		shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Liner);
-		shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
-		shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
-		shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
-		shadowMap->setCompareMode(Texture::CompareMode::Compare_Ref_To_Texture);
-		shadowMap->setCompareFunc(Texture::CompareFunc::Less);
-		shadowMap->unbind();
-	}
-
-	return true;
-}
-
-void SpotLightShadowMapping::cleanUp() {
-	m_shadowTarget.detachAllTexture();
-	m_lightVP = glm::mat4(1.f);
-}
 
 void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
 	if (!light.isCastShadow())
@@ -77,7 +37,7 @@ void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& l
 	m_shader = preZShader.lock();
 	auto renderer = m_renderTech->getRenderer();
 	renderer->pushShaderProgram(m_shader.get());
-	renderer->pushRenderTarget(&m_shadowTarget);
+	renderer->pushRenderTarget(m_shadowTarget.get());
 	renderer->pushViewport(&m_shadowViewport);
 	renderer->clearScreen(ClearFlags::Depth);
 
@@ -92,6 +52,10 @@ void SpotLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& l
 
 	for (size_t i = 0; i < scene.numCutOutItems; i++) {
 		m_renderTech->render(scene.cutOutItems[i]);
+	}
+
+	for (size_t i = 0; i < scene.numTransparentItems; i++) {
+		m_renderTech->render(scene.transparentItems[i]);
 	}
 
 	renderer->popViewport();
@@ -113,9 +77,9 @@ void SpotLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgra
 	if (shader->hasUniform("u_shadowMap")) {
 		shader->setUniform1("u_hasShadowMap", int(light.isCastShadow()));
 		if (light.isCastShadow()) {
-			Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+			Texture* shadowMap = m_shadowTarget->getAttachedTexture(RenderTarget::Slot::Depth);
 			if (shadowMap) {
-				shadowMap->bind(Texture::Unit::ShadowMap);
+				shadowMap->bindToTextureUnit(Texture::Unit::ShadowMap);
 				shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
 			}
 		}
@@ -134,8 +98,8 @@ void SpotLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgra
 
 void SpotLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
-		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
-			shadowMap->unbind();
+		if (auto shadowMap = m_shadowTarget->getAttachedTexture(RenderTarget::Slot::Depth))
+			shadowMap->unbindFromTextureUnit();
 	}
 }
 
@@ -143,10 +107,7 @@ void SpotLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram*
 void SpotLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
 	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
-	bool ok = m_shadowTarget.resize({ w, h });
-#ifdef _DEBUG
-	ASSERT(ok);
-#endif // _DEBUGÄã»¹ÄÜ 
+	ASSERT(setupShadowRenderTarget());
 }
 
 
@@ -156,3 +117,22 @@ void SpotLightShadowMapping::updateLightMatrix(const Light_t& light) {
 	m_lightVP = p * v;
 }
 
+
+bool SpotLightShadowMapping::setupShadowRenderTarget() {
+	m_shadowTarget.reset(new RenderTarget(m_shadowMapResolution));
+	m_shadowTarget->bind();
+
+	if (!m_shadowTarget->attachTexture2D(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
+		m_shadowTarget->unBind();
+		return false;
+	}
+
+	if (!m_shadowTarget->isValid()) {
+		m_shadowTarget->unBind();
+		return false;
+	}
+
+	m_shadowTarget->unBind();
+
+	return true;
+}

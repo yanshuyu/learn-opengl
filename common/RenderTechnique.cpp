@@ -22,8 +22,8 @@ void RenderTechniqueBase::render(const Scene_t& scene) {
 	drawDepthPass(scene);
 	drawGeometryPass(scene);
 	drawOpaquePass(scene);
-	drawTransparentPass(scene);
 	if (scene.skyBox) drawSkyBox(*scene.skyBox, *scene.mainCamera);
+	drawTransparentPass(scene);
 
 	endFrame();
 }
@@ -32,12 +32,12 @@ void RenderTechniqueBase::render(const Scene_t& scene) {
 void RenderTechniqueBase::render(const SkyBox_t& skyBox) {
 	m_renderer->pushGPUPipelineState(&m_skyBoxPipelineState);
 
-	skyBox.cubeMap->bind(Texture::Unit::CubeMap, Texture::Target::Texture_CubeMap);
+	skyBox.cubeMap->bindToTextureUnit(Texture::Unit::CubeMap, Texture::Target::Texture_CubeMap);
 	m_renderer->getActiveShaderProgram()->setUniform1("u_CubeMap", int(Texture::Unit::CubeMap));
 	skyBox.cubeVAO->bind();
 	GLCALL(glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0));
 	skyBox.cubeVAO->unbind();
-	skyBox.cubeMap->unbind();
+	skyBox.cubeMap->unbindFromTextureUnit();
 
 	m_renderer->popGPUPipelineState();
 }

@@ -24,17 +24,15 @@ public:
 	void endRenderLight(const Light_t& light, ShaderProgram* shader) override;
 	void onShadowMapResolutionChange(float w, float h) override;
 
-#ifdef _DEBUG
-	void visualizeShadowMaps(const glm::vec2& wndSize);
-#endif // _DEBUG
-
 
 private:
 	void calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera);
 	void calcViewFrumstumSplitPercents(const Camera_t& camera, float t);
 
+	bool setupShadowRenderTarget();
+
 private:
-	RenderTarget m_shadowTarget;
+	std::unique_ptr<RenderTarget> m_shadowTarget;
 	std::shared_ptr<ShaderProgram> m_shader;
 
 	glm::vec2 m_shadowMapResolution;

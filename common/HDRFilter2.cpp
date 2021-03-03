@@ -56,13 +56,13 @@ void HDRFilter2::apply(Texture* inputFrame, Texture* outputFrame, const FilterPa
 	auto shader = shader_weak.lock();
 	m_manager->getRenderer()->pushShaderProgram(shader.get());
 	
-	inputFrame->bind(Texture::Unit::Defualt, Texture::Target::Texture_2D);
+	inputFrame->bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_2D);
 	shader->setUniform1("u_hdrTexture", int(Texture::Unit::Defualt));
 	shader->setUniform1("u_Exposure", params->getParam<float>(sExposureParamName)->m_value);
 
 	m_manager->getRenderer()->drawFullScreenQuad();
 
-	inputFrame->unbind();
+	inputFrame->unbindFromTextureUnit();
 	m_manager->getRenderer()->popShadrProgram();
 	m_manager->getRenderer()->popRenderTarget();
 }

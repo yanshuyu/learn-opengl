@@ -5,6 +5,7 @@ Buffer::Buffer(): m_handler(0)
 , m_size(0)
 , m_elementCount(0)
 , m_target(Target::Unknown)
+, m_targetIdx(-1)
 , m_usage(Usage::Unknown) {
 	GLCALL(glGenBuffers(1, &m_handler));
 }
@@ -21,22 +22,31 @@ Buffer::~Buffer() {
 void Buffer::bind(Target target) const {
 	GLCALL(glBindBuffer(int(target), m_handler));
 	m_target = target;
+	m_targetIdx = -1;
 }
 
 void Buffer::bindBase(Target target, size_t index) const {
 	GLCALL(glBindBufferBase(int(target), index, m_handler));
 	m_target = target;
+	m_targetIdx = index;
 }
 
 void Buffer::bindRange(Target target, size_t index, size_t dataOffset, size_t dataSz) const {
 	GLCALL(glBindBufferRange(int(target), index, m_handler, dataOffset, dataSz));
 	m_target = target;
+	m_targetIdx = index;
 }
 
 void Buffer::unbind() const {
 	if (m_target != Target::Unknown) {
-		GLCALL(glBindBuffer(int(m_target), 0));
+		if (m_targetIdx < 0) {
+			GLCALL(glBindBuffer(int(m_target), 0));
+		}
+		else {
+			GLCALL(glBindBufferBase(GLenum(m_target), m_targetIdx, 0));
+		}
 		m_target = Target::Unknown;
+		m_targetIdx = -1;
 	}
 }
 

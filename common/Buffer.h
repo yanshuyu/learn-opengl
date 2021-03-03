@@ -56,7 +56,9 @@ public:
 	~Buffer();
 
 	Buffer(const Buffer& other) = delete;
+	Buffer(Buffer&& rv) = delete;
 	Buffer& operator = (const Buffer& other) = delete;
+	Buffer& operator = (Buffer&& rv) = delete;
 
 	void bind(Target target) const;
 	void bindBase(Target target, size_t index) const; // bind to indexed buffer target
@@ -87,6 +89,10 @@ public:
 		return m_target;
 	}
 
+	inline int getTargetIndex() const {
+		return m_targetIdx;
+	}
+
 	inline Usage getUsage() const {
 		return m_usage;
 	}
@@ -96,6 +102,7 @@ protected:
 	size_t m_size; //buffer size in bytes
 	size_t m_elementCount; //element count in buffer
 	mutable Target m_target;
+	mutable int m_targetIdx;
 	Usage m_usage;
 
 };

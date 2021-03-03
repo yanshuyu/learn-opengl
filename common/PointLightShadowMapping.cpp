@@ -11,7 +11,7 @@ PointLightShadowMapping::PointLightShadowMapping(IRenderTechnique* rt, const glm
 : IShadowMapping(rt)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
-, m_shadowTarget(shadowMapResolution)
+, m_shadowTarget()
 , m_shader(nullptr) {
 	
 }
@@ -20,56 +20,15 @@ PointLightShadowMapping::~PointLightShadowMapping() {
 	cleanUp();
 }
 
-bool PointLightShadowMapping::initialize() {
-	if (!m_shadowTarget.attachTextureCube(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	if (!m_shadowTarget.isValid()) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
-#ifdef _DEBUG
-	ASSERT(shadowMap);
-#endif // _DEBUG
-	if (shadowMap) {
-		shadowMap->setFilterMode(Texture::FilterType::Magnification, Texture::FilterMode::Nearest);
-		shadowMap->setFilterMode(Texture::FilterType::Minification, Texture::FilterMode::Nearest);
-		shadowMap->setWrapMode(Texture::WrapType::S, Texture::WrapMode::Clamp_To_Border);
-		shadowMap->setWrapMode(Texture::WrapType::T, Texture::WrapMode::Clamp_To_Border);
-		shadowMap->setWrapMode(Texture::WrapType::R, Texture::WrapMode::Clamp_To_Border);
-		shadowMap->setBorderColor({ 1.f, 1.f, 1.f, 1.f });
-	}
-
-	return true;
-}
-
-void PointLightShadowMapping::cleanUp() {
-	m_shadowTarget.detachAllTexture();
-}
-
 void PointLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
 	if (!light.isCastShadow())
 		return;
 
-	auto shader = ShaderProgramManager::getInstance()->getProgram("PointLightShadowPass");
-	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("PointLightShadowPass.shader");
-	ASSERT(!shader.expired());
+	m_shader = ShaderProgramManager::getInstance()->addProgram("PointLightShadowPass").lock();
 
-	m_shader = shader.lock();
 	auto renderer = m_renderTech->getRenderer();
 	renderer->pushShaderProgram(m_shader.get());
-	renderer->pushRenderTarget(&m_shadowTarget);
+	renderer->pushRenderTarget(m_shadowTarget.get());
 	renderer->pushViewport(&m_shadowViewport);
 	renderer->clearScreen(ClearFlags::Depth);
 
@@ -92,6 +51,10 @@ void PointLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& 
 		m_renderTech->render(scene.cutOutItems[i]);
 	}
 
+	for (size_t i = 0; i < scene.numTransparentItems; i++) {
+		m_renderTech->render(scene.transparentItems[i]);
+	}
+
 	renderer->popViewport();
 	renderer->popRenderTarget();
 	renderer->popShadrProgram();
@@ -109,9 +72,9 @@ void PointLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgr
 	}
 
 	if (shader->hasUniform("u_shadowMap") && light.isCastShadow()) {
-		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+		Texture* shadowMap = m_shadowTarget->getAttachedTexture(RenderTarget::Slot::Depth);
 		if (shadowMap) {
-			shadowMap->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_CubeMap);
+			shadowMap->bindToTextureUnit(Texture::Unit::ShadowMap, Texture::Target::Texture_CubeMap);
 			shader->setUniform1("u_shadowMap", int(Texture::Unit::ShadowMap));
 		}
 
@@ -125,18 +88,15 @@ void PointLightShadowMapping::beginRenderLight(const Light_t& light, ShaderProgr
 
 void PointLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
-		if (auto shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth))
-			shadowMap->unbind();
+		if (auto shadowMap = m_shadowTarget->getAttachedTexture(RenderTarget::Slot::Depth))
+			shadowMap->unbindFromTextureUnit();
 	}
 }
 
 void PointLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
 	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
-	bool ok = m_shadowTarget.resize({w, h});
-#ifdef _DEBUG
-	ASSERT(ok);
-#endif // _DEBUG
+	ASSERT(setupShadowRenderTarget());
 }
 
 
@@ -151,4 +111,25 @@ std::vector<glm::mat4> PointLightShadowMapping::calclightLightCameraMatrixs(cons
 	transforms.push_back(P * glm::lookAt(l.position, l.position + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0))); // -z
 
 	return transforms;
+}
+
+
+
+bool PointLightShadowMapping::setupShadowRenderTarget() {
+	m_shadowTarget.reset(new RenderTarget(m_shadowMapResolution));
+	m_shadowTarget->bind();
+
+	if (!m_shadowTarget->attachTextureCube(Texture::Format::Depth24, RenderTarget::Slot::Depth)) {
+		m_shadowTarget->unBind();
+		return false;
+	}
+
+	if (!m_shadowTarget->isValid()) {
+		m_shadowTarget->unBind();
+		return false;
+	}
+
+	m_shadowTarget->unBind();
+
+	return true;
 }

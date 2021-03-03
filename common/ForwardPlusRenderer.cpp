@@ -12,11 +12,17 @@ const std::string ForwardPlusRenderer::s_identifier = "ForwarPlusRenderer";
 
 
 ForwardPlusRenderer::ForwardPlusRenderer(Renderer* renderer) : RenderTechniqueBase(renderer)
-, m_outputTarget(renderer->getRenderSize())
+, m_outputTarget()
 , m_taskExecutors()
 , m_shadowMappings()
 , m_lightsSSBO()
-, m_lights() {
+, m_lights()
+, m_isOITSetup(false)
+, m_fragIdxACBO()
+, m_fragListSSBO()
+, m_fragListHeader()
+, m_fragListHeaderResetBuffer(){
+	setupPipelineStates();
 	RENDER_TASK_EXECUTOR_INIT();
 }
 
@@ -28,26 +34,8 @@ ForwardPlusRenderer::~ForwardPlusRenderer() {
 
 
 bool ForwardPlusRenderer::intialize() {
-	if (!m_outputTarget.attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color)) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG	
+	if (!setupOutputTarget())
 		return false;
-	}
-
-	if (!m_outputTarget.attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil)) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-
-	if (!m_outputTarget.isValid()) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
 
 	m_lightsSSBO.reset(new Buffer());
 	m_lightsSSBO->bind(Buffer::Target::ShaderStorageBuffer);
@@ -57,7 +45,6 @@ bool ForwardPlusRenderer::intialize() {
 	m_taskExecutors[RenderPass::DepthPass] = std::unique_ptr<RenderTaskExecutor>(new DepthPassRenderTaskExecutor(this));
 	m_taskExecutors[RenderPass::ShadowPass] = std::unique_ptr<RenderTaskExecutor>(new ShadowPassRenderTaskExecutor(this));
 	m_taskExecutors[RenderPass::LightPass] = std::unique_ptr<RenderTaskExecutor>(new LightPassRenderTaskExecuter(this));
-	m_taskExecutors[RenderPass::LightAccumulationPass] = std::unique_ptr<RenderTaskExecutor>(new LightAccumulationPassRenderTaskExecutor(this));
 
 	for (auto& executor : m_taskExecutors) {
 		if (!executor.second->initialize()) {
@@ -68,34 +55,6 @@ bool ForwardPlusRenderer::intialize() {
 		}
 	}
 
-	m_depthPassPipelineState.depthMode = DepthMode::Enable;
-	m_depthPassPipelineState.depthFunc = DepthFunc::Less;
-	m_depthPassPipelineState.depthMask = 1;
-
-	m_opaqusPipelineState.depthMode = DepthMode::Enable;
-	m_opaqusPipelineState.depthFunc = DepthFunc::LEqual;
-	m_opaqusPipelineState.depthMask = 0;
-	m_opaqusPipelineState.blendMode = BlendMode::Disable;
-
-	m_cutoutPipelineState.depthMode = DepthMode::Enable;
-	m_cutoutPipelineState.depthFunc = DepthFunc::Less;
-	m_cutoutPipelineState.depthMask = 1;
-	m_cutoutPipelineState.blendMode = BlendMode::Disable;
-
-	m_shadowPassPipelineState.depthMode = DepthMode::Enable;
-	m_shadowPassPipelineState.depthFunc = DepthFunc::Less;
-	m_shadowPassPipelineState.depthMask = 1;
-	m_shadowPassPipelineState.cullMode = CullFaceMode::Front;
-	m_shadowPassPipelineState.cullFaceWindingOrder = FaceWindingOrder::CCW;
-
-	m_lightPassPipelineState.depthMode = DepthMode::Enable;
-	m_lightPassPipelineState.depthFunc = DepthFunc::LEqual;
-	m_lightPassPipelineState.depthMask = 0;
-	m_lightPassPipelineState.blendMode = BlendMode::Enable;
-	m_lightPassPipelineState.blendSrcFactor = BlendFactor::One;
-	m_lightPassPipelineState.blendDstFactor = BlendFactor::One;
-	m_lightPassPipelineState.blendFunc = BlendFunc::Add;
-
 	return true;
 }
 
@@ -104,12 +63,12 @@ void ForwardPlusRenderer::cleanUp() {
 	m_taskExecutors.clear();
 	m_shadowMappings.clear();
 	m_lightsSSBO.release();
-	m_outputTarget.detachAllTexture();
+	m_outputTarget.release();
 }
 
 
 void ForwardPlusRenderer::beginFrame() {
-	m_renderer->pushRenderTarget(&m_outputTarget);
+	m_renderer->pushRenderTarget(m_outputTarget.get());
 	m_renderer->clearScreen(ClearFlags::Color | ClearFlags::Depth | ClearFlags::Stencil);
 }
 
@@ -119,18 +78,26 @@ void ForwardPlusRenderer::endFrame() {
 }
 
 
+Texture* ForwardPlusRenderer::getRenderedFrame() {
+	if (m_oitBlendTarget)
+		return m_oitBlendTarget->getAttachedTexture(RenderTarget::Slot::Color);
+	
+	if (m_outputTarget)
+		return m_outputTarget->getAttachedTexture(RenderTarget::Slot::Color);
+
+#ifdef _DEBUG
+	ASSERT(false);
+#endif // _DEBUG
+
+	return nullptr;
+}
+
 void ForwardPlusRenderer::drawDepthPass(const Scene_t& scene) {
 	if (scene.numOpaqueItems <= 0)
 		return;
 
-	auto shaderMgr = ShaderProgramManager::getInstance();
-	auto shader = shaderMgr->getProgram("DepthPass");
-	if (shader.expired())
-		shader = shaderMgr->addProgram("DepthPass");
-	ASSERT(!shader.expired());
-
+	m_passShader = ShaderProgramManager::getInstance()->addProgram("DepthPass").lock();
 	m_pass = RenderPass::DepthPass;
-	m_passShader = shader.lock();
 	m_renderer->pushShaderProgram(m_passShader.get());
 	m_renderer->pushGPUPipelineState(&m_depthPassPipelineState);
 	m_renderer->setColorMask(false);
@@ -155,9 +122,26 @@ void ForwardPlusRenderer::drawDepthPass(const Scene_t& scene) {
 
 
 void ForwardPlusRenderer::drawOpaquePass(const Scene_t& scene) {
+	PrepareLights(scene);
 	DrawOpaques(scene, false);
 	DrawOpaques(scene, true);
 	RenderMainLights(scene);
+}
+
+
+void ForwardPlusRenderer::drawTransparentPass(const Scene_t& scene) {
+	if (scene.numTransparentItems <= 0)
+		return;
+
+	if (!m_isOITSetup)
+		ASSERT(setupOIT());
+
+	genOITFragList(scene);
+
+	m_renderer->flushDrawCommands();
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	
+	blendOITFragList();
 }
 
 
@@ -168,16 +152,10 @@ void ForwardPlusRenderer::DrawOpaques(const Scene_t& scene, bool useCutout) {
 	if (!useCutout && scene.numOpaqueItems <= 0)
 		return;
 
-	auto shader = ShaderProgramManager::getInstance()->getProgram("ForwardPluseShading");
-	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("ForwardPluseShading");
-	ASSERT(!shader.expired());
-	
+	m_passShader = ShaderProgramManager::getInstance()->addProgram("ForwardPluseShading").lock();
 	m_pass = RenderPass::LightPass;
-	m_passShader = shader.lock();
-	m_renderer->pushShaderProgram(m_passShader.get());
-
 	auto pipeLineState = useCutout ? &m_cutoutPipelineState : &m_opaqusPipelineState;
+	m_renderer->pushShaderProgram(m_passShader.get());
 	m_renderer->pushGPUPipelineState(pipeLineState);
 
 	// set view project matrix
@@ -191,12 +169,10 @@ void ForwardPlusRenderer::DrawOpaques(const Scene_t& scene, bool useCutout) {
 		m_passShader->setUniform3v("u_CameraPosW", &scene.mainCamera->position[0]);
 	}
 
-	PrepareLights(scene);
+	m_lightsSSBO->bindBase(Buffer::Target::ShaderStorageBuffer, 1);
+	m_passShader->bindShaderStorageBlock("Lights", 1);
 	m_passShader->setUniform1("u_NumLights", int(scene.numLights));
-	m_lightsSSBO->bindBase(Buffer::Target::ShaderStorageBuffer, 0);
-	m_lightsSSBO->loadSubData(m_lights.data(), 0, sizeof(Light) * scene.numLights);
-	m_passShader->bindShaderStorageBlock("Lights", 0);
-
+	
 	if (useCutout) {
 		for (size_t i = 0; i < scene.numCutOutItems; i++)
 			render(scene.cutOutItems[i]);
@@ -227,6 +203,18 @@ void ForwardPlusRenderer::PrepareLights(const Scene_t& scene) {
 		m_lights[i].type = int(light.type);
 	}
 
+	for (size_t j = 0; j < scene.numMainLights; j++) {
+		Light_t& light = scene.mainLights[j];
+		m_lights[j + scene.numLights].position = glm::vec4(light.position, light.range);
+		m_lights[j + scene.numLights].direction = glm::normalize(-light.direction);
+		m_lights[j + scene.numLights].color = glm::vec4(light.color, light.intensity);
+		m_lights[j + scene.numLights].angles = light.type == LightType::Ambient ? light.colorEx : glm::vec3(light.innerCone, light.outterCone, 0.f);
+		m_lights[j + scene.numLights].type = int(light.type);
+	}
+
+	m_lightsSSBO->bind(Buffer::Target::ShaderStorageBuffer);
+	m_lightsSSBO->loadSubData(m_lights.data(), 0, sizeof(Light) * (scene.numLights + scene.numMainLights));
+	m_lightsSSBO->unbind();
 }
 
 
@@ -397,15 +385,215 @@ void ForwardPlusRenderer::render(const MeshRenderItem_t& task) {
 
 
 void ForwardPlusRenderer::onWindowResize(float w, float h) {
-	bool ok = m_outputTarget.resize({ w, h });
-#ifdef _DEBUG
-	ASSERT(ok);
-#endif // _DEBUG
-
+	ASSERT(setupOutputTarget());
+	cleanOIT();
 }
 
 void ForwardPlusRenderer::onShadowMapResolutionChange(float w, float h) {
 	for (auto& shadowMapping : m_shadowMappings) {
 		shadowMapping.second->onShadowMapResolutionChange(w, h);
 	}
+}
+
+
+bool ForwardPlusRenderer::setupOutputTarget() {
+	m_outputTarget.reset(new RenderTarget(m_renderer->getRenderSize()));
+
+	m_outputTarget->bind();
+
+	if (!m_outputTarget->attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color))
+		return false;
+
+	if (!m_outputTarget->attachTexture2D(Texture::Format::Depth24_Stencil8, RenderTarget::Slot::Depth_Stencil))
+		return false;
+
+	if (!m_outputTarget->isValid())
+		return false;
+
+	m_outputTarget->unBind();
+
+	return true;
+}
+
+
+void ForwardPlusRenderer::setupPipelineStates() {
+	m_depthPassPipelineState.depthMode = DepthMode::Enable;
+	m_depthPassPipelineState.depthFunc = DepthFunc::Less;
+	m_depthPassPipelineState.depthMask = 1;
+
+	m_opaqusPipelineState.depthMode = DepthMode::Enable;
+	m_opaqusPipelineState.depthFunc = DepthFunc::LEqual;
+	m_opaqusPipelineState.depthMask = 0;
+	m_opaqusPipelineState.blendMode = BlendMode::Disable;
+
+	m_cutoutPipelineState.depthMode = DepthMode::Enable;
+	m_cutoutPipelineState.depthFunc = DepthFunc::Less;
+	m_cutoutPipelineState.depthMask = 1;
+	m_cutoutPipelineState.blendMode = BlendMode::Disable;
+
+	m_shadowPassPipelineState.depthMode = DepthMode::Enable;
+	m_shadowPassPipelineState.depthFunc = DepthFunc::Less;
+	m_shadowPassPipelineState.depthMask = 1;
+	m_shadowPassPipelineState.cullMode = CullFaceMode::Front;
+	m_shadowPassPipelineState.cullFaceWindingOrder = FaceWindingOrder::CCW;
+
+	m_lightPassPipelineState.depthMode = DepthMode::Enable;
+	m_lightPassPipelineState.depthFunc = DepthFunc::LEqual;
+	m_lightPassPipelineState.depthMask = 0;
+	m_lightPassPipelineState.blendMode = BlendMode::Enable;
+	m_lightPassPipelineState.blendSrcFactor = BlendFactor::One;
+	m_lightPassPipelineState.blendDstFactor = BlendFactor::One;
+	m_lightPassPipelineState.blendFunc = BlendFunc::Add;
+
+	m_oitDrawPipelineState.depthMode = DepthMode::Enable;
+	m_oitDrawPipelineState.depthFunc = DepthFunc::Less;
+	m_oitDrawPipelineState.depthMask = 0;
+	m_oitDrawPipelineState.blendMode = BlendMode::Disable;
+
+	m_oitBlendPipelineState.depthMode = DepthMode::Disable;
+	m_oitBlendPipelineState.cullMode = CullFaceMode::None;
+	m_oitBlendPipelineState.blendMode = BlendMode::Disable;
+}
+
+
+bool ForwardPlusRenderer::setupOIT() {
+	bool ok;
+	m_fragIdxACBO.reset(new Buffer());
+	m_fragIdxACBO->bind(Buffer::Target::AtomicCounterBuffer);
+	ok =  m_fragIdxACBO->loadData(nullptr, sizeof(unsigned int), Buffer::Usage::DynamicDraw);
+	m_fragIdxACBO->unbind();
+	if (!ok) return false;
+
+	glm::vec2 renderSz = m_renderer->getRenderSize();
+	unsigned int bufSz = sizeof(Fragment) * MAX_FRAG_PER_PIXEL * renderSz.x * renderSz.y;
+	m_fragListSSBO.reset(new Buffer());
+	m_fragListSSBO->bind(Buffer::Target::ShaderStorageBuffer);
+	ok = m_fragListSSBO->loadData(nullptr, bufSz, Buffer::Usage::DynamicDraw);
+	m_fragListSSBO->unbind();
+	if (!ok) return false;
+
+	m_fragListHeader.reset(new Texture());
+	m_fragListHeader->allocStorage2D(Texture::Format::R32UI, renderSz.x, renderSz.y);
+
+	std::vector<unsigned int> clearData(renderSz.x * renderSz.y, 0xffffffff);
+	m_fragListHeaderResetBuffer.reset(new Buffer());
+	m_fragListHeaderResetBuffer->bind(Buffer::Target::PixelUnpackBuffer);
+	ok = m_fragListHeaderResetBuffer->loadData(clearData.data(), sizeof(unsigned int) * clearData.size(), Buffer::Usage::StaticCopy);
+	m_fragListHeaderResetBuffer->unbind();
+	if (!ok) return false;
+
+	m_oitBlendTarget.reset(new RenderTarget(m_renderer->getRenderSize()));
+	m_oitBlendTarget->bind();
+	ok = m_oitBlendTarget->attachTexture2D(Texture::Format::RGBA16F, RenderTarget::Slot::Color);
+	m_isOITSetup = ok && m_oitBlendTarget->isValid();
+	m_oitBlendTarget->unBind();
+
+
+	return m_isOITSetup;
+}
+
+
+void ForwardPlusRenderer::cleanOIT() {
+	m_fragIdxACBO.release();
+	m_fragListSSBO.release();
+	m_fragListHeaderResetBuffer.release();
+	m_fragListHeader.release();
+	m_oitBlendTarget.release();
+	m_isOITSetup = false;
+}
+
+
+void ForwardPlusRenderer::genOITFragList(const Scene_t& scene) {
+	m_passShader = ShaderProgramManager::getInstance()->addProgram("OITFragList").lock();
+	m_pass = RenderPass::LightPass;
+	m_renderer->pushShaderProgram(m_passShader.get());
+	m_renderer->pushGPUPipelineState(&m_oitDrawPipelineState);
+	m_renderer->setColorMask(false);
+
+	m_fragListSSBO->bindBase(Buffer::Target::ShaderStorageBuffer, 0);
+	m_passShader->bindShaderStorageBlock("FragmentBuffer", 0);
+
+	// reset frag list header and frag index counter
+	unsigned int resetIdx = 0;
+	m_fragIdxACBO->bindBase(Buffer::Target::AtomicCounterBuffer, 0);
+	m_fragIdxACBO->loadSubData(&resetIdx, 0, sizeof(unsigned int));
+
+	auto renderSz = m_renderer->getRenderSize();
+	//m_fragListHeader->subDataImage2DFromBuffer(m_fragListHeaderResetBuffer.get(), Texture::Format::R, Texture::FormatDataType::Int, 0, 0, renderSz.x, renderSz.y);
+	m_fragListHeaderResetBuffer->bind(Buffer::Target::PixelUnpackBuffer);
+	m_fragListHeader->bindToTextureUnit();
+	//GLCALL(glTextureSubImage2D(m_fragListHeader->getHandler(), 0, 0, 0, renderSz.x, renderSz.y, GL_RED_INTEGER, GL_UNSIGNED_INT, 0));
+	GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, renderSz.x, renderSz.y, GL_RED_INTEGER, GL_UNSIGNED_INT, 0));
+	m_fragListHeader->unbindFromTextureUnit();
+	m_fragListHeaderResetBuffer->unbind();
+
+	m_fragListHeader->bindToImageUnit(0, Texture::Format::R32UI, Texture::Access::ReadWrite);
+	m_passShader->setUniform1("u_FragHeader", 0);
+
+	unsigned int maxNumFrags = renderSz.x * renderSz.y * MAX_FRAG_PER_PIXEL;
+	m_passShader->setUniform1("u_MaxNumFrag", maxNumFrags);
+
+	//Lights
+	int totalLights = scene.numLights + scene.numMainLights;
+	m_lightsSSBO->bindBase(Buffer::Target::ShaderStorageBuffer, 1);
+	m_passShader->bindShaderStorageBlock("Lights", 1);
+	m_passShader->setUniform1("u_NumLights", totalLights);
+
+	// set view project matrix
+	if (m_passShader->hasUniform("u_VPMat")) {
+		glm::mat4 vp = scene.mainCamera->projMatrix * scene.mainCamera->viewMatrix;
+		m_passShader->setUniformMat4v("u_VPMat", &vp[0][0]);
+	}
+
+	// set camera position
+	if (m_passShader->hasUniform("u_CameraPosW")) {
+		m_passShader->setUniform3v("u_CameraPosW", &scene.mainCamera->position[0]);
+	}
+
+	// draw per pixel fragments link list
+	for (size_t i = 0; i < scene.numTransparentItems; i++) {
+		render(scene.transparentItems[i]);
+	}
+
+	m_lightsSSBO->unbind();
+	m_fragListSSBO->unbind();
+	m_fragIdxACBO->unbind();
+	m_fragListHeader->unbindFromImageUnit();
+	m_passShader->unbindShaderStorageBlock("FragmentBuffer");
+	m_passShader->unbindShaderStorageBlock("Lights");
+	m_passShader->unbindSubroutineUniforms();
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
+	m_renderer->setColorMask(true);
+	m_passShader = nullptr;
+	m_pass = RenderPass::None;
+}
+
+
+void ForwardPlusRenderer::blendOITFragList() {
+	m_passShader = ShaderProgramManager::getInstance()->addProgram("OITFragBlending").lock();
+	m_renderer->pushShaderProgram(m_passShader.get());
+	m_renderer->pushGPUPipelineState(&m_oitBlendPipelineState);
+	m_renderer->pushRenderTarget(m_oitBlendTarget.get());
+
+	m_fragListSSBO->bindBase(Buffer::Target::ShaderStorageBuffer, 0);
+	m_passShader->bindShaderStorageBlock("FragmentBuffer", 0);
+
+	m_fragListHeader->bindToImageUnit(0, Texture::Format::R32UI, Texture::Access::Read);
+	m_passShader->setUniform1("u_FragHeader", 0);
+
+	auto bgTex = m_outputTarget->getAttachedTexture(RenderTarget::Slot::Color);
+	bgTex->bindToImageUnit(1, Texture::Format::RGBA16F, Texture::Access::Read);
+	m_passShader->setUniform1("u_BackroundImage", 1);
+
+	m_renderer->clearScreen(ClearFlags::Color);
+	m_renderer->drawFullScreenQuad();
+
+	bgTex->unbindFromImageUnit();
+	m_fragListHeader->unbindFromImageUnit();
+	m_fragListSSBO->unbind();
+	m_passShader->unbindShaderStorageBlock("FragmentBuffer");
+	m_renderer->popRenderTarget();
+	m_renderer->popGPUPipelineState();
+	m_renderer->popShadrProgram();
 }

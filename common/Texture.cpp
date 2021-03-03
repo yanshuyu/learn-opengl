@@ -2,6 +2,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include<stb_image/stb_image.h>
 #include"Util.h"
+#include"Buffer.h"
 
 
 Texture::Texture():m_handler(0)
@@ -11,9 +12,8 @@ Texture::Texture():m_handler(0)
 , m_numLayer(0)
 , m_depth(0)
 , m_format(Format::Unknown)
-, m_bindedUnit(Unit::Defualt)
+, m_bindedTexUnit(Unit::Defualt)
 , m_bindedTarget(Target::Unknown)
-, m_bindAsImage(false)
 , m_bindedImageUnit(-1) {
 	GLCALL(glGenTextures(1, &m_handler));
 }
@@ -62,7 +62,7 @@ bool Texture::loadImage2DFromMemory(Format cpuFmt, Format gpuFmt,
 									size_t height,
 									const void* data,
 									bool genMipMap) {
-	bind();
+	bindToTextureUnit();
 	GLCALL(glTexImage2D(GL_TEXTURE_2D,
 		0,
 		GLint(gpuFmt),
@@ -79,8 +79,10 @@ bool Texture::loadImage2DFromMemory(Format cpuFmt, Format gpuFmt,
 	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
 	setWrapMode(WrapType::R, WrapMode::Clamp_To_Edge);
 
-	if (genMipMap)
-		GLCALL(glGenerateTextureMipmap(m_handler));
+	if (genMipMap) {
+		//GLCALL(glGenerateTextureMipmap(m_handler));
+		GLCALL(glGenerateMipmap(GLenum(m_bindedTarget)));
+	}
 
 	m_format = gpuFmt;
 	m_width = width;
@@ -88,7 +90,7 @@ bool Texture::loadImage2DFromMemory(Format cpuFmt, Format gpuFmt,
 	m_numLayer = 1;
 	m_depth = 1;
 
-	unbind();
+	unbindFromTextureUnit();
 
 	return true;
 }
@@ -143,7 +145,7 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 									const void* front,
 									const void* back,
 									bool genMipMap) {
-	bind(Unit::Defualt, Target::Texture_CubeMap);
+	bindToTextureUnit(Unit::Defualt, Target::Texture_CubeMap);
 
 	const void* datas[] = {right, left, top, bottom, front, back };
 	for (size_t i = 0; i < 6; i++) {
@@ -161,8 +163,10 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 			datas[i]));
 	}
 	
-	if (genMipMap)
-		GLCALL(glGenerateTextureMipmap(m_handler));
+	if (genMipMap) {
+		//GLCALL(glGenerateTextureMipmap(m_handler));
+		GLCALL(glGenerateMipmap(GLenum(m_bindedTarget)));
+	}
 
 	m_format = gpuFmt;
 	m_numLayer = 1;
@@ -176,16 +180,16 @@ bool Texture::loadCubeMapFromMemory(Format gpuFmt,
 	setWrapMode(WrapType::T, WrapMode::Clamp_To_Edge);
 	setWrapMode(WrapType::R, WrapMode::Clamp_To_Edge);
 
-	unbind();
+	unbindFromTextureUnit();
 
 	return true;
 }
 
 
 void Texture::allocStorage2D(Format fmt, size_t width, size_t height, size_t levels) {
-	bind();
+	bindToTextureUnit();
 	GLCALL(glTexStorage2D(GL_TEXTURE_2D, levels, GLenum(fmt), width, height));
-	unbind();
+	unbindFromTextureUnit();
 	m_format = fmt;
 	m_width = width;
 	m_height = height;
@@ -195,9 +199,9 @@ void Texture::allocStorage2D(Format fmt, size_t width, size_t height, size_t lev
 
 
 void Texture::allocStorage2DArray(Format fmt, size_t layers, size_t width, size_t height, size_t levels) {
-	bind(Unit::Defualt, Target::Texture_2D_Array);
+	bindToTextureUnit(Unit::Defualt, Target::Texture_2D_Array);
 	GLCALL(glTexStorage3D(GL_TEXTURE_2D_ARRAY, levels, GLenum(fmt), width, height, layers));
-	unbind();
+	unbindFromTextureUnit();
 	m_format = fmt;
 	m_width = width;
 	m_height = height;
@@ -207,9 +211,9 @@ void Texture::allocStorage2DArray(Format fmt, size_t layers, size_t width, size_
 
 
 void Texture::allocStorageCube(Format fmt, size_t width, size_t height, size_t levels) {
-	bind(Unit::Defualt, Target::Texture_CubeMap);
+	bindToTextureUnit(Unit::Defualt, Target::Texture_CubeMap);
 	GLCALL(glTexStorage2D(GL_TEXTURE_CUBE_MAP, levels, GLenum(fmt), width, height));
-	unbind();
+	unbindFromTextureUnit();
 	m_format = fmt;
 	m_numLayer = 1;
 	m_depth = 1;
@@ -220,9 +224,9 @@ void Texture::allocStorageCube(Format fmt, size_t width, size_t height, size_t l
 
 
 void Texture::allocStorageCubeArray(Format fmt, size_t layers, size_t width, size_t height, size_t levels) {
-	bind(Unit::Defualt, Target::Texture_CubeMap_Array);
+	bindToTextureUnit(Unit::Defualt, Target::Texture_CubeMap_Array);
 	GLCALL(glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, levels, GLenum(fmt), width, height, layers));
-	unbind();
+	unbindFromTextureUnit();
 	m_format = fmt;
 	m_numLayer = layers;
 	m_depth = 1;
@@ -232,9 +236,9 @@ void Texture::allocStorageCubeArray(Format fmt, size_t layers, size_t width, siz
 
 
 void Texture::allocStorage3D(Format fmt, size_t depth, size_t width, size_t height, size_t levels) {
-	bind(Unit::Defualt, Target::Texture_3D);
+	bindToTextureUnit(Unit::Defualt, Target::Texture_3D);
 	GLCALL(glTexStorage3D(GL_TEXTURE_3D, levels, GLenum(fmt), width, height, depth));
-	unbind();
+	unbindFromTextureUnit();
 	m_format = fmt;
 	m_numLayer = 1;
 	m_depth = depth;
@@ -243,58 +247,129 @@ void Texture::allocStorage3D(Format fmt, size_t depth, size_t width, size_t heig
 }
 
 
-bool Texture::bind(Unit unit, Target target)  const {
-	if (int(unit) >= maximumAvaliableTextureUnit()) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
+bool Texture::subDataImage2D(const void* data, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t mipLevel) {
+	if (m_bindedTarget == Target::Unknown)
 		return false;
-	}
+	//GLCALL(glTextureSubImage2D(m_handler, mipLevel, xOffset, yOffset, w, h, GLenum(fmt), GLenum(fmtDataType), data));
+	GLCALL(glTexSubImage2D(GLenum(m_bindedTarget), mipLevel, xOffset, yOffset, w, h, GLenum(fmt), GLenum(fmtDataType), data));
+	return true;
+}
 
+bool Texture::subDataImage2DFromBuffer(Buffer* buf, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t mipLevel, size_t byteOffset) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	buf->bind(Buffer::Target::PixelUnpackBuffer);
+	//GLCALL(glTextureSubImage2D(m_handler, mipLevel, xOffset, yOffset, w, h, GLenum(fmt), GLenum(fmtDataType), reinterpret_cast<void*>(byteOffset)));
+	GLCALL(glTexSubImage2D(GLenum(m_bindedTarget), mipLevel, xOffset, yOffset, w, h, GLenum(fmt), GLenum(fmtDataType), reinterpret_cast<void*>(byteOffset)));
+	buf->unbind();
+	
+	return true;
+}
+
+bool Texture::subDataImage2DArray(const void* data, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t slice, size_t mipLevel) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+	//GLCALL(glTextureSubImage3D(m_handler, mipLevel, xOffset, yOffset, slice, w, h, 0, GLenum(fmt), GLenum(fmtDataType), data));
+	GLCALL(glTexSubImage3D(GLenum(m_bindedTarget), mipLevel, xOffset, yOffset, slice, w, h, 0, GLenum(fmt), GLenum(fmtDataType), data));
+	return true;
+}
+
+bool Texture::subDataImage2DArrayFromBuffer(Buffer* buf, Format fmt, FormatDataType fmtDataType, size_t xOffset, size_t yOffset, size_t w, size_t h, size_t slice, size_t mipLevel, size_t byteOffset) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	buf->bind(Buffer::Target::PixelUnpackBuffer);
+	//GLCALL(glTextureSubImage3D(m_handler, mipLevel, xOffset, yOffset, slice, w, h, 0, GLenum(fmt), GLenum(fmtDataType), &byteOffset));
+	GLCALL(glTexSubImage3D(GLenum(m_bindedTarget), mipLevel, xOffset, yOffset, slice, w, h, 0, GLenum(fmt), GLenum(fmtDataType), &byteOffset));
+	buf->unbind();
+
+	return true;
+}
+
+
+bool Texture::bindToTextureUnit(Unit unit, Target target)  const {
 	GLCALL(glActiveTexture(GL_TEXTURE0 + int(unit)));
 	GLCALL(glBindTexture(int(target), m_handler));
-	m_bindedUnit = unit;
+	m_bindedTexUnit = unit;
 	m_bindedTarget = target;
 	return true;
 }
 
 
-void Texture::unbind() const {
+void Texture::unbindFromTextureUnit() const {
 	if (m_bindedTarget != Target::Unknown) {
-		GLCALL(glActiveTexture(GL_TEXTURE0 + int(m_bindedUnit)));
+		GLCALL(glActiveTexture(GL_TEXTURE0 + int(m_bindedTexUnit)));
 		GLCALL(glBindTexture(int(m_bindedTarget), 0));
 		m_bindedTarget = Target::Unknown;
-		m_bindedUnit = Unit::Defualt;
+		m_bindedTexUnit = Unit::Defualt;
 	}
 }
 
 
 void Texture::bindToImageUnit(size_t unit, Format fmt, Access access, size_t level, bool bindAsArray, size_t layerToBind) {
 	GLCALL(glBindImageTexture(unit, m_handler, level, bindAsArray, layerToBind, GLenum(access), GLenum(fmt)));
-	m_bindAsImage = true;
 	m_bindedImageUnit = unit;
 }
 
 
 void Texture::unbindFromImageUnit() const {
-	if (m_bindAsImage) {
-		GLCALL(glBindImageTexture(m_bindedImageUnit, m_handler, 0, false, 0, GLenum(Access::Read), GLenum(m_format)));
-		m_bindAsImage = false;
+	if (m_bindedImageUnit >= 0) {
+		GLCALL(glBindImageTexture(m_bindedImageUnit, 0, 0, false, 0, GLenum(Access::Read), GLenum(m_format)));
 		m_bindedImageUnit = -1;
 	}
 }
 
 
-void Texture::setFilterMode(FilterType type, FilterMode mode) {
-	GLCALL(glTextureParameteri(m_handler,  GLenum(type), GLenum(mode)));
+bool Texture::setFilterMode(FilterType type, FilterMode mode) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	//GLCALL(glTextureParameteri(m_handler,  GLenum(type), GLenum(mode)));
+	GLCALL(glTexParameteri(GLenum(m_bindedTarget), GLenum(type), GLenum(mode)));
+
+	return true;
 }
 
-void Texture::setWrapMode(WrapType type, WrapMode mode) {
-	GLCALL(glTextureParameteri(m_handler, GLenum(type), GLenum(mode)));
+bool Texture::setWrapMode(WrapType type, WrapMode mode) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	//GLCALL(glTextureParameteri(m_handler, GLenum(type), GLenum(mode)));
+	GLCALL(glTexParameteri(GLenum(m_bindedTarget), GLenum(type), GLenum(mode)));
+
+	return true;
 }
 
-void Texture::setBorderColor(glm::vec4 color) {
-	GLCALL(glTextureParameterfv(m_handler, GL_TEXTURE_BORDER_COLOR, &color[0]));
+bool Texture::setBorderColor(glm::vec4 color) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	//GLCALL(glTextureParameterfv(m_handler, GL_TEXTURE_BORDER_COLOR, &color[0]));
+	GLCALL(glTexParameterfv(GLenum(m_bindedTarget), GL_TEXTURE_BORDER_COLOR, &color[0]));
+
+	return true;
+}
+
+
+bool Texture::setCompareMode(CompareMode cm) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	//GLCALL(glTextureParameteri(m_handler, GL_TEXTURE_COMPARE_MODE, GLint(cm)));
+	GLCALL(glTexParameteri(GLenum(m_bindedTarget), GL_TEXTURE_COMPARE_MODE, GLint(cm)));
+
+	return true;
+}
+
+bool Texture::setCompareFunc(CompareFunc cf) {
+	if (m_bindedTarget == Target::Unknown)
+		return false;
+
+	//GLCALL(glTextureParameteri(m_handler, GL_TEXTURE_COMPARE_FUNC, GLint(cf)));
+	GLCALL(glTexParameteri(GLenum(m_bindedTarget), GL_TEXTURE_COMPARE_FUNC, GLint(cf)));
+
+	return true;
 }
 
 
@@ -328,7 +403,7 @@ Texture::Format Texture::getGenericFormat(size_t channelCnt) {
 
 void Texture::release() {
 	if (m_handler) {
-		unbind();
+		unbindFromTextureUnit();
 		unbindFromImageUnit();
 		glDeleteTextures(1, &m_handler);
 		m_handler = 0;
@@ -338,7 +413,7 @@ void Texture::release() {
 		m_depth = 0;
 		m_file.clear();
 		m_format = Format::Unknown;
-		m_bindedUnit = Unit::Defualt;
+		m_bindedTexUnit = Unit::Defualt;
 		m_bindedTarget = Target::Unknown;
 	}
 }

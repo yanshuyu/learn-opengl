@@ -3,7 +3,7 @@
 
 int main()
 {
-	auto app = std::unique_ptr<ImageProcessingApp>(new ImageProcessingApp("Image Processing"));
+	auto app = std::unique_ptr<ImageProcessingApp>(new ImageProcessingApp("Image Processing", 1920, 1080, 4, 3));
 
 	try {
 		app->run();

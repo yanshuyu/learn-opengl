@@ -27,7 +27,7 @@ bool PostProcessingManager::initialize() {
 	auto backBuffer = std::unique_ptr<Texture>(new Texture());
 	auto renderSz = m_renderer->getRenderSize();
 
-	frontBuffer->bind();
+	frontBuffer->bindToTextureUnit();
 	if (!frontBuffer->loadImage2DFromMemory(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, renderSz.x, renderSz.y, nullptr)) {
 		cleanUp();
 #ifdef _DEBUG
@@ -35,9 +35,9 @@ bool PostProcessingManager::initialize() {
 #endif // _DEBUG
 		return false;
 	}
-	frontBuffer->unbind();
+	frontBuffer->unbindFromTextureUnit();
 
-	backBuffer->bind();
+	backBuffer->bindToTextureUnit();
 	if (!backBuffer->loadImage2DFromMemory(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, renderSz.x, renderSz.y, nullptr)) {
 		cleanUp();
 #ifdef _DEBUG
@@ -45,7 +45,7 @@ bool PostProcessingManager::initialize() {
 #endif // _DEBUG
 		return false;
 	}
-	backBuffer->unbind();
+	backBuffer->unbindFromTextureUnit();
 
 	m_swapBuffers[0] = std::move(frontBuffer);
 	m_swapBuffers[1] = std::move(backBuffer);

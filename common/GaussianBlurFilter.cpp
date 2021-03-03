@@ -70,9 +70,9 @@ void GaussianBlurFilter::apply(Texture* inputFrame, Texture* outputFrame, const 
 	if (!halfBlurTex) {
 		auto renderSz = m_manager->getRenderer()->getRenderSize();
 		halfBlurTex = std::make_unique<Texture>();
-		halfBlurTex->bind();
+		halfBlurTex->bindToTextureUnit();
 		halfBlurTex->loadImage2DFromMemory(Texture::Format::RGBA, Texture::Format::RGBA, Texture::FormatDataType::UByte, renderSz.x, renderSz.y, nullptr);
-		halfBlurTex->unbind();
+		halfBlurTex->unbindFromTextureUnit();
 	}
 
 	ASSERT(halfBlurTex);
@@ -82,7 +82,7 @@ void GaussianBlurFilter::apply(Texture* inputFrame, Texture* outputFrame, const 
 	m_halfBlurTarget.attachProxyTexture(halfBlurTex.get(), RenderTarget::Slot::Color);
 	m_manager->getRenderer()->clearScreen(ClearFlags::Color);
 
-	inputFrame->bind(Texture::Unit::Defualt, Texture::Target::Texture_2D);
+	inputFrame->bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_2D);
 	shader->setUniform1("u_Texture", int(Texture::Unit::Defualt));
 	shader->setUniform1("u_Pass", 0);
 
@@ -96,13 +96,13 @@ void GaussianBlurFilter::apply(Texture* inputFrame, Texture* outputFrame, const 
 	m_outputTarget.attachProxyTexture(outputFrame, RenderTarget::Slot::Color);
 	m_manager->getRenderer()->clearScreen(ClearFlags::Color);
 	
-	halfBlurTex->bind(Texture::Unit::Defualt, Texture::Target::Texture_2D);
+	halfBlurTex->bindToTextureUnit(Texture::Unit::Defualt, Texture::Target::Texture_2D);
 	shader->setUniform1("u_Pass", 1);
 	
 	m_manager->getRenderer()->drawFullScreenQuad();
 
-	halfBlurTex->unbind();
-	inputFrame->unbind();
+	halfBlurTex->unbindFromTextureUnit();
+	inputFrame->unbindFromTextureUnit();
 	m_manager->getRenderer()->popRenderTarget();
 	m_manager->getRenderer()->popShadrProgram();
 	m_manager->enqueReuseableTexture(std::move(halfBlurTex));

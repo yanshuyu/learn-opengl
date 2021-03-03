@@ -19,42 +19,21 @@ DirectionalLightShadowMapping::DirectionalLightShadowMapping(IRenderTechnique* r
 , m_numCascade(numCascade)
 , m_shadowMapResolution(shadowMapResolution)
 , m_shadowViewport(0.f, 0.f, shadowMapResolution.x, shadowMapResolution.y)
-, m_shadowTarget(shadowMapResolution)
+, m_shadowTarget()
 , m_shader() {
 
 }
 	
 bool DirectionalLightShadowMapping::initialize() {
-	if (m_numCascade > s_maxNumCascades) {
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
+	if (m_numCascade > s_maxNumCascades)
+		return false;
 
-		return false;
-	}
-	
-	if (!m_shadowTarget.attchTexture2DArray(Texture::Format::Depth24, m_numCascade, RenderTarget::Slot::Depth)) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-	
-	if (!m_shadowTarget.isValid()) {
-		cleanUp();
-#ifdef _DEBUG
-		ASSERT(false);
-#endif // _DEBUG
-		return false;
-	}
-	
-	return true;
+	return setupShadowRenderTarget();
 }
 
 
 void DirectionalLightShadowMapping::cleanUp() {
-	m_shadowTarget.detachAllTexture();
+	m_shadowTarget.release();
 }
 
 void DirectionalLightShadowMapping::renderShadow(const Scene_t& scene, const Light_t& light) {
@@ -63,15 +42,11 @@ void DirectionalLightShadowMapping::renderShadow(const Scene_t& scene, const Lig
 
 	calcViewFrumstumCascades(light, *scene.mainCamera);
 	
-	auto shader = ShaderProgramManager::getInstance()->getProgram("DirectionalLightShadowPass");
-	if (shader.expired())
-		shader = ShaderProgramManager::getInstance()->addProgram("DirectionalLightShadowPass.shader");
-	ASSERT(!shader.expired());
+	m_shader =  ShaderProgramManager::getInstance()->addProgram("DirectionalLightShadowPass").lock();
 
 	Renderer* renderer = m_renderTech->getRenderer();
-	m_shader = shader.lock();
 	renderer->pushShaderProgram(m_shader.get());
-	renderer->pushRenderTarget(&m_shadowTarget);
+	renderer->pushRenderTarget(m_shadowTarget.get());
 	renderer->pushViewport(&m_shadowViewport);
 	renderer->clearScreen(ClearFlags::Depth);
 
@@ -94,6 +69,10 @@ void DirectionalLightShadowMapping::renderShadow(const Scene_t& scene, const Lig
 		m_renderTech->render(scene.cutOutItems[i]);
 	}
 
+	for (size_t i = 0; i < scene.numTransparentItems; i++) {
+		m_renderTech->render(scene.transparentItems[i]);
+	}
+
 	renderer->popViewport();
 	renderer->popRenderTarget();
 	renderer->popShadrProgram();
@@ -111,9 +90,9 @@ void DirectionalLightShadowMapping::beginRenderLight(const Light_t& light, Shade
 	}
 
 	if (shader->hasUniform("u_shadowMapArray") && light.isCastShadow()) {
-		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
+		Texture* shadowMap = m_shadowTarget->getAttachedTexture(RenderTarget::Slot::Depth);
 		if (shadowMap) {
-			shadowMap->bind(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
+			shadowMap->bindToTextureUnit(Texture::Unit::ShadowMap, Texture::Target::Texture_2D_Array);
 			shader->setUniform1("u_shadowMapArray", int(Texture::Unit::ShadowMap));
 		}
 
@@ -142,19 +121,15 @@ void DirectionalLightShadowMapping::beginRenderLight(const Light_t& light, Shade
 
 void DirectionalLightShadowMapping::endRenderLight(const Light_t& light, ShaderProgram* shader) {
 	if (light.isCastShadow()) {
-		Texture* shadowMap = m_shadowTarget.getAttachedTexture(RenderTarget::Slot::Depth);
-		if (shadowMap)
-			shadowMap->unbind();
+		Texture* shadowMap = m_shadowTarget->getAttachedTexture(RenderTarget::Slot::Depth);
+		if (shadowMap) shadowMap->unbindFromTextureUnit();
 	}
 }
 
 void DirectionalLightShadowMapping::onShadowMapResolutionChange(float w, float h) {
 	m_shadowMapResolution = { w, h };
 	m_shadowViewport = Viewport_t(0.f, 0.f, w, h);
-	bool ok = m_shadowTarget.resize({w, h});
-#ifdef _DEBUG
-	ASSERT(ok);
-#endif // _DEBUG
+	ASSERT(setupShadowRenderTarget());
 }
 
 void DirectionalLightShadowMapping::calcViewFrumstumCascades(const Light_t& light, const Camera_t& camera) {
@@ -208,4 +183,24 @@ void DirectionalLightShadowMapping::calcViewFrumstumSplitPercents(const Camera_t
 
 	glm::vec4 p = camera.projMatrix * glm::vec4(0.f, 0.f, camera.far, 1.f);
 	m_cascadeFarProjZ.push_back(p.z);
+}
+
+
+bool DirectionalLightShadowMapping::setupShadowRenderTarget() {
+	m_shadowTarget.reset(new RenderTarget(m_shadowMapResolution));
+	m_shadowTarget->bind();
+
+	if (!m_shadowTarget->attchTexture2DArray(Texture::Format::Depth24, m_numCascade, RenderTarget::Slot::Depth)) {
+		m_shadowTarget->unBind();
+		return false;
+	}
+
+	if (!m_shadowTarget->isValid()) {
+		m_shadowTarget->unBind();
+		return false;
+	}
+
+	m_shadowTarget->unBind();
+
+	return true;
 }

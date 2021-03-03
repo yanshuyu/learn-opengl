@@ -10,9 +10,8 @@ public:
 
 	virtual void run();
 
-	inline void injectWindowSize(int width, int height) {
-		onWindowResized(width, height);
-	}
+	virtual void onWindowResized(int width, int height);
+	virtual void onOpenglDebugError(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char* msg);
 
 protected:
 	virtual bool initailize();
@@ -23,7 +22,6 @@ protected:
 #endif // _DEBUG
 
 	virtual void shutdown();
-	virtual void onWindowResized(int width, int height);
 
 protected:
 	std::string m_wndName;

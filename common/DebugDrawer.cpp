@@ -58,13 +58,13 @@ void DebugDrawer::drawTexture(Texture* texture, const glm::vec2& windowSz, const
 	}
 
 	if (strongShader->hasUniform("u_texture")) {
-		texture->bind(Texture::Unit::Defualt);
+		texture->bindToTextureUnit(Texture::Unit::Defualt);
 		strongShader->setUniform1("u_texture", int(Texture::Unit::Defualt));
 	}
 
 	GLCALL(glDrawArrays(GL_TRIANGLES, 0, 6));
 
-	texture->unbind();
+	texture->unbindFromTextureUnit();
 	strongShader->unbind();
 	s_VBO->unbind();
 	GLCALL(glDisableVertexAttribArray(0));
