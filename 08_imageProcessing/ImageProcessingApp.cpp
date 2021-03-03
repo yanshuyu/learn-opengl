@@ -41,6 +41,7 @@ bool ImageProcessingApp::initailize() {
 	auto skyBox = camera->addComponent<SkyboxComponent>();
 	ASSERT(skyBox->load("sky_right.png", "sky_left.png", "sky_top.png", "sky_bottom.png", "sky_front.png", "sky_back.png"));
 
+	camera->addComponent<GaussianBlurFilterComponent>();
 
 	//camera->addComponent(ArcballCameraController::create());
 	//auto cameraController = camera->getComponent<ArcballCameraController>();
@@ -158,7 +159,7 @@ void ImageProcessingApp::_loadScene() {
 
 	// copo
 	gameObj = m_scene->addModel("copo.blend");
-	gameObj->setLayer(SceneLayer::Transparency);
+	gameObj->setLayer(SceneLayer::Opaque);
 	gameObj->m_transform.setRotation({ -90.f, 0.f, 0.f });
 	gameObj->m_transform.setPosition({ 0.f, 1.f, 0.f });
 	meshRenderer = gameObj->getComponent<MeshRenderComponent>().lock();
